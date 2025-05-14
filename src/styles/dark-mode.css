@@ -1,0 +1,133 @@
+/* Este archivo se encarga de aplicar los estilos específicos del modo oscuro */
+
+/* El modo oscuro se activa cuando el elemento HTML tiene la clase 'dark' */
+.dark {
+  /* Variables para el modo oscuro */
+  --color-primary-50: #001431;
+  --color-primary-100: #002952;
+  --color-primary-200: #003D82;
+  --color-primary-300: #0052A3;
+  --color-primary-400: #0066C4;
+  --color-primary-500: #0284c7;
+  --color-primary-600: #38bdf8;
+  --color-primary-700: #7dd3fc;
+  --color-primary-800: #bae6fd;
+  --color-primary-900: #e0f2fe;
+  
+  /* Colores secundarios en modo oscuro */
+  --color-secondary-50: #663100;
+  --color-secondary-100: #8C4500;
+  --color-secondary-200: #B35900;
+  --color-secondary-300: #D96E00;
+  --color-secondary-400: #FF8200;
+  --color-secondary-500: #FF9B33;
+  --color-secondary-600: #FFB466;
+  --color-secondary-700: #FFCD99;
+  --color-secondary-800: #FFE6CC;
+  --color-secondary-900: #FFF3E6;
+  
+  /* Colores acento en modo oscuro */
+  --color-accent-50: #053512;
+  --color-accent-100: #0A4F1D;
+  --color-accent-200: #106A29;
+  --color-accent-300: #158435;
+  --color-accent-400: #1A9E41;
+  --color-accent-500: #47B267;
+  --color-accent-600: #75C58D;
+  --color-accent-700: #A3D9B3;
+  --color-accent-800: #D1ECD9;
+  --color-accent-900: #E8F5EC;
+  
+  /* Ajuste de variables para modo oscuro */
+  --bg-main: #121212;
+  --bg-card: #1e1e1e;
+  --bg-elevated: #262626;
+  --bg-input: #2d3748;
+  --bg-hover: #323232;
+  
+  /* Variables de texto */
+  --text-main: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --text-muted: #718096;
+  
+  /* Variables de borde */
+  --border-subtle: #2d3748;
+  --border-strong: #4a5568;
+  
+  /* Sombras para modo oscuro */
+  --shadow-card: 0 2px 5px 0 rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 5px 15px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* =================== AJUSTES ESPECÍFICOS PARA COMPONENTES =================== */
+
+/* Header en modo oscuro */
+.dark header {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Menú móvil en modo oscuro */
+.dark .mobile-menu {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Ajustes para elementos específicos en modo oscuro */
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+/* Tarjetas en modo oscuro */
+.dark .card {
+  background-color: var(--bg-card) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+.dark .card:hover {
+  box-shadow: var(--shadow-card-hover) !important;
+}
+
+/* Input y formularios en modo oscuro */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--bg-input) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-main) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Botones en modo oscuro */
+.dark .btn-outline {
+  border-color: var(--border-subtle) !important;
+  color: var(--text-main) !important;
+}
+
+.dark .btn-outline:hover {
+  background-color: var(--bg-hover) !important;
+}
+
+/* Ajustes para los iconos en modo oscuro */
+.dark svg:not(.custom-color) {
+  color: var(--text-main);
+}
+
+/* Texto en modo oscuro */
+.dark p {
+  color: var(--text-secondary) !important;
+}
+
+.dark h1, 
+.dark h2, 
+.dark h3, 
+.dark h4, 
+.dark h5, 
+.dark h6 {
+  color: var(--text-main) !important;
+}

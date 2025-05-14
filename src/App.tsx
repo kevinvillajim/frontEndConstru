@@ -1,6 +1,7 @@
 import React, {Suspense} from "react";
 import {useRoutes} from "react-router-dom";
 import appRoutes from "./ui/routes/AppRoute";
+import {ThemeProvider} from "./ui/context/ThemeContext";
 
 const LoadingFallback = () => (
 	<div className="flex items-center justify-center min-h-screen">
@@ -17,7 +18,9 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
 	return (
 		<Suspense fallback={<LoadingFallback />}>
-			<AppRoutes />
+			<ThemeProvider>
+				<AppRoutes />
+			</ThemeProvider>
 		</Suspense>
 	);
 };
