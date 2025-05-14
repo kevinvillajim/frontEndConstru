@@ -13,7 +13,6 @@ C:.
 |   tsconfig.node.json
 |   vite.config.ts
 |   
-|       
 \---src
     |   App.css
     |   App.tsx
@@ -45,7 +44,15 @@ C:.
     |   |   \---layout
     |   +---hooks
     |   +---pages
+    |   |   |   HomePage.tsx
+    |   |   |   NotFoundPage.tsx
+    |   |   |   
+    |   |   \---layouts
+    |   |           MainLayout.tsx
+    |   |           
     |   \---routes
+    |           AppRoute.tsx
+    |           
     \---utils
             constants.ts
             formatters.ts
