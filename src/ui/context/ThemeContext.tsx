@@ -2,13 +2,15 @@
 import React, {createContext, useContext, useEffect, useState} from "react";
 
 type ThemeContextType = {
-	isDarkMode: boolean;
-	toggleDarkMode: () => void;
+	theme: "light" | "dark";
+	toggleTheme: () => void;
+	setTheme: (theme: "light" | "dark") => void;
 };
 
 const ThemeContext = createContext<ThemeContextType>({
-	isDarkMode: false,
-	toggleDarkMode: () => {},
+	theme: "light",
+	toggleTheme: () => {},
+	setTheme: () => {},
 });
 
 export const useTheme = () => useContext(ThemeContext);
@@ -16,42 +18,71 @@ export const useTheme = () => useContext(ThemeContext);
 export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({
 	children,
 }) => {
-	// Verificar localStorage o preferencia del sistema
-	const [isDarkMode, setIsDarkMode] = useState(() => {
+	// Inicializar tema desde localStorage o preferencia del sistema
+	const [theme, setThemeState] = useState<"light" | "dark">(() => {
 		if (typeof window !== "undefined") {
-			const savedTheme = localStorage.getItem("theme");
-			return (
-				savedTheme === "dark" ||
-				(!savedTheme &&
-					window.matchMedia("(prefers-color-scheme: dark)").matches)
-			);
+			const savedTheme = localStorage.getItem("theme") as
+				| "light"
+				| "dark"
+				| null;
+			if (savedTheme === "dark" || savedTheme === "light") {
+				return savedTheme;
+			}
+
+			// Si no hay tema guardado, verificar preferencia del sistema
+			return window.matchMedia("(prefers-color-scheme: dark)").matches
+				? "dark"
+				: "light";
 		}
-		return false;
+		return "light";
 	});
 
-	// Actualizar el DOM cuando cambia el modo
+	// Aplicar el tema al DOM
 	useEffect(() => {
 		if (typeof window !== "undefined") {
 			const root = window.document.documentElement;
 
-			if (isDarkMode) {
-				root.classList.add("dark");
-				localStorage.setItem("theme", "dark");
-			} else {
-				root.classList.remove("dark");
-				localStorage.setItem("theme", "light");
-			}
-		}
-	}, [isDarkMode]);
+			// Eliminar clase anterior
+			root.classList.remove("light", "dark");
 
-	// Función para cambiar el tema
-	const toggleDarkMode = () => {
-		setIsDarkMode((prev) => !prev);
+			// Añadir la clase del tema actual
+			root.classList.add(theme);
+
+			// Guardar el tema en localStorage
+			localStorage.setItem("theme", theme);
+		}
+	}, [theme]);
+
+	// Escuchar cambios en la preferencia del sistema
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+			const handleChange = () => {
+				// Solo cambiar automáticamente si el usuario no ha establecido una preferencia
+				if (!localStorage.getItem("theme")) {
+					setThemeState(mediaQuery.matches ? "dark" : "light");
+				}
+			};
+
+			mediaQuery.addEventListener("change", handleChange);
+			return () => mediaQuery.removeEventListener("change", handleChange);
+		}
+	}, []);
+
+	const toggleTheme = () => {
+		setThemeState((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+	};
+
+	const setTheme = (newTheme: "light" | "dark") => {
+		setThemeState(newTheme);
 	};
 
 	return (
-		<ThemeContext.Provider value={{isDarkMode, toggleDarkMode}}>
+		<ThemeContext.Provider value={{theme, toggleTheme, setTheme}}>
 			{children}
 		</ThemeContext.Provider>
 	);
 };
+
+export default ThemeProvider;

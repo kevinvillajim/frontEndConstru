@@ -1,7 +1,8 @@
+// src/ui/components/layout/Header.tsx
 import {useState} from "react";
 import {Link} from "react-router-dom";
 import {Bars3Icon, XMarkIcon} from "@heroicons/react/24/outline";
-import ThemeSwitcher from "./ThemeSwitcher";
+import ThemeSwitcher from "../../components/common/ThemeSwitcher"; // Importar el nuevo componente
 
 const Header = () => {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -55,7 +56,7 @@ const Header = () => {
 						>
 							Proyectos
 						</Link>
-						<ThemeSwitcher />
+						<ThemeSwitcher /> {/* Usar el nuevo ThemeSwitcher */}
 						<Link to="/login" className="btn-outline">
 							Iniciar Sesión
 						</Link>
@@ -66,7 +67,7 @@ const Header = () => {
 
 					{/* Mobile Menu Button */}
 					<div className="md:hidden flex items-center space-x-4">
-						<ThemeSwitcher />
+						<ThemeSwitcher /> {/* Agregar ThemeSwitcher en móvil */}
 						<button
 							type="button"
 							className="inline-flex items-center justify-center p-2 rounded-md focus:outline-none"

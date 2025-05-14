@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, {Suspense} from "react";
 import {useRoutes} from "react-router-dom";
 import appRoutes from "./ui/routes/AppRoute";
