@@ -4,6 +4,10 @@ import type { RouteObject } from "react-router";
 const MainLayout = lazy(() => import("../pages/layouts/MainLayout"));
 const HomePage = lazy(() => import("../pages/HomePage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
+const LoginPage = lazy(() => import("../pages/auth/LoginPage"));
+const RegisterPage = lazy(() => import("../pages/auth/RegisterPage"));
+const ForgotPasswordPage = lazy(() => import("../pages/auth/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("../pages/auth/ResetPasswordPage"));
 
 const appRoutes: RouteObject[] = [
 	//Public Routes
@@ -20,39 +24,35 @@ const appRoutes: RouteObject[] = [
 				),
 			},
 
-			// //Auth Routes
-			// {
-			// 	path: "login",
-			// 	element: (
-			// 		<AuthRoute>
-			// 			<LoginPage />
-			// 		</AuthRoute>
-			// 	),
-			// },
-			// {
-			// 	path: "register",
-			// 	element: (
-			// 		<AuthRoute>
-			// 			<RegisterPage />
-			// 		</AuthRoute>
-			// 	),
-			// },
-			// {
-			// 	path: "forgot-password",
-			// 	element: (
-			// 		<AuthRoute>
-			// 			<ForgotPasswordPage />
-			// 		</AuthRoute>
-			// 	),
-			// },
-			// {
-			// 	path: "reset-password",
-			// 	element: (
-			// 		<AuthRoute>
-			// 			<ResetPasswordPage />
-			// 		</AuthRoute>
-			// 	),
-			// },
+			//Auth Routes
+			{
+				path: "login",
+				element: (
+					// <AuthRoute>
+						<LoginPage />
+					//</AuthRoute>
+				),
+			},
+			 {
+			 	path: "register",
+			 	element: (
+			 		//<AuthRoute>
+			 			<RegisterPage />
+			 		//</AuthRoute>
+			 	),
+			 },
+			 {
+			 	path: "forgot-password",
+			 	element: (
+			 			<ForgotPasswordPage />
+			 	),
+			 },
+			 {
+			 	path: "reset-password",
+			 	element: (
+			 			<ResetPasswordPage />
+			 	),
+			 },
 		],
 	},
     
