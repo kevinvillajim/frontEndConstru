@@ -1,7 +1,6 @@
-// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
-export default {
-	content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+module.exports = {
+	content: ["./src/**/*.{js,jsx,ts,tsx}"],
 	darkMode: "class",
 	theme: {
 		extend: {
@@ -18,36 +17,31 @@ export default {
 					800: "var(--color-primary-800)",
 					900: "var(--color-primary-900)",
 				},
-				secondary: {
-					50: "var(--color-secondary-50)",
-					100: "var(--color-secondary-100)",
-					200: "var(--color-secondary-200)",
-					300: "var(--color-secondary-300)",
-					400: "var(--color-secondary-400)",
-					500: "var(--color-secondary-500)",
-					600: "var(--color-secondary-600)",
-					700: "var(--color-secondary-700)",
-					800: "var(--color-secondary-800)",
-					900: "var(--color-secondary-900)",
-				},
-				accent: {
-					50: "var(--color-accent-50)",
-					100: "var(--color-accent-100)",
-					200: "var(--color-accent-200)",
-					300: "var(--color-accent-300)",
-					400: "var(--color-accent-400)",
-					500: "var(--color-accent-500)",
-					600: "var(--color-accent-600)",
-					700: "var(--color-accent-700)",
-					800: "var(--color-accent-800)",
-					900: "var(--color-accent-900)",
+				// Colores para dark mode
+				dark: {
+					bg: "var(--bg-main)",
+					card: "var(--bg-card)",
+					input: "var(--bg-input)",
+					text: "var(--text-main)",
+					textSecondary: "var(--text-secondary)",
+					muted: "var(--text-muted)",
+					border: "var(--border-color)",
 				},
 			},
-			boxShadow: {
-				card: "var(--shadow-card)",
-				"card-hover": "var(--shadow-card-hover)",
+			backgroundColor: {
+				dark: "#121212",
+				"dark-card": "#1e1e1e",
+				"dark-hover": "#2c2c2c",
+			},
+			textColor: {
+				"dark-primary": "#ffffff",
+				"dark-secondary": "#a0aec0",
+				"dark-muted": "#718096",
+			},
+			borderColor: {
+				"dark-border": "#2d3748",
 			},
 		},
 	},
-	plugins: [],
+	plugins: [darkModePlugin],
 };

@@ -1,80 +1,89 @@
-// src/ui/context/ThemeContext.tsx
-import React, {createContext, useContext, useEffect, useState} from "react";
+import React, {createContext, useState, useEffect} from "react";
+import type {ReactNode} from "react";
+import appConfig from "../../config/appConfig";
+import {LocalStorageService} from "../../infrastructure/services/LocalStorageService";
 
-type ThemeContextType = {
-	theme: "light" | "dark";
+type ThemeMode = "light" | "dark";
+
+interface ThemeContextProps {
+	theme: ThemeMode;
 	toggleTheme: () => void;
-	setTheme: (theme: "light" | "dark") => void;
-};
+	setTheme: (theme: ThemeMode) => void;
+}
 
-const ThemeContext = createContext<ThemeContextType>({
+export const ThemeContext = createContext<ThemeContextProps>({
 	theme: "light",
 	toggleTheme: () => {},
 	setTheme: () => {},
 });
 
-export const useTheme = () => useContext(ThemeContext);
+interface ThemeProviderProps {
+	children: ReactNode;
+}
 
-export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({
-	children,
-}) => {
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
+	const storageService = new LocalStorageService();
+
 	// Inicializar tema desde localStorage o preferencia del sistema
-	const [theme, setThemeState] = useState<"light" | "dark">(() => {
-		if (typeof window !== "undefined") {
-			const savedTheme = localStorage.getItem("theme") as
-				| "light"
-				| "dark"
-				| null;
-			if (savedTheme === "dark" || savedTheme === "light") {
-				return savedTheme;
-			}
-
-			// Si no hay tema guardado, verificar preferencia del sistema
-			return window.matchMedia("(prefers-color-scheme: dark)").matches
-				? "dark"
-				: "light";
+	const initializeTheme = (): ThemeMode => {
+		// Intentar obtener del localStorage
+		const savedTheme = storageService.getItem(
+			appConfig.storage.themeKey
+		) as ThemeMode | null;
+		if (savedTheme === "dark" || savedTheme === "light") {
+			return savedTheme;
 		}
-		return "light";
-	});
+
+		// Si no hay tema guardado, verificar preferencia del sistema
+		const prefersDark = window.matchMedia(
+			"(prefers-color-scheme: dark)"
+		).matches;
+		return prefersDark ? "dark" : "light";
+	};
+
+	const [theme, setThemeState] = useState<ThemeMode>(initializeTheme);
 
 	// Aplicar el tema al DOM
 	useEffect(() => {
-		if (typeof window !== "undefined") {
-			const root = window.document.documentElement;
+		const root = window.document.documentElement;
 
-			// Eliminar clase anterior
-			root.classList.remove("light", "dark");
+		// Eliminar clase anterior
+		root.classList.remove("light", "dark");
 
-			// Añadir la clase del tema actual
-			root.classList.add(theme);
+		// Añadir la clase del tema actual
+		root.classList.add(theme);
 
-			// Guardar el tema en localStorage
-			localStorage.setItem("theme", theme);
-		}
-	}, [theme]);
+		// Guardar el tema en localStorage
+		storageService.setItem(appConfig.storage.themeKey, theme);
+	}, [theme, storageService]);
 
 	// Escuchar cambios en la preferencia del sistema
 	useEffect(() => {
-		if (typeof window !== "undefined") {
-			const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-			const handleChange = () => {
-				// Solo cambiar automáticamente si el usuario no ha establecido una preferencia
-				if (!localStorage.getItem("theme")) {
-					setThemeState(mediaQuery.matches ? "dark" : "light");
-				}
-			};
+		const handleChange = () => {
+			// Solo cambiar automáticamente si el usuario no ha establecido una preferencia
+			if (!storageService.hasKey(appConfig.storage.themeKey)) {
+				setThemeState(mediaQuery.matches ? "dark" : "light");
+			}
+		};
 
+		// Añadir event listener para navegadores modernos
+		if (mediaQuery.addEventListener) {
 			mediaQuery.addEventListener("change", handleChange);
 			return () => mediaQuery.removeEventListener("change", handleChange);
+		} else {
+			// Fallback para navegadores antiguos
+			mediaQuery.addListener(handleChange);
+			return () => mediaQuery.removeListener(handleChange);
 		}
-	}, []);
+	}, [storageService]);
 
 	const toggleTheme = () => {
 		setThemeState((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
 	};
 
-	const setTheme = (newTheme: "light" | "dark") => {
+	const setTheme = (newTheme: ThemeMode) => {
 		setThemeState(newTheme);
 	};
 
