@@ -17,6 +17,18 @@ module.exports = {
 					800: "var(--color-primary-800)",
 					900: "var(--color-primary-900)",
 				},
+				secondary: {
+					50: "var(--color-secondary-50)",
+					100: "var(--color-secondary-100)",
+					200: "var(--color-secondary-200)",
+					300: "var(--color-secondary-300)",
+					400: "var(--color-secondary-400)",
+					500: "var(--color-secondary-500)",
+					600: "var(--color-secondary-600)",
+					700: "var(--color-secondary-700)",
+					800: "var(--color-secondary-800)",
+					900: "var(--color-secondary-900)",
+				},
 				// Colores para dark mode
 				dark: {
 					bg: "var(--bg-main)",
@@ -29,17 +41,20 @@ module.exports = {
 				},
 			},
 			backgroundColor: {
-				dark: "#121212",
-				"dark-card": "#1e1e1e",
-				"dark-hover": "#2c2c2c",
+				dark: "#263238",
+				"dark-card": "#2c393f",
+				"dark-hover": "#37474f",
 			},
 			textColor: {
-				"dark-primary": "#ffffff",
-				"dark-secondary": "#a0aec0",
-				"dark-muted": "#718096",
+				"dark-primary": "#fafafa",
+				"dark-secondary": "#cfd8dc",
+				"dark-muted": "#90a4ae",
 			},
 			borderColor: {
-				"dark-border": "#2d3748",
+				"dark-border": "#37474f",
+			},
+			fontFamily: {
+				sans: ["Raleway", "system-ui", "sans-serif"],
 			},
 		},
 	},

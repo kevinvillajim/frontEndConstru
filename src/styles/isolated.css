@@ -1,0 +1,24 @@
+/* En isolated.css o un nuevo archivo theme-forced.css */
+.theme-forced {
+  /* Esto aísla este componente de cambios de tema */
+  isolation: isolate;
+}
+
+.theme-forced-light {
+  /* Variables forzadas para modo claro */
+  --text-main: #1f2937 !important;
+  --text-secondary: #4b5563 !important;
+  --text-muted: #6b7280 !important;
+}
+
+/* Asegura que los SVG y otros elementos conserven sus colores */
+.dark .theme-forced-light svg,
+.dark .theme-forced-light path {
+  color: inherit !important;
+  fill: currentColor !important;
+}
+
+/* Evita que las reglas de modo oscuro afecten a textos */
+.dark .theme-forced-light * {
+  color: inherit !important;
+}

@@ -1,4 +1,4 @@
-import React, {createContext, useState, useEffect} from "react";
+import React, {createContext, useState, useEffect, useContext} from "react";
 import type {ReactNode} from "react";
 import appConfig from "../../config/appConfig";
 import {LocalStorageService} from "../../infrastructure/services/LocalStorageService";
@@ -16,6 +16,14 @@ export const ThemeContext = createContext<ThemeContextProps>({
 	toggleTheme: () => {},
 	setTheme: () => {},
 });
+
+export const useTheme = () => {
+	const context = useContext(ThemeContext);
+	if (context === undefined) {
+		throw new Error("useTheme must be used within a ThemeProvider");
+	}
+	return context;
+};
 
 interface ThemeProviderProps {
 	children: ReactNode;
@@ -93,5 +101,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
 		</ThemeContext.Provider>
 	);
 };
+
 
 export default ThemeProvider;

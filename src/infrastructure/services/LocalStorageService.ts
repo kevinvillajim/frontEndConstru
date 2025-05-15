@@ -36,7 +36,7 @@ export class LocalStorageService {
 			// Intentamos parsear como JSON, si falla devolvemos el valor original
 			try {
 				return JSON.parse(item);
-			} catch (e) {
+			} catch {
 				return item;
 			}
 		} catch (error) {
