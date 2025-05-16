@@ -10,14 +10,22 @@ import {
 } from "@heroicons/react/24/outline";
 import {useAuth} from "../../context/AuthContext";
 
-enum SetupStep {
-	INITIAL = "initial",
-	SETUP = "setup",
-	VERIFY = "verify",
-	RECOVERY = "recovery",
-	COMPLETE = "complete",
-	DISABLE = "disable",
-}
+type SetupStep = 
+	| "initial"
+	| "setup"
+	| "verify"
+	| "recovery"
+	| "complete"
+	| "disable";
+
+const SetupStep = {
+	INITIAL: "initial" as SetupStep,
+	SETUP: "setup" as SetupStep,
+	VERIFY: "verify" as SetupStep,
+	RECOVERY: "recovery" as SetupStep,
+	COMPLETE: "complete" as SetupStep,
+	DISABLE: "disable" as SetupStep,
+};
 
 const TwoFactorAuthPage = () => {
 	const {user} = useAuth();
