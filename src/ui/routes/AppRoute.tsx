@@ -10,6 +10,14 @@ const ForgotPasswordPage = lazy(() => import("../pages/auth/ForgotPasswordPage")
 const ResetPasswordPage = lazy(() => import("../pages/auth/ResetPasswordPage"));
 const EmailVerificationPage = lazy(() => import("../pages/auth/EmailVerificationPage"));
 const ChangePasswordPage = lazy(() => import("../pages/auth/ChangePasswordPage"));
+const ProfilePage = lazy(() => import("../pages/profile/ProfilePage"));
+const PersonalInfoPage = lazy(() => import("../pages/profile/PersonalInfoPage"));
+const SecurityPage = lazy(() => import("../pages/profile/SecurityPage"));
+const SubscriptionPage = lazy(() => import("../pages/profile/SubscriptionPage"));
+const PreferencesPage = lazy(() => import("../pages/profile/PreferencesPage"));
+const NotificationsPage = lazy(() => import("../pages/profile/NotificationsPage"));
+const ProfessionalInfoPage = lazy(() => import("../pages/profile/ProfessionalInfoPage"));
+const TwoFactorAuthPage = lazy(() => import("../pages/auth/TwoFactorAuthPage"));
 
 const appRoutes: RouteObject[] = [
 	//Public Routes
@@ -55,7 +63,53 @@ const appRoutes: RouteObject[] = [
 				path: "profile/change-password",
 				element: (
 					// <ProtectedRoute>
-						<ChangePasswordPage />
+					<ChangePasswordPage />
+					//</ProtectedRoute>
+				),
+			},
+			{
+				path: "/profile",
+				element: (
+					//<ProtectedRoute>
+					<ProfilePage />
+					//</ProtectedRoute>
+				),
+				children: [
+					{
+						index: true,
+						element: <PersonalInfoPage />,
+					},
+					{
+						path: "personal",
+						element: <PersonalInfoPage />,
+					},
+					{
+						path: "security",
+						element: <SecurityPage />,
+					},
+					{
+						path: "subscription",
+						element: <SubscriptionPage />,
+					},
+					{
+						path: "preferences",
+						element: <PreferencesPage />,
+					},
+					{
+						path: "notifications",
+						element: <NotificationsPage />,
+					},
+					{
+						path: "professional",
+						element: <ProfessionalInfoPage />,
+					},
+				],
+			},
+			{
+				path: "/profile/2fa-setup",
+				element: (
+					//<ProtectedRoute>
+					<TwoFactorAuthPage />
 					//</ProtectedRoute>
 				),
 			},
