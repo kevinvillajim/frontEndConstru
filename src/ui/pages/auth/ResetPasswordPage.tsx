@@ -1,5 +1,5 @@
 import {useState, useEffect} from "react";
-import {Link, useSearchParams} from "react-router-dom";
+import {Link, useSearchParams, useNavigate} from "react-router-dom";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -8,6 +8,7 @@ import {
 	EyeSlashIcon,
 	ArrowRightIcon,
 } from "@heroicons/react/24/outline";
+import {authService} from "../../../core/application/ServiceFactory";
 
 // Definir el esquema de validación con Zod
 const resetPasswordSchema = z
@@ -29,6 +30,7 @@ type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 const ResetPasswordPage = () => {
 	const [searchParams] = useSearchParams();
+	const navigate = useNavigate();
 	const token = searchParams.get("token");
 
 	const [showPassword, setShowPassword] = useState(false);
@@ -50,11 +52,15 @@ const ResetPasswordPage = () => {
 			}
 
 			try {
-				// Aquí iría una llamada a la API para verificar el token
-				// Por ahora, simulamos una verificación
+				// En un escenario real, podríamos tener un endpoint para verificar el token
+				// Por ahora, asumimos que un token con longitud suficiente es válido
+				// En producción, deberías tener una validación real en el backend
+
+				// Simulación de verificación con un retraso
 				await new Promise((resolve) => setTimeout(resolve, 1000));
 
 				// Para el ejemplo, consideramos el token válido si tiene al menos 10 caracteres
+				// En un entorno real, tendrías un endpoint para verificar el token
 				setTokenValid(token.length >= 10);
 			} catch (error) {
 				console.error("Error validando token:", error);
@@ -113,25 +119,38 @@ const ResetPasswordPage = () => {
 
 	// Manejar el envío del formulario
 	const onSubmit = async (data: ResetPasswordFormValues) => {
-		if (!token) return;
+		if (!token) {
+			setResetError("Token no válido o faltante.");
+			return;
+		}
 
 		setIsLoading(true);
 		setResetError(null);
 
 		try {
-			// Aquí iría la lógica real de restablecimiento con la API
+			// Llamar al método real de resetPassword del servicio
 			console.log("Restableciendo contraseña con token:", token);
-			console.log("Nueva contraseña:", data.password);
+			const response = await authService.resetPassword(
+				token,
+				data.password,
+				data.confirmPassword
+			);
 
-			// Simulación de retraso para demostrar el estado de carga
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-
-			// Mostrar mensaje de éxito
-			setResetSuccess(true);
+			if (response.success) {
+				setResetSuccess(true);
+				// Opcionalmente, redirigir al login después de un tiempo
+				setTimeout(() => {
+					navigate("/login");
+				}, 5000);
+			} else {
+				setResetError(response.message || "Error al restablecer contraseña.");
+			}
 		} catch (error) {
 			console.error("Error al restablecer contraseña:", error);
+			const err = error as {message: string};
 			setResetError(
-				"Ha ocurrido un error al restablecer tu contraseña. Por favor, inténtalo de nuevo."
+				err.message ||
+					"Ha ocurrido un error al restablecer tu contraseña. Por favor, inténtalo de nuevo."
 			);
 		} finally {
 			setIsLoading(false);
@@ -437,45 +456,45 @@ const ResetPasswordPage = () => {
 
 			{/* Estilos para las animaciones */}
 			<style>{`
-				@keyframes fade-in {
-					from {
-						opacity: 0;
-					}
-					to {
-						opacity: 1;
-					}
-				}
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
 
-				@keyframes shake {
-					0%,
-					100% {
-						transform: translateX(0);
-					}
-					25% {
-						transform: translateX(-4px);
-					}
-					50% {
-						transform: translateX(4px);
-					}
-					75% {
-						transform: translateX(-4px);
-					}
-				}
+        @keyframes shake {
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          25% {
+            transform: translateX(-4px);
+          }
+          50% {
+            transform: translateX(4px);
+          }
+          75% {
+            transform: translateX(-4px);
+          }
+        }
 
-				.animate-fade-in {
-					animation: fade-in 0.4s ease-in-out;
-				}
+        .animate-fade-in {
+          animation: fade-in 0.4s ease-in-out;
+        }
 
-				.animate-shake {
-					animation: shake 0.4s ease-in-out;
-				}
+        .animate-shake {
+          animation: shake 0.4s ease-in-out;
+        }
 
-				.shadow-card {
-					box-shadow:
-						0 10px 25px -5px rgba(0, 0, 0, 0.05),
-						0 8px 10px -6px rgba(0, 0, 0, 0.01);
-				}
-			`}</style>
+        .shadow-card {
+          box-shadow:
+            0 10px 25px -5px rgba(0, 0, 0, 0.05),
+            0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+      `}</style>
 		</div>
 	);
 };

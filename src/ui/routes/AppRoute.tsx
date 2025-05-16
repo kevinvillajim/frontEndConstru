@@ -8,6 +8,7 @@ const LoginPage = lazy(() => import("../pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("../pages/auth/RegisterPage"));
 const ForgotPasswordPage = lazy(() => import("../pages/auth/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("../pages/auth/ResetPasswordPage"));
+const EmailVerificationPage = lazy(() => import("../pages/auth/EmailVerificationPage"));
 
 const appRoutes: RouteObject[] = [
 	//Public Routes
@@ -52,7 +53,13 @@ const appRoutes: RouteObject[] = [
 			 	element: (
 			 			<ResetPasswordPage />
 			 	),
-			 },
+			},
+			 {
+			 	path: "verify-email/:token",
+			 	element: (
+			 			<EmailVerificationPage />
+			 	),
+			},
 		],
 	},
     

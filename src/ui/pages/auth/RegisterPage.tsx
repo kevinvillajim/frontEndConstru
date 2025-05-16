@@ -1,5 +1,5 @@
-import {useState} from "react";
-import {Link, useNavigate} from "react-router-dom";
+import {useState, useEffect} from "react";
+import {Link, useLocation, useNavigate} from "react-router-dom";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -12,8 +12,24 @@ import {
 	AcademicCapIcon,
 	WrenchScrewdriverIcon,
 	PaintBrushIcon,
+	PlusIcon,
+	MinusIcon,
+	BoltIcon,
+	WrenchIcon,
 } from "@heroicons/react/24/outline";
 import {useAuth} from "../../context/AuthContext";
+
+// Enum matching the backend's ProfessionalType enum
+enum ProfessionalType {
+	ARCHITECT = "architect",
+	CIVIL_ENGINEER = "civil_engineer",
+	CONSTRUCTOR = "constructor",
+	CONTRACTOR = "contractor",
+	ELECTRICIAN = "electrician",
+	PLUMBER = "plumber",
+	DESIGNER = "designer",
+	OTHER = "other",
+}
 
 // Definir el esquema de validación con Zod
 const registerSchema = z
@@ -27,13 +43,7 @@ const registerSchema = z
 			.regex(/[A-Z]/, "Debe incluir al menos una mayúscula")
 			.regex(/[0-9]/, "Debe incluir al menos un número"),
 		confirmPassword: z.string(),
-		professionalType: z.enum([
-			"architect",
-			"engineer",
-			"constructor",
-			"designer",
-			"other",
-		]),
+		professionalType: z.nativeEnum(ProfessionalType),
 		terms: z.literal(true, {
 			errorMap: () => ({message: "Debes aceptar los términos y condiciones"}),
 		}),
@@ -50,18 +60,10 @@ interface RegisterError {
 	message: string;
 }
 
-// Opciones para el tipo de profesional
-const professionalOptions = [
-	{value: "architect", label: "Arquitecto", icon: BuildingOffice2Icon},
-	{value: "engineer", label: "Ingeniero Civil", icon: AcademicCapIcon},
-	{value: "constructor", label: "Constructor", icon: WrenchScrewdriverIcon},
-	{value: "designer", label: "Diseñador de Interiores", icon: PaintBrushIcon},
-	{value: "other", label: "Otro Profesional", icon: UserIcon},
-];
-
 const RegisterPage = () => {
 	const {register: registerUser} = useAuth();
 	const navigate = useNavigate();
+	const location = useLocation();
 
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -69,6 +71,47 @@ const RegisterPage = () => {
 	const [registerError, setRegisterError] = useState<string | null>(null);
 	const [registerSuccess, setRegisterSuccess] = useState(false);
 	const [passwordStrength, setPasswordStrength] = useState(0);
+	const [showAllProfessions, setShowAllProfessions] = useState(false);
+
+	// Professional options with proper backend enum values
+	const primaryProfessionOptions = [
+		{
+			value: ProfessionalType.ARCHITECT,
+			label: "Arquitecto",
+			icon: BuildingOffice2Icon,
+		},
+		{
+			value: ProfessionalType.CIVIL_ENGINEER,
+			label: "Ingeniero Civil",
+			icon: AcademicCapIcon,
+		},
+		{
+			value: ProfessionalType.CONSTRUCTOR,
+			label: "Constructor",
+			icon: WrenchScrewdriverIcon,
+		},
+		{
+			value: ProfessionalType.DESIGNER,
+			label: "Diseñador",
+			icon: PaintBrushIcon,
+		},
+	];
+
+	const additionalProfessionOptions = [
+		{value: ProfessionalType.CONTRACTOR, label: "Contratista", icon: UserIcon},
+		{
+			value: ProfessionalType.ELECTRICIAN,
+			label: "Electricista",
+			icon: BoltIcon,
+		},
+		{value: ProfessionalType.PLUMBER, label: "Plomero", icon: WrenchIcon},
+		{value: ProfessionalType.OTHER, label: "Otro Profesional", icon: UserIcon},
+	];
+
+	// Display all profession options or just the primary ones
+	const visibleProfessions = showAllProfessions
+		? [...primaryProfessionOptions, ...additionalProfessionOptions]
+		: primaryProfessionOptions;
 
 	// Configurar react-hook-form con validación de Zod
 	const {
@@ -84,7 +127,7 @@ const RegisterPage = () => {
 			email: "",
 			password: "",
 			confirmPassword: "",
-			professionalType: "architect",
+			professionalType: ProfessionalType.ARCHITECT,
 			terms: true,
 		},
 	});
@@ -116,10 +159,10 @@ const RegisterPage = () => {
 		return strength;
 	};
 
-	// Actualizar la fortaleza de la contraseña cuando cambia
-	useState(() => {
+	// Actualizar la fortaleza cada vez que cambia la contraseña
+	useEffect(() => {
 		setPasswordStrength(calculatePasswordStrength(password));
-	});
+	}, [password]);
 
 	// Manejar el envío del formulario
 	const onSubmit = async (data: RegisterFormValues) => {
@@ -127,21 +170,35 @@ const RegisterPage = () => {
 		setRegisterError(null);
 
 		try {
+			// Mapear datos del formulario a la estructura que espera la API
 			const registerData = {
 				firstName: data.firstName,
 				lastName: data.lastName,
 				email: data.email,
 				password: data.password,
-				professionalType: data.professionalType,
+				professionalType: data.professionalType, // Esto ya debe ser el valor del enum correcto
 			};
 
+			console.log("Enviando datos de registro:", {
+				...registerData,
+				password: "********", // No mostrar la contraseña en los logs
+			});
+
+			// Llamar al método de registro del AuthContext
 			await registerUser(registerData);
+
+			// Marcar el registro como exitoso
 			setRegisterSuccess(true);
 
-			// No redirigir automáticamente - mostrar mensaje de éxito primero
-			// después de 3 segundos, redirigir a login
+			// Después de un tiempo, redirigir a login
 			setTimeout(() => {
-				navigate("/login");
+				navigate("/login", {
+					state: {
+						from: location.state?.from,
+						registrationSuccess: true,
+						email: data.email,
+					},
+				});
 			}, 3000);
 		} catch (error) {
 			console.error("Error de registro:", error);
@@ -205,7 +262,7 @@ const RegisterPage = () => {
 					) : (
 						<div className="bg-white rounded-xl shadow-card p-8 backdrop-filter backdrop-blur-md bg-opacity-80">
 							{registerError && (
-								<div className="bg-red-100  text-red-700 p-3 rounded-lg mb-6 text-sm animate-fade-in">
+								<div className="bg-red-100 text-red-700 p-3 rounded-lg mb-6 text-sm animate-fade-in">
 									{registerError}
 								</div>
 							)}
@@ -230,8 +287,8 @@ const RegisterPage = () => {
 												{...register("firstName")}
 												className={`w-full px-4 py-3 rounded-lg border ${
 													errors.firstName
-														? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
-														: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+														? "border-red-500 focus:ring-red-500 focus:border-red-500"
+														: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
 												} bg-white text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
 												placeholder="Tu nombre"
 											/>
@@ -260,8 +317,8 @@ const RegisterPage = () => {
 												{...register("lastName")}
 												className={`w-full px-4 py-3 rounded-lg border ${
 													errors.lastName
-														? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
-														: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+														? "border-red-500 focus:ring-red-500 focus:border-red-500"
+														: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
 												} bg-white text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
 												placeholder="Tu apellido"
 											/>
@@ -291,8 +348,8 @@ const RegisterPage = () => {
 											{...register("email")}
 											className={`w-full px-4 py-3 rounded-lg border ${
 												errors.email
-													? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
-													: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+													? "border-red-500 focus:ring-red-500 focus:border-red-500"
+													: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
 											} bg-white text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
 											placeholder="tu@correo.com"
 										/>
@@ -312,18 +369,18 @@ const RegisterPage = () => {
 									>
 										Tipo de Profesional
 									</label>
-									<div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-										{professionalOptions.map((option) => (
+									<div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+										{visibleProfessions.map((option) => (
 											<label
 												key={option.value}
 												className={`
-                          flex flex-col items-center justify-center p-3 rounded-lg border cursor-pointer transition-all duration-300
-                          ${
+													flex flex-col items-center justify-center p-3 rounded-lg border cursor-pointer transition-all duration-300
+													${
 														watch("professionalType") === option.value
 															? "border-primary-500 bg-primary-50 text-primary-700"
 															: "border-gray-300 hover:border-primary-400"
 													}
-                        `}
+												`}
 											>
 												<input
 													type="radio"
@@ -338,6 +395,25 @@ const RegisterPage = () => {
 											</label>
 										))}
 									</div>
+
+									{/* Botón para mostrar/ocultar más opciones */}
+									<button
+										type="button"
+										onClick={() => setShowAllProfessions(!showAllProfessions)}
+										className="mt-3 text-primary-600 hover:text-primary-700 text-sm font-medium flex items-center"
+									>
+										{showAllProfessions ? (
+											<>
+												<MinusIcon className="h-4 w-4 mr-1" />
+												Mostrar menos opciones
+											</>
+										) : (
+											<>
+												<PlusIcon className="h-4 w-4 mr-1" />
+												Mostrar más opciones
+											</>
+										)}
+									</button>
 								</div>
 
 								{/* Contraseña */}
@@ -357,8 +433,8 @@ const RegisterPage = () => {
 											{...register("password")}
 											className={`w-full px-4 py-3 rounded-lg border ${
 												errors.password
-													? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
-													: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+													? "border-red-500 focus:ring-red-500 focus:border-red-500"
+													: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
 											} bg-white text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
 											placeholder="••••••••"
 										/>
@@ -396,7 +472,7 @@ const RegisterPage = () => {
 													{passwordStrength === 5 && "Muy fuerte"}
 												</span>
 											</div>
-											<div className="w-full h-1.5 bg-gray-200rounded-full overflow-hidden">
+											<div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
 												<div
 													className={`h-full transition-all duration-300 ${
 														passwordStrength <= 1
@@ -431,8 +507,8 @@ const RegisterPage = () => {
 											{...register("confirmPassword")}
 											className={`w-full px-4 py-3 rounded-lg border ${
 												errors.confirmPassword
-													? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
-													: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+													? "border-red-500 focus:ring-red-500 focus:border-red-500"
+													: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
 											} text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
 											placeholder="••••••••"
 										/>
@@ -465,10 +541,8 @@ const RegisterPage = () => {
 												id="terms"
 												type="checkbox"
 												{...register("terms")}
-												className={`h-4 w-4 rounded bg-red-800 border-gray-300 text-primary-600 focus:ring-primary-500 accent-secondary-500 ${
-													errors.terms
-														? "border-red-500 dark:border-red-500"
-														: "border-gray-300 dark:border-gray-600"
+												className={`h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 accent-secondary-500 ${
+													errors.terms ? "border-red-500" : "border-gray-300"
 												}`}
 											/>
 										</div>
@@ -480,14 +554,14 @@ const RegisterPage = () => {
 												Acepto los{" "}
 												<Link
 													to="/terminos"
-													className="text-primary-600 hover:text-primary-500transition-colors"
+													className="text-primary-600 hover:text-primary-500 transition-colors"
 												>
 													términos de servicio
 												</Link>{" "}
 												y{" "}
 												<Link
 													to="/privacidad"
-													className="text-primary-600 hover:text-primary-500transition-colors"
+													className="text-primary-600 hover:text-primary-500 transition-colors"
 												>
 													política de privacidad
 												</Link>
@@ -786,77 +860,77 @@ const RegisterPage = () => {
 
 			{/* Estilos para las animaciones */}
 			<style>{`
-				@keyframes fade-in {
-					from {
-						opacity: 0;
-					}
-					to {
-						opacity: 1;
-					}
-				}
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
 
-				@keyframes fade-in-slow {
-					0% {
-						opacity: 0;
-					}
-					100% {
-						opacity: 1;
-					}
-				}
+        @keyframes fade-in-slow {
+          0% {
+            opacity: 0;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
 
-				@keyframes slide-up {
-					from {
-						transform: translateY(20px);
-						opacity: 0;
-					}
-					to {
-						transform: translateY(0);
-						opacity: 1;
-					}
-				}
+        @keyframes slide-up {
+          from {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
 
-				@keyframes shake {
-					0%,
-					100% {
-						transform: translateX(0);
-					}
-					25% {
-						transform: translateX(-4px);
-					}
-					50% {
-						transform: translateX(4px);
-					}
-					75% {
-						transform: translateX(-4px);
-					}
-				}
+        @keyframes shake {
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          25% {
+            transform: translateX(-4px);
+          }
+          50% {
+            transform: translateX(4px);
+          }
+          75% {
+            transform: translateX(-4px);
+          }
+        }
 
-				.animate-fade-in {
-					animation: fade-in 0.4s ease-in-out;
-				}
+        .animate-fade-in {
+          animation: fade-in 0.4s ease-in-out;
+        }
 
-				.animate-fade-in-slow {
-					animation: fade-in-slow 1s ease-in-out;
-				}
+        .animate-fade-in-slow {
+          animation: fade-in-slow 1s ease-in-out;
+        }
 
-				.animate-slide-up {
-					animation: slide-up 0.5s ease-out;
-				}
+        .animate-slide-up {
+          animation: slide-up 0.5s ease-out;
+        }
 
-				.animate-shake {
-					animation: shake 0.4s ease-in-out;
-				}
+        .animate-shake {
+          animation: shake 0.4s ease-in-out;
+        }
 
-				.shadow-card {
-					box-shadow:
-						0 10px 25px -5px rgba(0, 0, 0, 0.05),
-						0 8px 10px -6px rgba(0, 0, 0, 0.01);
-				}
+        .shadow-card {
+          box-shadow:
+            0 10px 25px -5px rgba(0, 0, 0, 0.05),
+            0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
 
-				.shadow-glow {
-					box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
-				}
-			`}</style>
+        .shadow-glow {
+          box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
+        }
+      `}</style>
 		</div>
 	);
 };

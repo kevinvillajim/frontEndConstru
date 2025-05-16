@@ -4,6 +4,7 @@ import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {ArrowLeftIcon} from "@heroicons/react/24/outline";
+import {authService} from "../../../core/application/ServiceFactory";
 
 // Definir el esquema de validación con Zod
 const forgotPasswordSchema = z.object({
@@ -36,18 +37,23 @@ const ForgotPasswordPage = () => {
 		setResetError(null);
 
 		try {
-			// Aquí iría la lógica real de restablecimiento con la API
-			console.log("Solicitud de restablecimiento para:", data.email);
+			// Llamar al método real de forgotPassword
+			console.log("Solicitando recuperación para:", data.email);
+			const response = await authService.forgotPassword(data.email);
 
-			// Simulación de retraso para demostrar el estado de carga
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-
-			// Mostrar mensaje de éxito
-			setResetSuccess(true);
+			if (response.success) {
+				setResetSuccess(true);
+			} else {
+				setResetError(
+					response.message || "Ocurrió un error al procesar tu solicitud."
+				);
+			}
 		} catch (error) {
 			console.error("Error al solicitar restablecimiento:", error);
+			const err = error as {message: string};
 			setResetError(
-				"Ocurrió un error al procesar tu solicitud. Por favor, inténtalo de nuevo."
+				err.message ||
+					"Ocurrió un error al procesar tu solicitud. Por favor, inténtalo de nuevo."
 			);
 		} finally {
 			setIsLoading(false);
@@ -213,45 +219,45 @@ const ForgotPasswordPage = () => {
 
 			{/* Estilos para las animaciones */}
 			<style>{`
-				@keyframes fade-in {
-					from {
-						opacity: 0;
-					}
-					to {
-						opacity: 1;
-					}
-				}
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
 
-				@keyframes shake {
-					0%,
-					100% {
-						transform: translateX(0);
-					}
-					25% {
-						transform: translateX(-4px);
-					}
-					50% {
-						transform: translateX(4px);
-					}
-					75% {
-						transform: translateX(-4px);
-					}
-				}
+        @keyframes shake {
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          25% {
+            transform: translateX(-4px);
+          }
+          50% {
+            transform: translateX(4px);
+          }
+          75% {
+            transform: translateX(-4px);
+          }
+        }
 
-				.animate-fade-in {
-					animation: fade-in 0.4s ease-in-out;
-				}
+        .animate-fade-in {
+          animation: fade-in 0.4s ease-in-out;
+        }
 
-				.animate-shake {
-					animation: shake 0.4s ease-in-out;
-				}
+        .animate-shake {
+          animation: shake 0.4s ease-in-out;
+        }
 
-				.shadow-card {
-					box-shadow:
-						0 10px 25px -5px rgba(0, 0, 0, 0.05),
-						0 8px 10px -6px rgba(0, 0, 0, 0.01);
-				}
-			`}</style>
+        .shadow-card {
+          box-shadow:
+            0 10px 25px -5px rgba(0, 0, 0, 0.05),
+            0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+      `}</style>
 		</div>
 	);
 };
