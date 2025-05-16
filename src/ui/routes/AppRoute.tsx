@@ -9,6 +9,7 @@ const RegisterPage = lazy(() => import("../pages/auth/RegisterPage"));
 const ForgotPasswordPage = lazy(() => import("../pages/auth/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("../pages/auth/ResetPasswordPage"));
 const EmailVerificationPage = lazy(() => import("../pages/auth/EmailVerificationPage"));
+const ChangePasswordPage = lazy(() => import("../pages/auth/ChangePasswordPage"));
 
 const appRoutes: RouteObject[] = [
 	//Public Routes
@@ -18,11 +19,7 @@ const appRoutes: RouteObject[] = [
 		children: [
 			{
 				index: true,
-				element: (
-					
-						<HomePage />
-					
-				),
+				element: <HomePage />,
 			},
 
 			//Auth Routes
@@ -30,39 +27,41 @@ const appRoutes: RouteObject[] = [
 				path: "login",
 				element: (
 					// <AuthRoute>
-						<LoginPage />
+					<LoginPage />
 					//</AuthRoute>
 				),
 			},
-			 {
-			 	path: "register",
-			 	element: (
-			 		//<AuthRoute>
-			 			<RegisterPage />
-			 		//</AuthRoute>
-			 	),
-			 },
-			 {
-			 	path: "forgot-password",
-			 	element: (
-			 			<ForgotPasswordPage />
-			 	),
-			 },
-			 {
-			 	path: "reset-password",
-			 	element: (
-			 			<ResetPasswordPage />
-			 	),
+			{
+				path: "register",
+				element: (
+					//<AuthRoute>
+					<RegisterPage />
+					//</AuthRoute>
+				),
 			},
-			 {
-			 	path: "verify-email/:token",
-			 	element: (
-			 			<EmailVerificationPage />
-			 	),
+			{
+				path: "forgot-password",
+				element: <ForgotPasswordPage />,
+			},
+			{
+				path: "reset-password/:token",
+				element: <ResetPasswordPage />,
+			},
+			{
+				path: "verify-email/:token",
+				element: <EmailVerificationPage />,
+			},
+			{
+				path: "profile/change-password",
+				element: (
+					// <ProtectedRoute>
+						<ChangePasswordPage />
+					//</ProtectedRoute>
+				),
 			},
 		],
 	},
-    
+
 	// {
 	// 	path: "/seller",
 	// 	element: (

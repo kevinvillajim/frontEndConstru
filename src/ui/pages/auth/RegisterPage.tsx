@@ -20,16 +20,16 @@ import {
 import {useAuth} from "../../context/AuthContext";
 
 // Enum matching the backend's ProfessionalType enum
-enum ProfessionalType {
-	ARCHITECT = "architect",
-	CIVIL_ENGINEER = "civil_engineer",
-	CONSTRUCTOR = "constructor",
-	CONTRACTOR = "contractor",
-	ELECTRICIAN = "electrician",
-	PLUMBER = "plumber",
-	DESIGNER = "designer",
-	OTHER = "other",
-}
+const ProfessionalType = {
+	ARCHITECT: "architect",
+	CIVIL_ENGINEER: "civil_engineer",
+	CONSTRUCTOR: "constructor",
+	CONTRACTOR: "contractor",
+	ELECTRICIAN: "electrician",
+	PLUMBER: "plumber",
+	DESIGNER: "designer",
+	OTHER: "other",
+} as const
 
 // Definir el esquema de validación con Zod
 const registerSchema = z

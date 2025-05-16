@@ -1,5 +1,5 @@
-import {useState, useEffect} from "react";
-import {Link, useParams, useNavigate} from "react-router-dom";
+import {useState} from "react";
+import {useNavigate} from "react-router-dom";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -8,75 +8,38 @@ import {
 	EyeSlashIcon,
 	ArrowRightIcon,
 } from "@heroicons/react/24/outline";
-import {authService} from "../../../core/application/ServiceFactory";
+import {useAuth} from "../../context/AuthContext";
 
 // Definir el esquema de validación con Zod
-const resetPasswordSchema = z
+const changePasswordSchema = z
 	.object({
-		password: z
+		currentPassword: z.string().min(1, "La contraseña actual es requerida"),
+		newPassword: z
 			.string()
 			.min(8, "La contraseña debe tener al menos 8 caracteres")
 			.regex(/[A-Z]/, "Debe incluir al menos una mayúscula")
 			.regex(/[0-9]/, "Debe incluir al menos un número"),
 		confirmPassword: z.string(),
 	})
-	.refine((data) => data.password === data.confirmPassword, {
+	.refine((data) => data.newPassword === data.confirmPassword, {
 		message: "Las contraseñas no coinciden",
 		path: ["confirmPassword"],
 	});
 
 // Tipo para los valores del formulario
-type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
-const ResetPasswordPage = () => {
-	// Usar useParams para obtener el token de la URL
-	const {token} = useParams<{token: string}>();
+const ChangePasswordPage = () => {
+	const {changePassword} = useAuth();
 	const navigate = useNavigate();
 
-	const [showPassword, setShowPassword] = useState(false);
+	const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+	const [showNewPassword, setShowNewPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
-	const [resetError, setResetError] = useState<string | null>(null);
-	const [resetSuccess, setResetSuccess] = useState(false);
+	const [changeError, setChangeError] = useState<string | null>(null);
+	const [changeSuccess, setChangeSuccess] = useState(false);
 	const [passwordStrength, setPasswordStrength] = useState(0);
-	const [tokenValid, setTokenValid] = useState<boolean | null>(null);
-	const [validatingToken, setValidatingToken] = useState(true);
-
-	// Verificar la validez del token al cargar la página
-	useEffect(() => {
-		const verifyToken = async () => {
-			if (!token) {
-				setTokenValid(false);
-				setValidatingToken(false);
-				return;
-			}
-
-			try {
-				// En un escenario real, hacemos una verificación con el backend
-				// Podríamos tener un endpoint específico para verificar tokens
-				// Por ahora, simulamos la verificación con el token de reseteo de la base de datos
-				console.log("Verificando token:", token);
-
-				// Simulación: verificar el token con el backend
-				// En producción, deberías hacer una llamada real a la API
-				const response = await authService.verifyResetToken(token);
-
-				// Si la verificación es exitosa, el token es válido
-				if (response && response.success) {
-					setTokenValid(true);
-				} else {
-					setTokenValid(false);
-				}
-			} catch (error) {
-				console.error("Error validando token:", error);
-				setTokenValid(false);
-			} finally {
-				setValidatingToken(false);
-			}
-		};
-
-		verifyToken();
-	}, [token]);
 
 	// Configurar react-hook-form con validación de Zod
 	const {
@@ -84,20 +47,21 @@ const ResetPasswordPage = () => {
 		handleSubmit,
 		formState: {errors},
 		watch,
-	} = useForm<ResetPasswordFormValues>({
-		resolver: zodResolver(resetPasswordSchema),
+	} = useForm<ChangePasswordFormValues>({
+		resolver: zodResolver(changePasswordSchema),
 		defaultValues: {
-			password: "",
+			currentPassword: "",
+			newPassword: "",
 			confirmPassword: "",
 		},
 	});
 
 	// Observar los cambios en el campo de contraseña para evaluar su fortaleza
-	const password = watch("password");
+	const newPassword = watch("newPassword");
 
 	// Evaluar la fortaleza de la contraseña
-	useEffect(() => {
-		if (!password) {
+	useState(() => {
+		if (!newPassword) {
 			setPasswordStrength(0);
 			return;
 		}
@@ -105,131 +69,70 @@ const ResetPasswordPage = () => {
 		let strength = 0;
 
 		// Longitud mínima
-		if (password.length >= 8) strength += 1;
+		if (newPassword.length >= 8) strength += 1;
 
 		// Contiene mayúsculas
-		if (/[A-Z]/.test(password)) strength += 1;
+		if (/[A-Z]/.test(newPassword)) strength += 1;
 
 		// Contiene minúsculas
-		if (/[a-z]/.test(password)) strength += 1;
+		if (/[a-z]/.test(newPassword)) strength += 1;
 
 		// Contiene números
-		if (/[0-9]/.test(password)) strength += 1;
+		if (/[0-9]/.test(newPassword)) strength += 1;
 
 		// Contiene caracteres especiales
-		if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+		if (/[^A-Za-z0-9]/.test(newPassword)) strength += 1;
 
 		setPasswordStrength(strength);
-	}, [password]);
+	});
 
 	// Manejar el envío del formulario
-	const onSubmit = async (data: ResetPasswordFormValues) => {
-		if (!token) {
-			setResetError("Token no válido o faltante.");
-			return;
-		}
-
+	const onSubmit = async (data: ChangePasswordFormValues) => {
 		setIsLoading(true);
-		setResetError(null);
+		setChangeError(null);
 
 		try {
-			console.log("Restableciendo contraseña con token:", token);
-			// Llamada al servicio de autenticación para restablecer la contraseña
-			const response = await authService.resetPassword(
-				token,
-				data.password,
-				data.confirmPassword
+			// Llamada al servicio de autenticación para cambiar la contraseña
+			const response = await changePassword(
+				data.currentPassword,
+				data.newPassword
 			);
 
 			if (response.success) {
-				setResetSuccess(true);
-				// Redirigir al login después de 5 segundos
+				setChangeSuccess(true);
+				// Redirigir al perfil después de 3 segundos
 				setTimeout(() => {
-					navigate("/login");
-				}, 5000);
+					navigate("/profile");
+				}, 3000);
 			} else {
-				setResetError(response.message || "Error al restablecer contraseña.");
+				setChangeError(response.message || "Error al cambiar la contraseña.");
 			}
 		} catch (error) {
-			console.error("Error al restablecer contraseña:", error);
+			console.error("Error al cambiar contraseña:", error);
 			const err = error as {message: string};
-			setResetError(
+			setChangeError(
 				err.message ||
-					"Ha ocurrido un error al restablecer tu contraseña. Por favor, inténtalo de nuevo."
+					"Ha ocurrido un error al cambiar tu contraseña. Por favor, inténtalo de nuevo."
 			);
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
-	// Renderizado condicional según el estado del token
-	if (validatingToken) {
-		return (
-			<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark dark:to-dark-card px-4 sm:px-6 lg:px-8">
-				<div className="w-full max-w-md text-center">
-					<div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-					<p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
-						Verificando enlace de recuperación...
-					</p>
-				</div>
-			</div>
-		);
-	}
-
-	if (tokenValid === false) {
-		return (
-			<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark dark:to-dark-card px-4 sm:px-6 lg:px-8">
-				<div className="w-full max-w-md animate-fade-in">
-					<div className="bg-white dark:bg-dark-card rounded-xl shadow-card p-8 text-center">
-						<div className="rounded-full bg-red-100 dark:bg-red-900 p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-							<svg
-								className="w-8 h-8 text-red-600 dark:text-red-400"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-								xmlns="http://www.w3.org/2000/svg"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth="2"
-									d="M6 18L18 6M6 6l12 12"
-								></path>
-							</svg>
-						</div>
-						<h2 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white">
-							Enlace Inválido
-						</h2>
-						<p className="text-gray-600 dark:text-gray-300 mb-6">
-							Este enlace de recuperación es inválido o ha expirado. Por favor,
-							solicita un nuevo enlace.
-						</p>
-						<Link
-							to="/forgot-password"
-							className="bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 inline-block"
-						>
-							Solicitar Nuevo Enlace
-						</Link>
-					</div>
-				</div>
-			</div>
-		);
-	}
-
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark dark:to-dark-card px-4 sm:px-6 lg:px-8">
 			<div className="w-full max-w-md animate-fade-in">
 				<div className="text-center mb-8">
 					<h2 className="text-3xl font-bold mb-2 text-primary-700 dark:text-primary-300">
-						Restablecer Contraseña
+						Cambiar Contraseña
 					</h2>
 					<p className="text-gray-600 dark:text-gray-400">
-						Elige una nueva contraseña segura para tu cuenta
+						Actualiza la contraseña de tu cuenta
 					</p>
 				</div>
 
 				<div className="bg-white dark:bg-dark-card rounded-xl shadow-card p-8 backdrop-filter backdrop-blur-md bg-opacity-80 dark:bg-opacity-70">
-					{resetSuccess ? (
+					{changeSuccess ? (
 						<div className="text-center animate-fade-in">
 							<div className="rounded-full bg-green-100 dark:bg-green-900 p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
 								<svg
@@ -248,46 +151,45 @@ const ResetPasswordPage = () => {
 								</svg>
 							</div>
 							<h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">
-								¡Contraseña Restablecida!
+								¡Contraseña Actualizada!
 							</h3>
 							<p className="text-gray-600 dark:text-gray-300 mb-6">
-								Tu contraseña ha sido actualizada exitosamente. Ya puedes
-								iniciar sesión con tu nueva contraseña.
+								Tu contraseña ha sido actualizada exitosamente.
 							</p>
-							<Link
-								to="/login"
+							<button
+								onClick={() => navigate("/profile")}
 								className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50 flex items-center justify-center"
 							>
-								<span>Iniciar Sesión</span>
+								<span>Volver al Perfil</span>
 								<ArrowRightIcon className="ml-2 h-5 w-5" />
-							</Link>
+							</button>
 						</div>
 					) : (
 						<>
-							{resetError && (
+							{changeError && (
 								<div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-3 rounded-lg mb-6 text-sm animate-fade-in">
-									{resetError}
+									{changeError}
 								</div>
 							)}
 
 							<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-								{/* Campo de contraseña */}
+								{/* Campo de contraseña actual */}
 								<div>
 									<label
-										htmlFor="password"
+										htmlFor="currentPassword"
 										className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
 									>
-										Nueva Contraseña
+										Contraseña Actual
 									</label>
 									<div
-										className={`relative ${errors.password ? "animate-shake" : ""}`}
+										className={`relative ${errors.currentPassword ? "animate-shake" : ""}`}
 									>
 										<input
-											id="password"
-											type={showPassword ? "text" : "password"}
-											{...register("password")}
+											id="currentPassword"
+											type={showCurrentPassword ? "text" : "password"}
+											{...register("currentPassword")}
 											className={`w-full px-4 py-3 rounded-lg border ${
-												errors.password
+												errors.currentPassword
 													? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
 													: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
 											} bg-white dark:bg-dark-input text-gray-900 dark:text-white transition-all duration-300 focus:outline-none focus:ring-2`}
@@ -296,23 +198,66 @@ const ResetPasswordPage = () => {
 										<button
 											type="button"
 											className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
-											onClick={() => setShowPassword(!showPassword)}
+											onClick={() =>
+												setShowCurrentPassword(!showCurrentPassword)
+											}
 										>
-											{showPassword ? (
+											{showCurrentPassword ? (
 												<EyeSlashIcon className="h-5 w-5" />
 											) : (
 												<EyeIcon className="h-5 w-5" />
 											)}
 										</button>
 									</div>
-									{errors.password && (
+									{errors.currentPassword && (
 										<p className="mt-1 text-sm text-red-600 dark:text-red-400 animate-fade-in">
-											{errors.password.message}
+											{errors.currentPassword.message}
+										</p>
+									)}
+								</div>
+
+								{/* Campo de nueva contraseña */}
+								<div>
+									<label
+										htmlFor="newPassword"
+										className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+									>
+										Nueva Contraseña
+									</label>
+									<div
+										className={`relative ${errors.newPassword ? "animate-shake" : ""}`}
+									>
+										<input
+											id="newPassword"
+											type={showNewPassword ? "text" : "password"}
+											{...register("newPassword")}
+											className={`w-full px-4 py-3 rounded-lg border ${
+												errors.newPassword
+													? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
+													: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
+											} bg-white dark:bg-dark-input text-gray-900 dark:text-white transition-all duration-300 focus:outline-none focus:ring-2`}
+											placeholder="••••••••"
+										/>
+										<button
+											type="button"
+											className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
+											onClick={() => setShowNewPassword(!showNewPassword)}
+										>
+											{showNewPassword ? (
+												<EyeSlashIcon className="h-5 w-5" />
+											) : (
+												<EyeIcon className="h-5 w-5" />
+											)}
+										</button>
+									</div>
+									{errors.newPassword && (
+										<p className="mt-1 text-sm text-red-600 dark:text-red-400 animate-fade-in">
+											{errors.newPassword.message}
 										</p>
 									)}
 
 									{/* Indicador de fortaleza de contraseña */}
-									{password && (
+									{newPassword && (
 										<div className="mt-2">
 											<div className="flex justify-between mb-1">
 												<span className="text-xs text-gray-500 dark:text-gray-400">
@@ -388,7 +333,7 @@ const ResetPasswordPage = () => {
 									)}
 								</div>
 
-								{/* Botón de restablecer */}
+								{/* Botón de cambiar */}
 								<button
 									type="submit"
 									disabled={isLoading}
@@ -419,19 +364,18 @@ const ResetPasswordPage = () => {
 											<span>Procesando...</span>
 										</div>
 									) : (
-										<span>Restablecer Contraseña</span>
+										<span>Cambiar Contraseña</span>
 									)}
 								</button>
 
-								{/* Enlaces adicionales */}
-								<div className="text-center pt-4">
-									<Link
-										to="/login"
-										className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
-									>
-										Volver a Iniciar Sesión
-									</Link>
-								</div>
+								{/* Cancelar */}
+								<button
+									type="button"
+									onClick={() => navigate("/profile")}
+									className="w-full mt-2 text-center text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium transition-colors"
+								>
+									Cancelar
+								</button>
 							</form>
 						</>
 					)}
@@ -504,4 +448,4 @@ const ResetPasswordPage = () => {
 	);
 };
 
-export default ResetPasswordPage;
+export default ChangePasswordPage;

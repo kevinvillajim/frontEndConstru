@@ -264,4 +264,51 @@ export class ApiAuthRepository implements AuthRepository {
 			};
 		}
 	}
+
+	/**
+	 * Verifica el token de restablecimiento
+	 * @param token Token de recuperación
+	 */
+	async verifyResetToken(
+		token: string
+	): Promise<{success: boolean; message: string}> {
+		try {
+			const response = await axios.post(endpoints.auth.resetPassword(token));
+			return response.data;
+		} catch (error) {
+			console.error("Error al verificar token de restablecimiento:", error);
+			if (axios.isAxiosError(error)) {
+				const axiosError = error as AxiosError<ApiError>;
+				if (axiosError.response) {
+					throw axiosError.response.data;
+				}
+			}
+			throw {success: false, message: "Error de conexión al servidor"};
+		}
+	}
+
+	/**
+	 * Cambia la contraseña del usuario actual
+	 * @param currentPassword Contraseña actual
+	 * @param newPassword Nueva contraseña
+	 */
+	async changePassword(currentPassword: string, newPassword: string): Promise<{success: boolean; message: string}> {
+  try {
+    const response = await axios.post(
+      endpoints.auth.changePassword,
+      { currentPassword, newPassword },
+      { withCredentials: true }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error al cambiar contraseña:", error);
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<ApiError>;
+      if (axiosError.response) {
+        throw axiosError.response.data;
+      }
+    }
+    throw {success: false, message: "Error de conexión al servidor"};
+  }
+}
 }

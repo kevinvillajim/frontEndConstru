@@ -18,6 +18,10 @@ interface AuthContextProps {
 	register: (userData: RegisterRequest) => Promise<void>;
 	logout: () => Promise<void>;
 	refreshAuthStatus: () => Promise<void>;
+	changePassword: (
+		currentPassword: string,
+		newPassword: string
+	) => Promise<{success: boolean; message: string}>;
 }
 
 // Crear el contexto
@@ -132,6 +136,31 @@ const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
 		}
 	};
 
+	const changePassword = async (
+		currentPassword: string,
+		newPassword: string
+	): Promise<{success: boolean; message: string}> => {
+		setIsLoading(true);
+		try {
+			const response = await authService.changePassword(
+				currentPassword,
+				newPassword
+			);
+			setIsLoading(false);
+			return response;
+		} catch (error) {
+			setIsLoading(false);
+			console.error("Error al cambiar contraseña:", error);
+			const err = error as {message: string};
+			throw {
+				success: false,
+				message: err.message || "Error al cambiar la contraseña",
+			};
+		}
+	};
+
+	
+
 	// Valor del contexto
 	const contextValue: AuthContextProps = {
 		user,
@@ -141,6 +170,7 @@ const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
 		register,
 		logout,
 		refreshAuthStatus,
+		changePassword,
 	};
 
 	return (

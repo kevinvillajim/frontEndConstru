@@ -19,14 +19,14 @@ const auth = {
 	logout: getFullUrl("/auth/logout"),
 	verifyEmail: (token: string) => getFullUrl(`/auth/verify-email/${token}`),
 	forgotPassword: getFullUrl("/auth/forgot-password"),
-	resetPassword: (token: string) =>
-		getFullUrl(`/auth/reset-password/${token}`),
+	resetPassword: (token: string) => getFullUrl(`/auth/reset-password/${token}`),
 	profile: getFullUrl("/auth/profile"),
 	setup2FA: getFullUrl("/auth/2fa/setup"),
 	verify2FA: getFullUrl("/auth/2fa/verify"),
 	disable2FA: getFullUrl("/auth/2fa/disable"),
 	validate2FA: getFullUrl("/auth/2fa/validate"),
 	recovery2FA: getFullUrl("/auth/2fa/recovery"),
+	changePassword: getFullUrl("/auth/change-password"),
 };
 
 // Endpoints de cálculos técnicos

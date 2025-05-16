@@ -215,13 +215,13 @@ const LoginPage = () => {
 
 					{/* Métricas o beneficios */}
 					<div className="grid grid-cols-2 gap-8 mt-4 w-full max-w-lg">
-						<div className="bg-primary-600 bg-opacity-10 rounded-lg p-4 backdrop-filter backdrop-blur-sm transform transition-transform hover:scale-105">
+						<div className="bg-primary-800 bg-opacity-10 rounded-lg p-4 backdrop-filter backdrop-blur-sm transform transition-transform hover:scale-105">
 							<div className="text-3xl font-bold text-secondary-400 mb-1">
 								+500
 							</div>
 							<div className="text-sm">Profesionales confían en nosotros</div>
 						</div>
-						<div className="bg-primary-600 bg-opacity-10 rounded-lg p-4 backdrop-filter backdrop-blur-sm transform transition-transform hover:scale-105">
+						<div className="bg-primary-800 bg-opacity-10 rounded-lg p-4 backdrop-filter backdrop-blur-sm transform transition-transform hover:scale-105">
 							<div className="text-3xl font-bold text-secondary-400 mb-1">
 								85%
 							</div>

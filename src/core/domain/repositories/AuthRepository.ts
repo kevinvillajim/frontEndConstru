@@ -57,4 +57,20 @@ export interface AuthRepository {
 		password: string,
 		confirmPassword: string
 	): Promise<{success: boolean; message: string}>;
+
+	/**
+	 * Verifica si el token de recuperación es válido
+	 * @param token Token de recuperación
+	 */
+	verifyResetToken(token: string): Promise<{success: boolean; message: string}>;
+
+	/**
+	 * Cambia la contraseña del usuario actual
+	 * @param currentPassword Contraseña actual
+	 * @param newPassword Nueva contraseña
+	 */
+	changePassword(
+		currentPassword: string,
+		newPassword: string
+	): Promise<{success: boolean; message: string}>;
 }

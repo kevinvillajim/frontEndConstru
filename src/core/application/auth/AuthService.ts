@@ -84,4 +84,29 @@ export class AuthService {
 			confirmPassword
 		);
 	}
+
+	/**
+	 * Verifica si el token de recuperación es válido
+	 * @param token Token de recuperación
+	 */
+	async verifyResetToken(
+		token: string
+	): Promise<{success: boolean; message: string}> {
+		return await this.authRepository.verifyResetToken(token);
+	}
+
+	/**
+	 * Cambia la contraseña del usuario actual
+	 * @param currentPassword Contraseña actual
+	 * @param newPassword Nueva contraseña
+	 */
+	async changePassword(
+		currentPassword: string,
+		newPassword: string
+	): Promise<{success: boolean; message: string}> {
+		return await this.authRepository.changePassword(
+			currentPassword,
+			newPassword
+		);
+	}
 }
