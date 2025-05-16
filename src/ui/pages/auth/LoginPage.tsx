@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {Link} from "react-router-dom";
+import {Link, useLocation, useNavigate} from "react-router-dom";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -8,6 +8,7 @@ import {
 	EyeSlashIcon,
 	ArrowRightIcon,
 } from "@heroicons/react/24/outline";
+import {useAuth} from "../../context/AuthContext";
 
 // Definir el esquema de validación con Zod
 const loginSchema = z.object({
@@ -19,10 +20,26 @@ const loginSchema = z.object({
 // Tipo para los valores del formulario
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+interface AuthError {
+	message: string;
+}
+
 const LoginPage = () => {
+	const {login} = useAuth();
+	const navigate = useNavigate();
+	const location = useLocation();
+
 	const [showPassword, setShowPassword] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [loginError, setLoginError] = useState<string | null>(null);
+	const [showTwoFactorInput, setShowTwoFactorInput] = useState(false);
+	const [twoFactorCode, setTwoFactorCode] = useState("");
+
+	// Obtener la ruta de redirección después del login, si existe
+	const from =
+		(location.state &&
+			(location.state as {from?: {pathname: string}}).from?.pathname) ||
+		"/";
 
 	// Configurar react-hook-form con validación de Zod
 	const {
@@ -44,27 +61,66 @@ const LoginPage = () => {
 		setLoginError(null);
 
 		try {
-			// Aquí iría la lógica real de autenticación con la API
-			console.log("Datos de inicio de sesión:", data);
-
-			// Simulación de retraso para demostrar el estado de carga
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-
-			// Redirigir o manejar la respuesta exitosa
-			// history.push("/dashboard");
+			// Si estamos en el flujo de 2FA, enviamos el código
+			if (showTwoFactorInput) {
+				await login(data.email, data.password, twoFactorCode);
+			} else {
+				// Intento normal de login
+				try {
+					await login(data.email, data.password);
+				} catch (error) {
+					const authError = error as AuthError;
+					// Si el error es por 2FA requerido, mostrar el input
+					if (
+						authError.message?.includes("two-factor") ||
+						authError.message?.includes("2FA") ||
+						authError.message?.includes("código de verificación")
+					) {
+						setShowTwoFactorInput(true);
+						setIsLoading(false);
+						return;
+					}
+					throw error;
+				}
+			}
+		// Login exitoso, redirigir
+			navigate(from);
 		} catch (error) {
 			console.error("Error de inicio de sesión:", error);
-			setLoginError("Credenciales incorrectas. Por favor, inténtalo de nuevo.");
-		} finally {
+			const err = error as AuthError;
+			setLoginError(err.message || "Credenciales incorrectas. Por favor, inténtalo de nuevo.");		} finally {
 			setIsLoading(false);
 		}
 	};
 
+	const renderTwoFactorField = () => {
+		if (!showTwoFactorInput) return null;
+
+		return (
+			<div className="mb-6">
+				<label
+					htmlFor="totpToken"
+					className="block mb-2 text-sm font-medium text-gray-700"
+				>
+					Código de Verificación (2FA)
+				</label>
+				<input
+					id="totpToken"
+					type="text"
+					value={twoFactorCode}
+					onChange={(e) => setTwoFactorCode(e.target.value)}
+					className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2"
+					placeholder="Código de 6 dígitos"
+				/>
+			</div>
+		);
+	};
+
 	return (
-		<div className="flex min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark dark:to-dark-card">
+		<div className="flex min-h-screen bg-gradient-to-br from-primary-50 to-primary-100">
 			{/* Panel izquierdo - Diseño e ilustración */}
 			<div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-				<div className="absolute inset-0 bg-primary-600 dark:bg-primary-800">
+				<div className="absolute inset-0 bg-primary-600">
 					{/* Elementos gráficos arquitectónicos (rejilla) */}
 					<div className="absolute inset-0 opacity-10">
 						<div className="grid-pattern"></div>
@@ -188,9 +244,9 @@ const LoginPage = () => {
 					</div>
 
 					{/* Tarjeta del formulario con efecto de elevación sutil */}
-					<div className="bg-white dark:bg-dark-card rounded-xl shadow-card p-8 backdrop-filter backdrop-blur-md bg-opacity-80 dark:bg-opacity-70">
+					<div className="bg-white rounded-xl shadow-card p-8 backdrop-filter backdrop-blur-md bg-opacity-80">
 						{loginError && (
-							<div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-3 rounded-lg mb-6 text-sm animate-fade-in">
+							<div className="bg-red-100 text-red-700 p-3 rounded-lg mb-6 text-sm animate-fade-in">
 								{loginError}
 							</div>
 						)}
@@ -213,14 +269,14 @@ const LoginPage = () => {
 										{...register("email")}
 										className={`w-full px-4 py-3 rounded-lg border ${
 											errors.email
-												? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
-												: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-										} bg-white dark:bg-dark-input text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
+												? "border-red-500 focus:ring-red-500 focus:border-red-500"
+												: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+										} bg-white text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
 										placeholder="tu@correo.com"
 									/>
 								</div>
 								{errors.email && (
-									<p className="mt-1 text-sm text-red-600 dark:text-red-400 animate-fade-in">
+									<p className="mt-1 text-sm text-red-600 animate-fade-in">
 										{errors.email.message}
 									</p>
 								)}
@@ -243,9 +299,9 @@ const LoginPage = () => {
 										{...register("password")}
 										className={`w-full px-4 py-3 rounded-lg border ${
 											errors.password
-												? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
-												: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-										} bg-white dark:bg-dark-input text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
+												? "border-red-500 focus:ring-red-500 focus:border-red-500"
+												: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+										} bg-white text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
 										placeholder="••••••••"
 									/>
 									<button
@@ -261,11 +317,14 @@ const LoginPage = () => {
 									</button>
 								</div>
 								{errors.password && (
-									<p className="mt-1 text-sm text-red-600 dark:text-red-400 animate-fade-in">
+									<p className="mt-1 text-sm text-red-600 animate-fade-in">
 										{errors.password.message}
 									</p>
 								)}
 							</div>
+
+							{/* Campo de 2FA si es necesario */}
+							{renderTwoFactorField()}
 
 							{/* Opciones adicionales */}
 							<div className="flex items-center justify-between mb-6">
@@ -274,7 +333,7 @@ const LoginPage = () => {
 										id="rememberMe"
 										type="checkbox"
 										{...register("rememberMe")}
-										className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:border-gray-600 dark:bg-dark-input"
+										className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 "
 									/>
 									<label
 										htmlFor="rememberMe"
@@ -285,10 +344,10 @@ const LoginPage = () => {
 								</div>
 								<Link
 									to="/forgot-password"
-									className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 transition-colors group"
+									className="text-sm font-medium text-primary-600 hover:text-primary-500 transition-colors group"
 								>
 									<span>¿Olvidaste tu contraseña?</span>
-									<span className="block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-primary-600 dark:bg-primary-400"></span>
+									<span className="block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-primary-600"></span>
 								</Link>
 							</div>
 
@@ -333,11 +392,11 @@ const LoginPage = () => {
 
 						{/* Separador */}
 						<div className="flex items-center my-6">
-							<div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
-							<div className="px-3 text-sm text-gray-500 dark:text-gray-400">
+							<div className="flex-grow border-t border-gray-300"></div>
+							<div className="px-3 text-sm text-gray-500">
 								o
 							</div>
-							<div className="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+							<div className="flex-grow border-t border-gray-300"></div>
 						</div>
 
 						{/* Enlace a registro */}
@@ -346,10 +405,10 @@ const LoginPage = () => {
 								¿No tienes una cuenta?{" "}
 								<Link
 									to="/register"
-									className="relative inline-block font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 transition-colors group"
+									className="relative inline-block font-medium text-primary-600 hover:text-primary-500 transition-colors group"
 								>
 									<span className="relative z-10">Regístrate aquí</span>
-									<span className="absolute left-0 bottom-0 h-0.5 bg-primary-600 dark:bg-primary-400 w-0 group-hover:w-full transition-all duration-500"></span>
+									<span className="absolute left-0 bottom-0 h-0.5 bg-primary-600 w-0 group-hover:w-full transition-all duration-500"></span>
 								</Link>
 							</p>
 						</div>

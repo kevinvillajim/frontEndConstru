@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -13,6 +13,7 @@ import {
 	WrenchScrewdriverIcon,
 	PaintBrushIcon,
 } from "@heroicons/react/24/outline";
+import {useAuth} from "../../context/AuthContext";
 
 // Definir el esquema de validación con Zod
 const registerSchema = z
@@ -45,6 +46,10 @@ const registerSchema = z
 // Tipo para los valores del formulario
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
+interface RegisterError {
+	message: string;
+}
+
 // Opciones para el tipo de profesional
 const professionalOptions = [
 	{value: "architect", label: "Arquitecto", icon: BuildingOffice2Icon},
@@ -55,6 +60,9 @@ const professionalOptions = [
 ];
 
 const RegisterPage = () => {
+	const {register: registerUser} = useAuth();
+	const navigate = useNavigate();
+
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
@@ -119,18 +127,28 @@ const RegisterPage = () => {
 		setRegisterError(null);
 
 		try {
-			// Aquí iría la lógica real de registro con la API
-			console.log("Datos de registro:", data);
+			const registerData = {
+				firstName: data.firstName,
+				lastName: data.lastName,
+				email: data.email,
+				password: data.password,
+				professionalType: data.professionalType,
+			};
 
-			// Simulación de retraso para demostrar el estado de carga
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-
-			// Mostrar éxito
+			await registerUser(registerData);
 			setRegisterSuccess(true);
+
+			// No redirigir automáticamente - mostrar mensaje de éxito primero
+			// después de 3 segundos, redirigir a login
+			setTimeout(() => {
+				navigate("/login");
+			}, 3000);
 		} catch (error) {
 			console.error("Error de registro:", error);
+			const err = error as RegisterError;
 			setRegisterError(
-				"Ha ocurrido un error al registrarse. Por favor, inténtalo de nuevo."
+				err.message ||
+					"Ha ocurrido un error al registrarse. Por favor, inténtalo de nuevo."
 			);
 		} finally {
 			setIsLoading(false);
