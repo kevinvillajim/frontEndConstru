@@ -8,53 +8,121 @@ C:.
 |   package-lock.json
 |   package.json
 |   README.md
+|   tailwind-darkmode-plugin.js
+|   tailwind.config.js
 |   tsconfig.app.json
 |   tsconfig.json
 |   tsconfig.node.json
 |   vite.config.ts
-|   
+|               
++---public
+|       vite.svg
+|       
 \---src
     |   App.css
     |   App.tsx
-    |   index.css
     |   main.tsx
     |   vite-env.d.ts
     |   
     +---assets
     |       react.svg
     |       
+    +---config
+    |       appConfig.ts
+    |       environment.ts
+    |       
     +---core
     |   +---adapters
     |   |   +---api
+    |   |   |       ApiAuthRepository.ts
+    |   |   |       ApiClient.ts
+    |   |   |       AxiosConfig.ts
+    |   |   |       
     |   |   +---persistence
     |   |   \---store
     |   +---application
+    |   |   |   ServiceFactory.ts
+    |   |   |   
     |   |   +---auth
+    |   |   |       AuthService.ts
+    |   |   |       
     |   |   +---calculations
     |   |   \---projects
     |   \---domain
     |       +---models
+    |       |   +---auth
+    |       |   |       AuthModels.ts
+    |       |   |       
+    |       |   \---user
     |       +---repositories
-    |       \---service
+    |       |       AuthRepository.ts
+    |       |       
+    |       \---services
+    +---infrastructure
+    |   +---repositories
+    |   \---services
+    |           LocalStorageService.ts
+    |           
+    +---styles
+    |       dark-mode.css
+    |       isolated.css
+    |       main.css
+    |       personalized.css
+    |       tailwind.css
+    |       
     +---ui
     |   +---components
     |   |   +---auth
     |   |   +---calculations
     |   |   +---common
+    |   |   |       ThemeForced.tsx
+    |   |   |       ToastService.ts
+    |   |   |       
+    |   |   +---debug
     |   |   \---layout
+    |   |           Footer.tsx
+    |   |           Header.tsx
+    |   |           ThemeToggle.tsx
+    |   |           
+    |   +---context
+    |   |       AuthContext.tsx
+    |   |       ThemeContext.tsx
+    |   |       
     |   +---hooks
+    |   |       useTheme.ts
+    |   |       
     |   +---pages
     |   |   |   HomePage.tsx
     |   |   |   NotFoundPage.tsx
     |   |   |   
-    |   |   \---layouts
-    |   |           MainLayout.tsx
+    |   |   +---auth
+    |   |   |       ChangePasswordPage.tsx
+    |   |   |       EmailVerificationPage.tsx
+    |   |   |       ForgotPasswordPage.tsx
+    |   |   |       LoginPage.tsx
+    |   |   |       RegisterPage.tsx
+    |   |   |       ResetPasswordPage.tsx
+    |   |   |       TwoFactorAuthPage.tsx
+    |   |   |       
+    |   |   +---layouts
+    |   |   |       MainLayout.tsx
+    |   |   |       
+    |   |   \---profile
+    |   |           NotificationsPage.tsx
+    |   |           PersonalInfoPage.tsx
+    |   |           PreferencesPage.tsx
+    |   |           ProfessionalInfoPage.tsx
+    |   |           ProfilePage.tsx
+    |   |           SecurityPage.tsx
+    |   |           SubscriptionPage.tsx
     |   |           
     |   \---routes
     |           AppRoute.tsx
+    |           ProtectedRoute.tsx
     |           
     \---utils
             constants.ts
+            endpoints.ts
             formatters.ts
             validators.ts
             

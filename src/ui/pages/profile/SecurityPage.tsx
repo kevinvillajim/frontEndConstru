@@ -1,10 +1,11 @@
 // src/ui/pages/profile/SecurityPage.tsx
-import React, {useState, useEffect} from "react";
+import {useState, useEffect} from "react";
 import {Link} from "react-router-dom";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useAuth} from "../../context/AuthContext";
+import {useUserProfile} from "../../context/UserProfileContext";
 import ToastService from "../../components/common/ToastService";
 import {
 	ShieldCheckIcon,
@@ -34,6 +35,7 @@ type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
 const SecurityPage = () => {
 	const {changePassword} = useAuth();
+	const {profile} = useUserProfile();
 	const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 	const [showNewPassword, setShowNewPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -58,6 +60,13 @@ const SecurityPage = () => {
 	});
 
 	const newPassword = watch("newPassword");
+
+	// Verificar si el usuario tiene 2FA habilitado cuando el perfil se carga
+	useEffect(() => {
+		if (profile) {
+			setHas2FAEnabled(!!profile.twoFactorEnabled);
+		}
+	}, [profile]);
 
 	// Effect para calcular la fortaleza de la contraseña
 	useEffect(() => {
@@ -85,13 +94,6 @@ const SecurityPage = () => {
 
 		setPasswordStrength(strength);
 	}, [newPassword]);
-
-	// Verificar si el usuario tiene 2FA habilitado
-	useEffect(() => {
-		// Aquí iría la llamada para verificar si el usuario tiene 2FA habilitado
-		// Por ahora, establecemos un valor de ejemplo
-		setHas2FAEnabled(false);
-	}, []);
 
 	// Manejar el cambio de contraseña
 	const onSubmit = async (data: ChangePasswordFormValues) => {
@@ -382,35 +384,74 @@ const SecurityPage = () => {
 							Sesiones Activas
 						</h4>
 						<div className="mt-2 space-y-3">
-							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-								<div className="flex items-center">
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
+							{profile?.devices && profile.devices.length > 0 ? (
+								profile.devices.map((device, index) => (
+									<div
+										key={device.id || index}
+										className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
 									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-										/>
-									</svg>
-									<div>
-										<div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-											Navegador en este dispositivo
+										<div className="flex items-center">
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3"
+												fill="none"
+												viewBox="0 0 24 24"
+												stroke="currentColor"
+											>
+												<path
+													strokeLinecap="round"
+													strokeLinejoin="round"
+													strokeWidth={2}
+													d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+												/>
+											</svg>
+											<div>
+												<div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+													{device.deviceType || "Navegador"}
+												</div>
+												<div className="text-xs text-gray-500 dark:text-gray-400">
+													{device.lastUsed
+														? new Date(device.lastUsed).toLocaleString()
+														: "Fecha desconocida"}
+												</div>
+											</div>
 										</div>
-										<div className="text-xs text-gray-500 dark:text-gray-400">
-											Quito, Ecuador • {new Date().toLocaleDateString()}
+										<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
+											Activa
+										</span>
+									</div>
+								))
+							) : (
+								<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+									<div className="flex items-center">
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor"
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												strokeWidth={2}
+												d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+											/>
+										</svg>
+										<div>
+											<div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+												Navegador en este dispositivo
+											</div>
+											<div className="text-xs text-gray-500 dark:text-gray-400">
+												Quito, Ecuador • {new Date().toLocaleDateString()}
+											</div>
 										</div>
 									</div>
+									<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
+										Activa
+									</span>
 								</div>
-								<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
-									Activa
-								</span>
-							</div>
+							)}
 						</div>
 					</div>
 				</div>

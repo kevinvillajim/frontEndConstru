@@ -1,10 +1,16 @@
 // src/ui/pages/profile/PreferencesPage.tsx
-import React, { useState, useEffect } from "react";
-import { useTheme } from "../../hooks/useTheme";
+import React, {useState, useEffect} from "react";
+import {useTheme} from "../../hooks/useTheme";
+import {useUserProfile} from "../../context/UserProfileContext";
 import ToastService from "../../components/common/ToastService";
 
 const PreferencesPage = () => {
 	const {theme, setTheme} = useTheme();
+	const {
+		profile,
+		updatePreferences,
+		isLoading: profileLoading,
+	} = useUserProfile();
 	const [isLoading, setIsLoading] = useState(false);
 	const [preferences, setPreferences] = useState({
 		language: "es",
@@ -12,17 +18,32 @@ const PreferencesPage = () => {
 		dateFormat: "dd/MM/yyyy",
 		timeFormat: "24h",
 		distanceUnit: "metric",
-		notifications: {
-			email: true,
-			browser: true,
-			mobile: false,
+		accessibility: {
+			reducedMotion: false,
+			highContrast: false,
+			largeText: false,
 		},
 	});
 
+	// Cargar preferencias del usuario cuando el perfil se carga
 	useEffect(() => {
-		// Cargar preferencias del usuario desde el backend
-		// Por ahora usamos datos ficticios
-	}, []);
+		if (profile && profile.preferences) {
+			setPreferences({
+				language: profile.preferences.language || "es",
+				currency: profile.preferences.currency || "USD",
+				dateFormat: profile.preferences.dateFormat || "dd/MM/yyyy",
+				timeFormat: profile.preferences.timeFormat || "24h",
+				distanceUnit: profile.preferences.distanceUnit || "metric",
+				accessibility: {
+					reducedMotion:
+						profile.preferences.accessibility?.reducedMotion || false,
+					highContrast:
+						profile.preferences.accessibility?.highContrast || false,
+					largeText: profile.preferences.accessibility?.largeText || false,
+				},
+			});
+		}
+	}, [profile]);
 
 	const handleChange = (field: string, value: unknown) => {
 		setPreferences((prev) => ({
@@ -31,24 +52,26 @@ const PreferencesPage = () => {
 		}));
 	};
 
-	// const handleNotificationChange = (channel: string, value: boolean) => {
-	// 	setPreferences((prev) => ({
-	// 		...prev,
-	// 		notifications: {
-	// 			...prev.notifications,
-	// 			[channel]: value,
-	// 		},
-	// 	}));
-	// };
+	const handleAccessibilityChange = (field: string, value: boolean) => {
+		setPreferences((prev) => ({
+			...prev,
+			accessibility: {
+				...prev.accessibility,
+				[field]: value,
+			},
+		}));
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsLoading(true);
 
 		try {
-			// Simular una llamada a la API
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			// Actualizar tema
+			setTheme(theme);
 
+			// Actualizar otras preferencias
+			await updatePreferences(preferences);
 			ToastService.success("Preferencias actualizadas correctamente");
 		} catch (error) {
 			console.error("Error al actualizar preferencias:", error);
@@ -57,6 +80,33 @@ const PreferencesPage = () => {
 			setIsLoading(false);
 		}
 	};
+
+	const handleResetDefaults = () => {
+		// Valores predeterminados
+		const defaultPreferences = {
+			language: "es",
+			currency: "USD",
+			dateFormat: "dd/MM/yyyy",
+			timeFormat: "24h",
+			distanceUnit: "metric",
+			accessibility: {
+				reducedMotion: false,
+				highContrast: false,
+				largeText: false,
+			},
+		};
+
+		setPreferences(defaultPreferences);
+		setTheme("light");
+	};
+
+	if (profileLoading) {
+		return (
+			<div className="flex justify-center items-center h-64">
+				<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+			</div>
+		);
+	}
 
 	return (
 		<div>
@@ -227,6 +277,10 @@ const PreferencesPage = () => {
 							<input
 								id="reducedMotion"
 								type="checkbox"
+								checked={preferences.accessibility.reducedMotion}
+								onChange={(e) =>
+									handleAccessibilityChange("reducedMotion", e.target.checked)
+								}
 								className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
 							/>
 							<label
@@ -240,6 +294,10 @@ const PreferencesPage = () => {
 							<input
 								id="highContrast"
 								type="checkbox"
+								checked={preferences.accessibility.highContrast}
+								onChange={(e) =>
+									handleAccessibilityChange("highContrast", e.target.checked)
+								}
 								className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
 							/>
 							<label
@@ -253,6 +311,10 @@ const PreferencesPage = () => {
 							<input
 								id="largeText"
 								type="checkbox"
+								checked={preferences.accessibility.largeText}
+								onChange={(e) =>
+									handleAccessibilityChange("largeText", e.target.checked)
+								}
 								className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
 							/>
 							<label
@@ -269,6 +331,7 @@ const PreferencesPage = () => {
 				<div className="flex justify-end">
 					<button
 						type="button"
+						onClick={handleResetDefaults}
 						className="mr-3 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50"
 					>
 						Restablecer Valores Predeterminados

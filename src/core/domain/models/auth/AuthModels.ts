@@ -4,7 +4,7 @@
  * Modelos relacionados con autenticación y usuario
  */
 
-import {
+import type {
 	UserGender,
 	ProfessionalType,
 	UserRole,
@@ -13,7 +13,7 @@ import {
 	UserAddress,
 	UserPreferences,
 	UserStats,
-} from "../../../domain/models/user/User";
+} from "../../models/user/User";
 
 // Solicitud de login
 export interface LoginRequest {
@@ -85,6 +85,7 @@ export interface User {
 		instagram?: string;
 		linkedin?: string;
 		twitter?: string;
+		website?: string; // Added this property to fix errors
 	};
 	verificationToken?: string;
 	passwordResetToken?: string;

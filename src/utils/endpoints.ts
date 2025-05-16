@@ -30,6 +30,16 @@ const auth = {
 	changePassword: getFullUrl("/auth/change-password"),
 };
 
+// Endpoints de perfil de usuario
+const user = {
+  profile: getFullUrl("/user/profile"),
+  personalInfo: getFullUrl("/user/personal-info"),
+  professionalInfo: getFullUrl("/user/professional-info"),
+  addresses: getFullUrl("/user/addresses"),
+  preferences: getFullUrl("/user/preferences"),
+  profilePicture: getFullUrl("/user/profile-picture"),
+};
+
 // Endpoints de cálculos técnicos
 const calculations = {
 	execute: getFullUrl("/calculations/execute"),
@@ -123,6 +133,7 @@ const notifications = {
 // Exportar todos los endpoints agrupados
 const endpoints = {
 	auth,
+	user,
 	calculations,
 	materials,
 	projects,

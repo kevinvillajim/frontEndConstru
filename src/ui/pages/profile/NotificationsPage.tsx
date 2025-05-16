@@ -1,9 +1,15 @@
 // src/ui/pages/profile/NotificationsPage.tsx
 import React, {useState, useEffect} from "react";
 import {BellIcon, InformationCircleIcon} from "@heroicons/react/24/outline";
+import {useUserProfile} from "../../context/UserProfileContext";
 import ToastService from "../../components/common/ToastService";
 
 const NotificationsPage = () => {
+	const {
+		profile,
+		updateNotificationPreferences,
+		isLoading: profileLoading,
+	} = useUserProfile();
 	const [isLoading, setIsLoading] = useState(false);
 	const [settings, setSettings] = useState({
 		email: true,
@@ -17,11 +23,23 @@ const NotificationsPage = () => {
 		marketingEmails: false,
 	});
 
-	// Cargar configuraciones de notificaciones al montar el componente
+	// Cargar preferencias de notificaciones cuando el perfil se carga
 	useEffect(() => {
-		// Aquí iría la llamada al backend para obtener las configuraciones de notificaciones
-		// Por ahora usamos datos ficticios
-	}, []);
+		if (profile && profile.preferences && profile.preferences.notifications) {
+			const notifications = profile.preferences.notifications;
+			setSettings({
+				email: notifications.email ?? true,
+				push: notifications.push ?? true,
+				sms: notifications.sms ?? false,
+				projectUpdates: notifications.projectUpdates ?? true,
+				materialRecommendations: notifications.materialRecommendations ?? true,
+				pricingAlerts: notifications.pricingAlerts ?? true,
+				weeklyReports: notifications.weeklyReports ?? true,
+				systemAnnouncements: notifications.systemAnnouncements ?? true,
+				marketingEmails: notifications.marketingEmails ?? false,
+			});
+		}
+	}, [profile]);
 
 	const handleChange = (field: string, value: boolean) => {
 		setSettings((prev) => ({
@@ -35,9 +53,7 @@ const NotificationsPage = () => {
 		setIsLoading(true);
 
 		try {
-			// Simular una llamada a la API
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-
+			await updateNotificationPreferences(settings);
 			ToastService.success(
 				"Preferencias de notificaciones actualizadas correctamente"
 			);
@@ -53,6 +69,14 @@ const NotificationsPage = () => {
 			setIsLoading(false);
 		}
 	};
+
+	if (profileLoading) {
+		return (
+			<div className="flex justify-center items-center h-64">
+				<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+			</div>
+		);
+	}
 
 	return (
 		<div>
