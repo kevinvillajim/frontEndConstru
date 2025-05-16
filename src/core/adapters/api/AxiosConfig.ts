@@ -1,4 +1,6 @@
+// src/core/adapters/api/AxiosConfig.ts
 import axios from "axios";
+import ApiClient from "./ApiClient";
 import endpoints from "../../../utils/endpoints";
 
 /**
@@ -62,11 +64,7 @@ export const setupAxiosInterceptors = () => {
 
 				try {
 					// Intentar refrescar el token
-					await axios.post(
-						endpoints.auth.refreshToken,
-						{},
-						{withCredentials: true}
-					);
+					await ApiClient.post(endpoints.auth.refreshToken);
 
 					// Token refrescado exitosamente, reintentar la petición original
 					return axios(originalRequest);
@@ -93,7 +91,7 @@ export const setupAxiosInterceptors = () => {
 };
 
 // Exportar una instancia configurada por defecto
-export const configuredAxios = axios;
+export const configuredAxios = ApiClient;
 
 // Ejecutar la configuración automáticamente
 setupAxiosInterceptors();

@@ -4,7 +4,6 @@ import appRoutes from "./ui/routes/AppRoute";
 import AuthProvider from "./ui/context/AuthContext";
 import "./App.css";
 import "./core/adapters/api/AxiosConfig";
-import ApiDebugger from "./ui/components/debug/ApiDebugger";
 
 const LoadingFallback = () => (
 	<div className="flex items-center justify-center min-h-screen">
@@ -23,7 +22,6 @@ const App: React.FC = () => {
 		<AuthProvider>
 			<Suspense fallback={<LoadingFallback />}>
 				<AppRoutes />
-				{import.meta.env.DEV && <ApiDebugger />}
 			</Suspense>
 		</AuthProvider>
 	);

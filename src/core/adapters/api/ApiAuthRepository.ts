@@ -1,4 +1,5 @@
 import axios, {AxiosError} from "axios";
+import ApiClient from "./ApiClient";
 import type {
 	LoginRequest,
 	LoginResponse,
@@ -19,16 +20,9 @@ export class ApiAuthRepository implements AuthRepository {
 		console.log("URL de endpoint:", endpoints.auth.login);
 
 		try {
-			const response = await axios.post<LoginResponse>(
-				endpoints.auth.login,
-				credentials,
-				{
-					withCredentials: true,
-					headers: {
-						"Content-Type": "application/json",
-						Accept: "application/json",
-					},
-				}
+			const response = await ApiClient.post<LoginResponse>(
+				"/auth/login",
+				credentials
 			);
 
 			console.log("Respuesta login:", response.status, response.statusText);
@@ -61,15 +55,9 @@ export class ApiAuthRepository implements AuthRepository {
 		console.log("URL de endpoint:", endpoints.auth.register);
 
 		try {
-			const response = await axios.post<RegisterResponse>(
-				endpoints.auth.register,
-				userData,
-				{
-					headers: {
-						"Content-Type": "application/json",
-						Accept: "application/json",
-					},
-				}
+			const response = await ApiClient.post<RegisterResponse>(
+				"/auth/register",
+				userData
 			);
 
 			console.log("Respuesta registro:", response.status, response.statusText);
@@ -101,7 +89,7 @@ export class ApiAuthRepository implements AuthRepository {
 
 	async logout(): Promise<void> {
 		try {
-			await axios.post(endpoints.auth.logout, {}, {withCredentials: true});
+			await ApiClient.post("/auth/logout");
 		} catch (error) {
 			console.error("Error en logout:", error);
 			if (axios.isAxiosError(error)) {
@@ -116,9 +104,8 @@ export class ApiAuthRepository implements AuthRepository {
 
 	async getProfile(): Promise<User> {
 		try {
-			const response = await axios.get<{success: boolean; data: User}>(
-				endpoints.auth.profile,
-				{withCredentials: true}
+			const response = await ApiClient.get<{success: boolean; data: User}>(
+				"/auth/profile"
 			);
 			return response.data.data;
 		} catch (error) {
@@ -135,11 +122,7 @@ export class ApiAuthRepository implements AuthRepository {
 
 	async refreshToken(): Promise<void> {
 		try {
-			await axios.post(
-				endpoints.auth.refreshToken,
-				{},
-				{withCredentials: true}
-			);
+			await ApiClient.post("/auth/refresh-token");
 		} catch (error) {
 			console.error("Error en refreshToken:", error);
 			if (axios.isAxiosError(error)) {
@@ -156,10 +139,10 @@ export class ApiAuthRepository implements AuthRepository {
 		email: string
 	): Promise<{success: boolean; message: string}> {
 		try {
-			const response = await axios.post<{success: boolean; message: string}>(
-				endpoints.auth.forgotPassword,
-				{email}
-			);
+			const response = await ApiClient.post<{
+				success: boolean;
+				message: string;
+			}>("/auth/forgot-password", {email});
 			return response.data;
 		} catch (error) {
 			console.error("Error en forgotPassword:", error);
@@ -179,10 +162,10 @@ export class ApiAuthRepository implements AuthRepository {
 		confirmPassword: string
 	): Promise<{success: boolean; message: string}> {
 		try {
-			const response = await axios.post<{success: boolean; message: string}>(
-				endpoints.auth.resetPassword(token),
-				{password, confirmPassword}
-			);
+			const response = await ApiClient.post<{
+				success: boolean;
+				message: string;
+			}>(`/auth/reset-password/${token}`, {password, confirmPassword});
 			return response.data;
 		} catch (error) {
 			console.error("Error en resetPassword:", error);

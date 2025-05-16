@@ -1,7 +1,7 @@
 const environments = {
   development: {
-    apiBaseUrl: 'http://127.0.0.1:4000/api',
-    imageBaseUrl: 'http://127.0.0.1:4000/storage/',
+    apiBaseUrl: 'http://localhost:4000/api',
+    imageBaseUrl: 'http://localhost:4000/storage/',
     debug: true
   },
   staging: {
