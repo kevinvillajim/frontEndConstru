@@ -33,7 +33,7 @@ const changePasswordSchema = z
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
 const SecurityPage = () => {
-	const {user, changePassword} = useAuth();
+	const {changePassword} = useAuth();
 	const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 	const [showNewPassword, setShowNewPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -96,16 +96,11 @@ const SecurityPage = () => {
 	// Manejar el cambio de contraseña
 	const onSubmit = async (data: ChangePasswordFormValues) => {
 		setIsLoading(true);
-
 		try {
-			// Simular operación de cambio de contraseña
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-
-			// Aquí iría la llamada real al backend
-			// await changePassword(data.currentPassword, data.newPassword);
-
+			// Usar la función real de cambio de contraseña
+			await changePassword(data.currentPassword, data.newPassword);
 			ToastService.success("Contraseña actualizada correctamente");
-			reset(); // Limpiar el formulario después del éxito
+			reset();
 		} catch (error) {
 			console.error("Error al cambiar contraseña:", error);
 			ToastService.error(

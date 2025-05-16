@@ -156,12 +156,13 @@ const ResetPasswordPage = () => {
 			} else {
 				setResetError(response.message || "Error al restablecer contraseña.");
 			}
-		} catch (error: any) {
+		} catch (error: Error | unknown) {
 			console.error("Error al restablecer contraseña:", error);
-			setResetError(
-				error.message ||
-					"Ha ocurrido un error al restablecer tu contraseña. Por favor, inténtalo de nuevo."
-			);
+			const err = error as {message: string};
+			throw {
+				success: false,
+				message: err.message || "Error al cambiar la contraseña",
+			};
 		} finally {
 			setIsLoading(false);
 		}

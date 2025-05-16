@@ -24,22 +24,22 @@ const PreferencesPage = () => {
 		// Por ahora usamos datos ficticios
 	}, []);
 
-	const handleChange = (field: string, value: any) => {
+	const handleChange = (field: string, value: unknown) => {
 		setPreferences((prev) => ({
 			...prev,
 			[field]: value,
 		}));
 	};
 
-	const handleNotificationChange = (channel: string, value: boolean) => {
-		setPreferences((prev) => ({
-			...prev,
-			notifications: {
-				...prev.notifications,
-				[channel]: value,
-			},
-		}));
-	};
+	// const handleNotificationChange = (channel: string, value: boolean) => {
+	// 	setPreferences((prev) => ({
+	// 		...prev,
+	// 		notifications: {
+	// 			...prev.notifications,
+	// 			[channel]: value,
+	// 		},
+	// 	}));
+	// };
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();

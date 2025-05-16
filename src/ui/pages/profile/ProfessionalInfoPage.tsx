@@ -1,10 +1,16 @@
-// src/ui/pages/profile/ProfessionalInfoPage.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../context/AuthContext";
 import ToastService from "../../components/common/ToastService";
+
+// Tipo para la educación
+interface EducationItem {
+  institution: string;
+  degree: string;
+  graduationYear: string;
+}
 
 // Definir el esquema de validación con Zod
 const professionalInfoSchema = z.object({
@@ -18,18 +24,12 @@ const professionalInfoSchema = z.object({
     "designer",
     "other",
   ]),
-  company: z.string().optional(),
+  companyName: z.string().optional(),
   position: z.string().optional(),
   licenseNumber: z.string().optional(),
   professionalBio: z.string().max(500, "La biografía no debe exceder los 500 caracteres").optional(),
   website: z.string().url("Ingresa una URL válida").optional().or(z.literal("")),
   yearsOfExperience: z.string().optional(),
-  specialties: z.array(z.string()).optional(),
-  education: z.array(z.object({
-    institution: z.string(),
-    degree: z.string(),
-    graduationYear: z.string(),
-  })).optional(),
 });
 
 // Tipo para los valores del formulario
@@ -41,9 +41,7 @@ const ProfessionalInfoPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [newSpecialty, setNewSpecialty] = useState("");
-  const [education, setEducation] = useState
-    { institution: string; degree: string; graduationYear: string }[]
-  >([]);
+  const [education, setEducation] = useState<EducationItem[]>([]);
 
   // Configurar react-hook-form con validación de Zod
   const {
@@ -57,25 +55,30 @@ const ProfessionalInfoPage = () => {
     resolver: zodResolver(professionalInfoSchema),
     defaultValues: {
       professionalType: user?.professionalType as any || "architect",
-      company: user?.company || "",
-      position: user?.position || "",
-      licenseNumber: user?.licenseNumber || "",
-      professionalBio: user?.professionalBio || "",
-      website: user?.website || "",
+      companyName: user?.company?.name || "",
+      position: user?.company?.position || "",
+      licenseNumber: user?.nationalId || "", // Usando nationalId como licenseNumber
+      professionalBio: user?.bio || "",
+      website: user?.socialLinks?.website || "",
       yearsOfExperience: user?.yearsOfExperience?.toString() || "",
-      specialties: user?.specialties || [],
-      education: user?.education || [],
     },
   });
 
   // Inicializar datos de educación y especialidades desde el usuario
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) {
-      if (user.specialties) {
-        setSpecialties(user.specialties);
+      if (user.specializations) {
+        setSpecialties(user.specializations);
       }
-      if (user.education) {
-        setEducation(user.education);
+      if (user.certifications) {
+        // Usar certifications como educación (ejemplo)
+        setEducation(
+          user.certifications.map((cert) => ({
+            institution: "Institución",
+            degree: cert,
+            graduationYear: "-"
+          }))
+        );
       }
     }
   }, [user]);
@@ -85,12 +88,12 @@ const ProfessionalInfoPage = () => {
     setIsLoading(true);
     
     try {
-      // Agregar las especialidades y educación al objeto data
-      data.specialties = specialties;
-      data.education = education;
-      
       // Aquí iría la llamada al backend para actualizar la información
-      // await userService.updateProfessionalInfo(data);
+      console.log("Datos a enviar:", {
+        ...data,
+        specialties,
+        education
+      });
       
       // Simular un delay para la demo
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -139,22 +142,29 @@ const ProfessionalInfoPage = () => {
   const handleCancel = () => {
     reset({
       professionalType: user?.professionalType as any || "architect",
-      company: user?.company || "",
-      position: user?.position || "",
-      licenseNumber: user?.licenseNumber || "",
-      professionalBio: user?.professionalBio || "",
-      website: user?.website || "",
+      companyName: user?.company?.name || "",
+      position: user?.company?.position || "",
+      licenseNumber: user?.nationalId || "",
+      professionalBio: user?.bio || "",
+      website: user?.socialLinks?.website || "",
       yearsOfExperience: user?.yearsOfExperience?.toString() || "",
     });
     
-    if (user?.specialties) {
-      setSpecialties(user.specialties);
+    if (user?.specializations) {
+      setSpecialties(user.specializations);
     } else {
       setSpecialties([]);
     }
     
-    if (user?.education) {
-      setEducation(user.education);
+    if (user?.certifications) {
+      // Reset education based on certifications
+      setEducation(
+        user.certifications.map((cert) => ({
+          institution: "Institución",
+          degree: cert,
+          graduationYear: "-"
+        }))
+      );
     } else {
       setEducation([]);
     }
@@ -266,15 +276,15 @@ const ProfessionalInfoPage = () => {
 
             <div>
               <label
-                htmlFor="company"
+                htmlFor="companyName"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 Empresa / Estudio
               </label>
               <input
                 type="text"
-                id="company"
-                {...register("company")}
+                id="companyName"
+                {...register("companyName")}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
             </div>
@@ -552,7 +562,7 @@ const ProfessionalInfoPage = () => {
                 Número de Licencia
               </h3>
               <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                {user?.licenseNumber || "No especificado"}
+                {user?.nationalId || "No especificado"}
               </p>
             </div>
 
@@ -561,7 +571,7 @@ const ProfessionalInfoPage = () => {
                 Empresa / Estudio
               </h3>
               <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                {user?.company || "No especificado"}
+                {user?.company?.name || "No especificado"}
               </p>
             </div>
 
@@ -570,7 +580,7 @@ const ProfessionalInfoPage = () => {
                 Cargo / Posición
               </h3>
               <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                {user?.position || "No especificado"}
+                {user?.company?.position || "No especificado"}
               </p>
             </div>
 
@@ -588,14 +598,14 @@ const ProfessionalInfoPage = () => {
                 Sitio Web
               </h3>
               <p className="mt-1 text-lg text-gray-900 dark:text-white">
-                {user?.website ? (
+                {user?.socialLinks?.website ? (
                   
-                    href={user.website}
+                    href={user.socialLinks.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary-600 dark:text-primary-400 hover:underline"
                   >
-                    {user.website}
+                    {user.socialLinks.website}
                   </a>
                 ) : (
                   "No especificado"
@@ -611,7 +621,7 @@ const ProfessionalInfoPage = () => {
             </h3>
             <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <p className="text-gray-900 dark:text-white">
-                {user?.professionalBio || "No hay biografía profesional."}
+                {user?.bio || "No hay biografía profesional."}
               </p>
             </div>
           </div>

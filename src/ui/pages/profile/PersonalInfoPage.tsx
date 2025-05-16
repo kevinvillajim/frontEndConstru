@@ -1,4 +1,3 @@
-// src/ui/pages/profile/PersonalInfoPage.tsx
 import React, {useState} from "react";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
@@ -12,7 +11,8 @@ const personalInfoSchema = z.object({
 	lastName: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
 	email: z.string().email("Ingresa un correo electrónico válido"),
 	phone: z.string().optional(),
-	address: z.string().optional(),
+	mobilePhone: z.string().optional(),
+	street: z.string().optional(),
 	city: z.string().optional(),
 	province: z.string().optional(),
 	postalCode: z.string().optional(),
@@ -25,6 +25,10 @@ const PersonalInfoPage = () => {
 	const {user} = useAuth();
 	const [isEditing, setIsEditing] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+
+	// Obtener la dirección principal (o la primera disponible)
+	const mainAddress =
+		user?.addresses?.find((addr) => addr.isMain) || user?.addresses?.[0];
 
 	// Configurar react-hook-form con validación de Zod
 	const {
@@ -39,15 +43,16 @@ const PersonalInfoPage = () => {
 			lastName: user?.lastName || "",
 			email: user?.email || "",
 			phone: user?.phone || "",
-			address: user?.address || "",
-			city: user?.city || "",
-			province: user?.province || "",
-			postalCode: user?.postalCode || "",
+			mobilePhone: user?.mobilePhone || "",
+			street: mainAddress?.street || "",
+			city: mainAddress?.city || "",
+			province: mainAddress?.province || "",
+			postalCode: mainAddress?.postalCode || "",
 		},
 	});
 
 	// Manejar el envío del formulario
-	const onSubmit = async (data: PersonalInfoFormValues) => {
+	const onSubmit = async (formData: PersonalInfoFormValues) => {
 		setIsLoading(true);
 
 		try {
@@ -74,10 +79,11 @@ const PersonalInfoPage = () => {
 			lastName: user?.lastName || "",
 			email: user?.email || "",
 			phone: user?.phone || "",
-			address: user?.address || "",
-			city: user?.city || "",
-			province: user?.province || "",
-			postalCode: user?.postalCode || "",
+			mobilePhone: user?.mobilePhone || "",
+			street: mainAddress?.street || "",
+			city: mainAddress?.city || "",
+			province: mainAddress?.province || "",
+			postalCode: mainAddress?.postalCode || "",
 		});
 		setIsEditing(false);
 	};
@@ -237,17 +243,32 @@ const PersonalInfoPage = () => {
 							/>
 						</div>
 
+						<div>
+							<label
+								htmlFor="mobilePhone"
+								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+							>
+								Teléfono Móvil
+							</label>
+							<input
+								type="tel"
+								id="mobilePhone"
+								{...register("mobilePhone")}
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+							/>
+						</div>
+
 						<div className="md:col-span-2">
 							<label
-								htmlFor="address"
+								htmlFor="street"
 								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
 							>
 								Dirección
 							</label>
 							<input
 								type="text"
-								id="address"
-								{...register("address")}
+								id="street"
+								{...register("street")}
 								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
 							/>
 						</div>
@@ -336,12 +357,21 @@ const PersonalInfoPage = () => {
 						</p>
 					</div>
 
+					<div>
+						<h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+							Teléfono Móvil
+						</h3>
+						<p className="mt-1 text-lg text-gray-900 dark:text-white">
+							{user?.mobilePhone || "No especificado"}
+						</p>
+					</div>
+
 					<div className="md:col-span-2">
 						<h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
 							Dirección
 						</h3>
 						<p className="mt-1 text-lg text-gray-900 dark:text-white">
-							{user?.address || "No especificada"}
+							{mainAddress?.street || "No especificada"}
 						</p>
 					</div>
 
@@ -350,7 +380,7 @@ const PersonalInfoPage = () => {
 							Ciudad
 						</h3>
 						<p className="mt-1 text-lg text-gray-900 dark:text-white">
-							{user?.city || "No especificada"}
+							{mainAddress?.city || "No especificada"}
 						</p>
 					</div>
 
@@ -359,7 +389,7 @@ const PersonalInfoPage = () => {
 							Provincia
 						</h3>
 						<p className="mt-1 text-lg text-gray-900 dark:text-white">
-							{user?.province || "No especificada"}
+							{mainAddress?.province || "No especificada"}
 						</p>
 					</div>
 
@@ -368,7 +398,7 @@ const PersonalInfoPage = () => {
 							Código Postal
 						</h3>
 						<p className="mt-1 text-lg text-gray-900 dark:text-white">
-							{user?.postalCode || "No especificado"}
+							{mainAddress?.postalCode || "No especificado"}
 						</p>
 					</div>
 				</div>
