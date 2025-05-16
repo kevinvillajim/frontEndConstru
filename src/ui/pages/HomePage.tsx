@@ -34,7 +34,7 @@ const HomePage = () => {
 						</div>
 						<div className="hidden md:block">
 							<img
-								src="/src/assets/hero-image.svg"
+								src="https://www.aceroform.com.mx/wp-content/uploads/2020/10/banner-construccion.jpg"
 								alt="Plataforma CONSTRU"
 								className="w-full h-auto max-h-96"
 								onError={(e) => {
