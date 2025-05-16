@@ -273,10 +273,57 @@ export class ApiAuthRepository implements AuthRepository {
 		token: string
 	): Promise<{success: boolean; message: string}> {
 		try {
-			const response = await axios.post(endpoints.auth.resetPassword(token));
+			// Usar una petición GET específica para verificar el token
+			const response = await axios.get(
+				`${endpoints.auth.verifyResetToken}/${token}`,
+				{
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+					},
+				}
+			);
+
 			return response.data;
 		} catch (error) {
 			console.error("Error al verificar token de restablecimiento:", error);
+
+			if (axios.isAxiosError(error)) {
+				const axiosError = error as AxiosError<ApiError>;
+				if (axiosError.response) {
+					return {
+						success: false,
+						message:
+							axiosError.response.data?.message || "Token inválido o expirado",
+					};
+				}
+			}
+
+			return {
+				success: false,
+				message: "Error de conexión al servidor",
+			};
+		}
+	}
+
+	/**
+	 * Cambia la contraseña del usuario actual
+	 * @param currentPassword Contraseña actual
+	 * @param newPassword Nueva contraseña
+	 */
+	async changePassword(
+		currentPassword: string,
+		newPassword: string
+	): Promise<{success: boolean; message: string}> {
+		try {
+			const response = await axios.post(
+				endpoints.auth.changePassword,
+				{currentPassword, newPassword},
+				{withCredentials: true}
+			);
+			return response.data;
+		} catch (error) {
+			console.error("Error al cambiar contraseña:", error);
 			if (axios.isAxiosError(error)) {
 				const axiosError = error as AxiosError<ApiError>;
 				if (axiosError.response) {
@@ -286,29 +333,4 @@ export class ApiAuthRepository implements AuthRepository {
 			throw {success: false, message: "Error de conexión al servidor"};
 		}
 	}
-
-	/**
-	 * Cambia la contraseña del usuario actual
-	 * @param currentPassword Contraseña actual
-	 * @param newPassword Nueva contraseña
-	 */
-	async changePassword(currentPassword: string, newPassword: string): Promise<{success: boolean; message: string}> {
-  try {
-    const response = await axios.post(
-      endpoints.auth.changePassword,
-      { currentPassword, newPassword },
-      { withCredentials: true }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error al cambiar contraseña:", error);
-    if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError<ApiError>;
-      if (axiosError.response) {
-        throw axiosError.response.data;
-      }
-    }
-    throw {success: false, message: "Error de conexión al servidor"};
-  }
-}
 }

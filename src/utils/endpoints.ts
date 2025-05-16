@@ -26,6 +26,7 @@ const auth = {
 	disable2FA: getFullUrl("/auth/2fa/disable"),
 	validate2FA: getFullUrl("/auth/2fa/validate"),
 	recovery2FA: getFullUrl("/auth/2fa/recovery"),
+	verifyResetToken: getFullUrl("/auth/verify-reset-token"),
 	changePassword: getFullUrl("/auth/change-password"),
 };
 

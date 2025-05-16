@@ -52,24 +52,32 @@ const ResetPasswordPage = () => {
 			}
 
 			try {
-				// En un escenario real, hacemos una verificación con el backend
-				// Podríamos tener un endpoint específico para verificar tokens
-				// Por ahora, simulamos la verificación con el token de reseteo de la base de datos
-				console.log("Verificando token:", token);
+				// Implementar una verificación de token más adecuada
+				// En lugar de hacer una solicitud POST al endpoint de restablecimiento,
+				// debe haber un endpoint específico para verificar el token
 
-				// Simulación: verificar el token con el backend
-				// En producción, deberías hacer una llamada real a la API
-				const response = await authService.verifyResetToken(token);
+				// Podemos simular esta verificación con una solicitud GET
+				const response = await fetch(`/api/auth/verify-reset-token/${token}`, {
+					method: "GET",
+					headers: {
+						"Content-Type": "application/json",
+					},
+				});
 
-				// Si la verificación es exitosa, el token es válido
-				if (response && response.success) {
+				const data = await response.json();
+
+				if (response.ok && data.success) {
 					setTokenValid(true);
 				} else {
 					setTokenValid(false);
+					setResetError(data.message || "Token inválido o expirado");
 				}
 			} catch (error) {
 				console.error("Error validando token:", error);
 				setTokenValid(false);
+				setResetError(
+					"Error al verificar el token. Por favor, solicita un nuevo enlace."
+				);
 			} finally {
 				setValidatingToken(false);
 			}
@@ -133,8 +141,6 @@ const ResetPasswordPage = () => {
 		setResetError(null);
 
 		try {
-			console.log("Restableciendo contraseña con token:", token);
-			// Llamada al servicio de autenticación para restablecer la contraseña
 			const response = await authService.resetPassword(
 				token,
 				data.password,
@@ -143,18 +149,17 @@ const ResetPasswordPage = () => {
 
 			if (response.success) {
 				setResetSuccess(true);
-				// Redirigir al login después de 5 segundos
+				// Redirigir al login después de 3 segundos
 				setTimeout(() => {
 					navigate("/login");
-				}, 5000);
+				}, 3000);
 			} else {
 				setResetError(response.message || "Error al restablecer contraseña.");
 			}
-		} catch (error) {
+		} catch (error: any) {
 			console.error("Error al restablecer contraseña:", error);
-			const err = error as {message: string};
 			setResetError(
-				err.message ||
+				error.message ||
 					"Ha ocurrido un error al restablecer tu contraseña. Por favor, inténtalo de nuevo."
 			);
 		} finally {
@@ -165,10 +170,10 @@ const ResetPasswordPage = () => {
 	// Renderizado condicional según el estado del token
 	if (validatingToken) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark dark:to-dark-card px-4 sm:px-6 lg:px-8">
+			<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 px-4 sm:px-6 lg:px-8">
 				<div className="w-full max-w-md text-center">
 					<div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-					<p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
+					<p className="mt-4 text-lg text-gray-700">
 						Verificando enlace de recuperación...
 					</p>
 				</div>
@@ -178,12 +183,12 @@ const ResetPasswordPage = () => {
 
 	if (tokenValid === false) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark dark:to-dark-card px-4 sm:px-6 lg:px-8">
+			<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 px-4 sm:px-6 lg:px-8">
 				<div className="w-full max-w-md animate-fade-in">
-					<div className="bg-white dark:bg-dark-card rounded-xl shadow-card p-8 text-center">
-						<div className="rounded-full bg-red-100 dark:bg-red-900 p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+					<div className="bg-white rounded-xl shadow-card p-8 text-center">
+						<div className="rounded-full bg-red-100 p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
 							<svg
-								className="w-8 h-8 text-red-600 dark:text-red-400"
+								className="w-8 h-8 text-red-600"
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
@@ -197,12 +202,12 @@ const ResetPasswordPage = () => {
 								></path>
 							</svg>
 						</div>
-						<h2 className="text-2xl font-bold mb-2 text-gray-800 dark:text-white">
+						<h2 className="text-2xl font-bold mb-2 text-gray-800">
 							Enlace Inválido
 						</h2>
-						<p className="text-gray-600 dark:text-gray-300 mb-6">
-							Este enlace de recuperación es inválido o ha expirado. Por favor,
-							solicita un nuevo enlace.
+						<p className="text-gray-600 mb-6">
+							{resetError ||
+								"Este enlace de recuperación es inválido o ha expirado. Por favor, solicita un nuevo enlace."}
 						</p>
 						<Link
 							to="/forgot-password"
@@ -217,23 +222,23 @@ const ResetPasswordPage = () => {
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark dark:to-dark-card px-4 sm:px-6 lg:px-8">
+		<div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 px-4 sm:px-6 lg:px-8">
 			<div className="w-full max-w-md animate-fade-in">
 				<div className="text-center mb-8">
-					<h2 className="text-3xl font-bold mb-2 text-primary-700 dark:text-primary-300">
+					<h2 className="text-3xl font-bold mb-2 text-primary-700">
 						Restablecer Contraseña
 					</h2>
-					<p className="text-gray-600 dark:text-gray-400">
+					<p className="text-gray-600">
 						Elige una nueva contraseña segura para tu cuenta
 					</p>
 				</div>
 
-				<div className="bg-white dark:bg-dark-card rounded-xl shadow-card p-8 backdrop-filter backdrop-blur-md bg-opacity-80 dark:bg-opacity-70">
+				<div className="bg-white rounded-xl shadow-card p-8 backdrop-filter backdrop-blur-md bg-opacity-80">
 					{resetSuccess ? (
 						<div className="text-center animate-fade-in">
-							<div className="rounded-full bg-green-100 dark:bg-green-900 p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+							<div className="rounded-full bg-green-100 p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
 								<svg
-									className="w-8 h-8 text-green-600 dark:text-green-400"
+									className="w-8 h-8 text-green-600"
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
@@ -247,10 +252,10 @@ const ResetPasswordPage = () => {
 									></path>
 								</svg>
 							</div>
-							<h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-white">
+							<h3 className="text-xl font-semibold mb-2 text-gray-800">
 								¡Contraseña Restablecida!
 							</h3>
-							<p className="text-gray-600 dark:text-gray-300 mb-6">
+							<p className="text-gray-600 mb-6">
 								Tu contraseña ha sido actualizada exitosamente. Ya puedes
 								iniciar sesión con tu nueva contraseña.
 							</p>
@@ -265,7 +270,7 @@ const ResetPasswordPage = () => {
 					) : (
 						<>
 							{resetError && (
-								<div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-3 rounded-lg mb-6 text-sm animate-fade-in">
+								<div className="bg-red-100 text-red-700 p-3 rounded-lg mb-6 text-sm animate-fade-in">
 									{resetError}
 								</div>
 							)}
@@ -275,7 +280,7 @@ const ResetPasswordPage = () => {
 								<div>
 									<label
 										htmlFor="password"
-										className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+										className="block mb-2 text-sm font-medium text-gray-700"
 									>
 										Nueva Contraseña
 									</label>
@@ -288,14 +293,14 @@ const ResetPasswordPage = () => {
 											{...register("password")}
 											className={`w-full px-4 py-3 rounded-lg border ${
 												errors.password
-													? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
-													: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-											} bg-white dark:bg-dark-input text-gray-900 dark:text-white transition-all duration-300 focus:outline-none focus:ring-2`}
+													? "border-red-500 focus:ring-red-500 focus:border-red-500"
+													: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+											} bg-white text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
 											placeholder="••••••••"
 										/>
 										<button
 											type="button"
-											className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
+											className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-primary-500 transition-colors"
 											onClick={() => setShowPassword(!showPassword)}
 										>
 											{showPassword ? (
@@ -306,7 +311,7 @@ const ResetPasswordPage = () => {
 										</button>
 									</div>
 									{errors.password && (
-										<p className="mt-1 text-sm text-red-600 dark:text-red-400 animate-fade-in">
+										<p className="mt-1 text-sm text-red-600 animate-fade-in">
 											{errors.password.message}
 										</p>
 									)}
@@ -315,7 +320,7 @@ const ResetPasswordPage = () => {
 									{password && (
 										<div className="mt-2">
 											<div className="flex justify-between mb-1">
-												<span className="text-xs text-gray-500 dark:text-gray-400">
+												<span className="text-xs text-gray-500">
 													Fortaleza de contraseña
 												</span>
 												<span className="text-xs font-medium">
@@ -327,7 +332,7 @@ const ResetPasswordPage = () => {
 													{passwordStrength === 5 && "Muy fuerte"}
 												</span>
 											</div>
-											<div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+											<div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
 												<div
 													className={`h-full transition-all duration-300 ${
 														passwordStrength <= 1
@@ -349,7 +354,7 @@ const ResetPasswordPage = () => {
 								<div>
 									<label
 										htmlFor="confirmPassword"
-										className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+										className="block mb-2 text-sm font-medium text-gray-700"
 									>
 										Confirmar Contraseña
 									</label>
@@ -362,14 +367,14 @@ const ResetPasswordPage = () => {
 											{...register("confirmPassword")}
 											className={`w-full px-4 py-3 rounded-lg border ${
 												errors.confirmPassword
-													? "border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500"
-													: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-											} bg-white dark:bg-dark-input text-gray-900 dark:text-white transition-all duration-300 focus:outline-none focus:ring-2`}
+													? "border-red-500 focus:ring-red-500 focus:border-red-500"
+													: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+											} bg-white text-gray-900 transition-all duration-300 focus:outline-none focus:ring-2`}
 											placeholder="••••••••"
 										/>
 										<button
 											type="button"
-											className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 transition-colors"
+											className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-primary-500 transition-colors"
 											onClick={() =>
 												setShowConfirmPassword(!showConfirmPassword)
 											}
@@ -382,7 +387,7 @@ const ResetPasswordPage = () => {
 										</button>
 									</div>
 									{errors.confirmPassword && (
-										<p className="mt-1 text-sm text-red-600 dark:text-red-400 animate-fade-in">
+										<p className="mt-1 text-sm text-red-600 animate-fade-in">
 											{errors.confirmPassword.message}
 										</p>
 									)}
@@ -427,7 +432,7 @@ const ResetPasswordPage = () => {
 								<div className="text-center pt-4">
 									<Link
 										to="/login"
-										className="text-sm font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
+										className="text-sm font-medium text-primary-600 hover:text-primary-500 transition-colors"
 									>
 										Volver a Iniciar Sesión
 									</Link>
@@ -436,70 +441,7 @@ const ResetPasswordPage = () => {
 						</>
 					)}
 				</div>
-
-				{/* Decoración arquitectónica sutil */}
-				<div className="mt-10 mx-auto w-full max-w-md opacity-30 dark:opacity-20">
-					<svg viewBox="0 0 400 40" xmlns="http://www.w3.org/2000/svg">
-						<line
-							x1="0"
-							y1="20"
-							x2="400"
-							y2="20"
-							stroke="currentColor"
-							strokeWidth="1"
-						/>
-						<circle cx="200" cy="20" r="5" fill="currentColor" />
-						<circle cx="180" cy="20" r="2" fill="currentColor" />
-						<circle cx="160" cy="20" r="2" fill="currentColor" />
-						<circle cx="140" cy="20" r="2" fill="currentColor" />
-						<circle cx="220" cy="20" r="2" fill="currentColor" />
-						<circle cx="240" cy="20" r="2" fill="currentColor" />
-						<circle cx="260" cy="20" r="2" fill="currentColor" />
-					</svg>
-				</div>
 			</div>
-
-			{/* Estilos para las animaciones */}
-			<style>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes shake {
-          0%,
-          100% {
-            transform: translateX(0);
-          }
-          25% {
-            transform: translateX(-4px);
-          }
-          50% {
-            transform: translateX(4px);
-          }
-          75% {
-            transform: translateX(-4px);
-          }
-        }
-
-        .animate-fade-in {
-          animation: fade-in 0.4s ease-in-out;
-        }
-
-        .animate-shake {
-          animation: shake 0.4s ease-in-out;
-        }
-
-        .shadow-card {
-          box-shadow:
-            0 10px 25px -5px rgba(0, 0, 0, 0.05),
-            0 8px 10px -6px rgba(0, 0, 0, 0.01);
-        }
-      `}</style>
 		</div>
 	);
 };
