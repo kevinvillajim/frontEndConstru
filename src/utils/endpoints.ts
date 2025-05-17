@@ -128,6 +128,7 @@ const notifications = {
 	registerDevice: getFullUrl("/notifications/devices"),
 	unregisterDevice: (token: string) =>
 		getFullUrl(`/notifications/devices/${token}`),
+	devices: getFullUrl("/notifications/devices"), // Add this line
 };
 
 // Exportar todos los endpoints agrupados

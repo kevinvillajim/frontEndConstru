@@ -1,10 +1,11 @@
 // src/ui/pages/profile/PersonalInfoPage.tsx
-import React, {useState, useEffect} from "react";
+import {useState, useEffect} from "react";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useUserProfile} from "../../context/UserProfileContext";
 import ToastService from "../../components/common/ToastService";
+import type { UserAddress } from "../../../core/domain/models/user/User";
 
 // Definir el esquema de validación con Zod
 const personalInfoSchema = z.object({
@@ -33,7 +34,7 @@ const PersonalInfoPage = () => {
 		profile?.addresses?.find((addr) => addr.isMain) || profile?.addresses?.[0];
 
 	// Direcciones adicionales
-	const [additionalAddresses, setAdditionalAddresses] = useState<Array<unknown>>(
+	const [additionalAddresses, setAdditionalAddresses] = useState<UserAddress[]>(
 		[]
 	);
 
@@ -81,7 +82,7 @@ const PersonalInfoPage = () => {
 				setAdditionalAddresses(otherAddresses);
 			}
 		}
-	}, [profile, mainAddress]);
+	}, [profile, mainAddress, reset]);
 
 	// Manejar el envío del formulario
 	const onSubmit = async (formData: PersonalInfoFormValues) => {
@@ -559,13 +560,15 @@ const PersonalInfoPage = () => {
 								{additionalAddresses.map((address, index) => (
 									<div
 										key={address.id || index}
-										className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg"
+										className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
 									>
 										<p className="text-gray-900 dark:text-white">
-											{address.street}
+											{(address as UserAddress).street}
 										</p>
 										<p className="text-gray-600 dark:text-gray-400">
-											{address.city}, {address.province}, {address.postalCode}
+											{(address as UserAddress).city},{" "}
+											{(address as UserAddress).province},{" "}
+											{(address as UserAddress).postalCode}
 										</p>
 									</div>
 								))}

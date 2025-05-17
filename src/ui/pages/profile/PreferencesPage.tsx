@@ -17,14 +17,13 @@ const PreferencesPage = () => {
 		currency: "USD",
 		dateFormat: "dd/MM/yyyy",
 		timeFormat: "24h",
-		distanceUnit: "metric",
+		distanceUnit: "metric" as "metric" | "imperial", // Type assertion
 		accessibility: {
 			reducedMotion: false,
 			highContrast: false,
 			largeText: false,
 		},
 	});
-
 	// Cargar preferencias del usuario cuando el perfil se carga
 	useEffect(() => {
 		if (profile && profile.preferences) {
@@ -88,7 +87,7 @@ const PreferencesPage = () => {
 			currency: "USD",
 			dateFormat: "dd/MM/yyyy",
 			timeFormat: "24h",
-			distanceUnit: "metric",
+			distanceUnit: "metric" as "metric" | "imperial",
 			accessibility: {
 				reducedMotion: false,
 				highContrast: false,

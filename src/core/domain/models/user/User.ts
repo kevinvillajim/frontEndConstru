@@ -4,40 +4,46 @@
  */
 
 // Tipos de género para usuarios
-export enum UserGender {
-	MALE = "male",
-	FEMALE = "female",
-	OTHER = "other",
-	PREFER_NOT_TO_SAY = "prefer_not_to_say",
-}
+export const UserGender = {
+	MALE: "male",
+	FEMALE: "female",
+	OTHER: "other",
+	PREFER_NOT_TO_SAY: "prefer_not_to_say",
+} as const
+export type UserGender = (typeof UserGender)[keyof typeof UserGender];
 
 // Tipos de profesionales
-export enum ProfessionalType {
-	ARCHITECT = "architect",
-	CIVIL_ENGINEER = "civil_engineer",
-	CONSTRUCTOR = "constructor",
-	CONTRACTOR = "contractor",
-	ELECTRICIAN = "electrician",
-	PLUMBER = "plumber",
-	DESIGNER = "designer",
-	OTHER = "other",
-}
+export const ProfessionalType = {
+	ARCHITECT: "architect",
+	CIVIL_ENGINEER: "civil_engineer",
+	CONSTRUCTOR: "constructor",
+	CONTRACTOR: "contractor",
+	ELECTRICIAN: "electrician",
+	PLUMBER: "plumber",
+	DESIGNER: "designer",
+	OTHER: "other",
+} as const;
+export type ProfessionalType =
+	(typeof ProfessionalType)[keyof typeof ProfessionalType];
 
 // Roles de usuario
-export enum UserRole {
-	ADMIN = "admin",
-	USER = "user",
-	SELLER = "seller",
-	WORKER = "worker",
-}
+export const UserRole = {
+	ADMIN: "admin",
+	USER: "user",
+	SELLER: "seller",
+	WORKER: "worker",
+} as const;
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 // Planes de suscripción
-export enum SubscriptionPlan {
-	FREE = "free",
-	PREMIUM = "premium",
-	ENTERPRISE = "enterprise",
-	CUSTOM = "custom",
-}
+export const SubscriptionPlan = {
+	FREE: "free",
+	PREMIUM: "premium",
+	ENTERPRISE: "enterprise",
+	CUSTOM: "custom",
+} as const;
+export type SubscriptionPlan =
+	(typeof SubscriptionPlan)[keyof typeof SubscriptionPlan];
 
 // Información de empresa del usuario
 export interface UserCompany {
@@ -118,7 +124,7 @@ export interface UserDevice {
 export interface ProfileUpdateResponse {
 	success: boolean;
 	message: string;
-	data?: any;
+	data?: Record<string, unknown>;
 }
 
 // Modelo de usuario ampliado con toda la información de perfil

@@ -19,6 +19,7 @@ export class ApiUserRepository implements UserRepository {
 	 * Obtiene el perfil completo del usuario
 	 * @param userId ID del usuario
 	 */
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	async getProfile(userId: string): Promise<UserProfile> {
 		try {
 			// En la mayoría de los casos, el userId no es necesario porque
@@ -262,7 +263,7 @@ export class ApiUserRepository implements UserRepository {
 	 */
 	async updateNotificationPreferences(
 		userId: string,
-		notificationPreferences: any
+		notificationPreferences: unknown
 	): Promise<ProfileUpdateResponse> {
 		try {
 			const response = await axios.patch<ProfileUpdateResponse>(

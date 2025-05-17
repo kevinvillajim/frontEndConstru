@@ -3,7 +3,7 @@ import {useState} from "react";
 import {useAuth} from "../context/AuthContext";
 import {userService} from "../../core/application/ServiceFactory";
 import type {
-	User,
+	UserProfile,
 	UserAddress,
 	UserPreferences,
 } from "../../core/domain/models/user/User";
@@ -13,7 +13,7 @@ export const useUserProfile = () => {
 	const {user, refreshAuthStatus} = useAuth();
 	const [isLoading, setIsLoading] = useState(false);
 
-	const updatePersonalInfo = async (personalInfo: Partial<User>) => {
+	const updatePersonalInfo = async (personalInfo: Partial<UserProfile>) => {
 		if (!user?.id) return {success: false, message: "Usuario no autenticado"};
 
 		setIsLoading(true);
@@ -42,7 +42,7 @@ export const useUserProfile = () => {
 		}
 	};
 
-	const updateProfessionalInfo = async (professionalInfo: Partial<User>) => {
+	const updateProfessionalInfo = async (professionalInfo: Partial<UserProfile>) => {
 		if (!user?.id) return {success: false, message: "Usuario no autenticado"};
 
 		setIsLoading(true);
@@ -75,7 +75,7 @@ export const useUserProfile = () => {
 
 		setIsLoading(true);
 		try {
-			const result = await userService.updateUserPreferences(
+			const result = await userService.updatePreferences(
 				user.id,
 				preferences
 			);
@@ -103,8 +103,15 @@ export const useUserProfile = () => {
 
 		setIsLoading(true);
 		try {
-			const result = await userService.updateUserAddresses(user.id, addresses);
-			if (result.success) {
+const results = [];
+for (const address of addresses) {
+	const result = await userService.updateAddress(user.id, address.id, address);
+	results.push(result);
+}
+const result =
+	results.length > 0
+		? results[results.length - 1]
+		: {success: false, message: "No addresses to update"};			if (result.success) {
 				ToastService.success(result.message);
 				await refreshAuthStatus();
 			} else {
