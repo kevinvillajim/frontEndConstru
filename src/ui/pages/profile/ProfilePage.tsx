@@ -1,5 +1,5 @@
 // src/ui/pages/profile/ProfilePage.tsx
-import React, {useState, useEffect} from "react";
+import {useState, useEffect} from "react";
 import {Outlet, useNavigate, useLocation} from "react-router-dom";
 import {
 	UserCircleIcon,
@@ -9,7 +9,8 @@ import {
 	BuildingOfficeIcon,
 	CreditCardIcon,
 } from "@heroicons/react/24/outline";
-import {useAuth} from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
+import {UserProfileProvider} from "../../context/UserProfileContext";
 
 const ProfilePage = () => {
 	const {user} = useAuth();
@@ -158,7 +159,9 @@ const ProfilePage = () => {
 				{/* Main Content Area */}
 				<div className="md:w-3/4">
 					<div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-						<Outlet />
+						<UserProfileProvider>
+							<Outlet />
+						</UserProfileProvider>
 					</div>
 				</div>
 			</div>

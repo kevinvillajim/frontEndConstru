@@ -32,7 +32,7 @@ const auth = {
 
 // Endpoints de perfil de usuario
 const user = {
-  profile: getFullUrl("/user/profile"),
+  profile: getFullUrl("/auth/profile"),
   personalInfo: getFullUrl("/user/personal-info"),
   professionalInfo: getFullUrl("/user/professional-info"),
   addresses: getFullUrl("/user/addresses"),
