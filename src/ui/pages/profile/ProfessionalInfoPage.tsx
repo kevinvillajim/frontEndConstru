@@ -599,17 +599,17 @@ const ProfessionalInfoPage = () => {
               </h3>
               <p className="mt-1 text-lg text-gray-900 dark:text-white">
                 {user?.socialLinks?.website ? (
-  
-    href={user.socialLinks.website}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="text-primary-600 dark:text-primary-400 hover:underline"
-  >
-    {user.socialLinks.website}
-  </a>
-) : (
-  "No especificado"
-)}
+                  <a
+                    href={user.socialLinks.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-600 dark:text-primary-400 hover:underline"
+                  >
+                    {user.socialLinks.website}
+                  </a>
+                ) : (
+                  "No especificado"
+                )}
               </p>
             </div>
           </div>

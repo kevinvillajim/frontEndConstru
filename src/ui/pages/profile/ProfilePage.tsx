@@ -1,4 +1,3 @@
-// src/ui/pages/profile/ProfilePage.tsx
 import {useState, useEffect} from "react";
 import {Outlet, useNavigate, useLocation} from "react-router-dom";
 import {
@@ -8,8 +7,9 @@ import {
 	BellIcon,
 	BuildingOfficeIcon,
 	CreditCardIcon,
+	LightBulbIcon, // Added for recommendations
 } from "@heroicons/react/24/outline";
-import { useAuth } from "../../context/AuthContext";
+import {useAuth} from "../../context/AuthContext";
 import {UserProfileProvider} from "../../context/UserProfileContext";
 
 const ProfilePage = () => {
@@ -59,6 +59,11 @@ const ProfilePage = () => {
 			id: "professional",
 			name: "Información Profesional",
 			icon: BuildingOfficeIcon,
+		},
+		{
+			id: "recommendations", // Added new tab
+			name: "Recomendaciones",
+			icon: LightBulbIcon,
 		},
 	];
 

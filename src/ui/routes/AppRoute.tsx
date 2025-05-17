@@ -17,6 +17,9 @@ const SubscriptionPage = lazy(() => import("../pages/profile/SubscriptionPage"))
 const PreferencesPage = lazy(() => import("../pages/profile/PreferencesPage"));
 const NotificationsPage = lazy(() => import("../pages/profile/NotificationsPage"));
 const ProfessionalInfoPage = lazy(() => import("../pages/profile/ProfessionalInfoPage"));
+const RecommendationsPage = lazy(
+	() => import("../pages/profile/RecommendationsPage")
+);
 const TwoFactorAuthPage = lazy(() => import("../pages/auth/TwoFactorAuthPage"));
 
 const appRoutes: RouteObject[] = [
@@ -102,6 +105,10 @@ const appRoutes: RouteObject[] = [
 					{
 						path: "professional",
 						element: <ProfessionalInfoPage />,
+					},
+					{
+						path: "recommendations", // Added new route
+						element: <RecommendationsPage />,
 					},
 				],
 			},
