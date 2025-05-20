@@ -20,6 +20,10 @@ const ProfessionalInfoPage = lazy(() => import("../pages/profile/ProfessionalInf
 const RecommendationsPage = lazy(
 	() => import("../pages/profile/RecommendationsPage")
 );
+const MainNotificationsPage = lazy(
+	() => import("../pages/NotificationsPage")
+);
+const ProjectsPage = lazy(() => import("../pages/projects/ProjectsPage"));
 const TwoFactorAuthPage = lazy(() => import("../pages/auth/TwoFactorAuthPage"));
 
 const appRoutes: RouteObject[] = [
@@ -111,6 +115,22 @@ const appRoutes: RouteObject[] = [
 						element: <RecommendationsPage />,
 					},
 				],
+			},
+			{
+				path: "notifications",
+				element: (
+					// <ProtectedRoute>
+					<MainNotificationsPage />
+					//</ProtectedRoute>
+				),
+			},
+			{
+				path: "projects/my-projects",
+				element: (
+					// <ProtectedRoute>
+					<ProjectsPage />
+					//</ProtectedRoute>
+				),
 			},
 			{
 				path: "/profile/2fa-setup",

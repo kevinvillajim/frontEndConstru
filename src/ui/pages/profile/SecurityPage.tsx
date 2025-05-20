@@ -115,22 +115,22 @@ const SecurityPage = () => {
 
 	return (
 		<div>
-			<h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+			<h2 className="text-2xl font-bold text-gray-900 mb-6">
 				Seguridad
 			</h2>
 
 			<div className="space-y-8">
 				{/* Two-Factor Authentication Section */}
-				<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+				<div className="p-6 border border-gray-200 rounded-lg">
 					<div className="flex items-start">
 						<div className="flex-shrink-0">
-							<ShieldCheckIcon className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+							<ShieldCheckIcon className="h-8 w-8 text-gray-500" />
 						</div>
 						<div className="ml-4 flex-1">
-							<h3 className="text-lg font-medium text-gray-900 dark:text-white">
+							<h3 className="text-lg font-medium text-gray-900">
 								Autenticación de Dos Factores (2FA)
 							</h3>
-							<p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+							<p className="mt-1 text-sm text-gray-500">
 								Añade una capa extra de seguridad a tu cuenta. Cuando 2FA está
 								habilitado, necesitarás tanto tu contraseña como un código
 								temporal para iniciar sesión.
@@ -138,12 +138,12 @@ const SecurityPage = () => {
 							<div className="mt-4">
 								{has2FAEnabled ? (
 									<div className="flex items-center">
-										<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 mr-3">
+										<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-3">
 											Habilitado
 										</span>
 										<Link
 											to="/profile/2fa-setup"
-											className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+											className="text-sm font-medium text-primary-600 hover:text-primary-700"
 										>
 											Configurar dispositivos
 										</Link>
@@ -162,16 +162,16 @@ const SecurityPage = () => {
 				</div>
 
 				{/* Change Password Section */}
-				<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
+				<div className="p-6 border border-gray-200 rounded-lg">
 					<div className="flex items-start">
 						<div className="flex-shrink-0">
-							<KeyIcon className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+							<KeyIcon className="h-8 w-8 text-gray-500" />
 						</div>
 						<div className="ml-4 flex-1">
-							<h3 className="text-lg font-medium text-gray-900 dark:text-white">
+							<h3 className="text-lg font-medium text-gray-900">
 								Cambiar Contraseña
 							</h3>
-							<p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+							<p className="mt-1 text-sm text-gray-500">
 								Actualiza tu contraseña regularmente para mantener tu cuenta
 								segura.
 							</p>
@@ -183,7 +183,7 @@ const SecurityPage = () => {
 								<div>
 									<label
 										htmlFor="currentPassword"
-										className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+										className="block text-sm font-medium text-gray-700"
 									>
 										Contraseña Actual
 									</label>
@@ -195,8 +195,8 @@ const SecurityPage = () => {
 											className={`w-full px-4 py-2 rounded-lg border ${
 												errors.currentPassword
 													? "border-red-500 focus:ring-red-500 focus:border-red-500"
-													: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-											} bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-10`}
+													: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+											} bg-white text-gray-900 pr-10`}
 										/>
 										<button
 											type="button"
@@ -213,7 +213,7 @@ const SecurityPage = () => {
 										</button>
 									</div>
 									{errors.currentPassword && (
-										<p className="mt-1 text-sm text-red-600 dark:text-red-400">
+										<p className="mt-1 text-sm text-red-600">
 											{errors.currentPassword.message}
 										</p>
 									)}
@@ -223,7 +223,7 @@ const SecurityPage = () => {
 								<div>
 									<label
 										htmlFor="newPassword"
-										className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+										className="block text-sm font-medium text-gray-700"
 									>
 										Nueva Contraseña
 									</label>
@@ -235,8 +235,8 @@ const SecurityPage = () => {
 											className={`w-full px-4 py-2 rounded-lg border ${
 												errors.newPassword
 													? "border-red-500 focus:ring-red-500 focus:border-red-500"
-													: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-											} bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-10`}
+													: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+											} bg-white text-gray-900 pr-10`}
 										/>
 										<button
 											type="button"
@@ -251,7 +251,7 @@ const SecurityPage = () => {
 										</button>
 									</div>
 									{errors.newPassword && (
-										<p className="mt-1 text-sm text-red-600 dark:text-red-400">
+										<p className="mt-1 text-sm text-red-600">
 											{errors.newPassword.message}
 										</p>
 									)}
@@ -260,7 +260,7 @@ const SecurityPage = () => {
 									{newPassword && (
 										<div className="mt-2">
 											<div className="flex justify-between items-center mb-1">
-												<span className="text-xs text-gray-500 dark:text-gray-400">
+												<span className="text-xs text-gray-500">
 													Fortaleza de la contraseña
 												</span>
 												<span className="text-xs font-medium">
@@ -272,7 +272,7 @@ const SecurityPage = () => {
 													{passwordStrength === 5 && "Muy fuerte"}
 												</span>
 											</div>
-											<div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+											<div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
 												<div
 													className={`h-full transition-all duration-300 ${
 														passwordStrength <= 1
@@ -294,7 +294,7 @@ const SecurityPage = () => {
 								<div>
 									<label
 										htmlFor="confirmPassword"
-										className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+										className="block text-sm font-medium text-gray-700"
 									>
 										Confirmar Nueva Contraseña
 									</label>
@@ -306,8 +306,8 @@ const SecurityPage = () => {
 											className={`w-full px-4 py-2 rounded-lg border ${
 												errors.confirmPassword
 													? "border-red-500 focus:ring-red-500 focus:border-red-500"
-													: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-											} bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-10`}
+													: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+											} bg-white text-gray-900 pr-10`}
 										/>
 										<button
 											type="button"
@@ -324,7 +324,7 @@ const SecurityPage = () => {
 										</button>
 									</div>
 									{errors.confirmPassword && (
-										<p className="mt-1 text-sm text-red-600 dark:text-red-400">
+										<p className="mt-1 text-sm text-red-600">
 											{errors.confirmPassword.message}
 										</p>
 									)}
@@ -371,16 +371,16 @@ const SecurityPage = () => {
 				</div>
 
 				{/* Login Activity and Session Management */}
-				<div className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-					<h3 className="text-lg font-medium text-gray-900 dark:text-white">
+				<div className="p-6 border border-gray-200 rounded-lg">
+					<h3 className="text-lg font-medium text-gray-900">
 						Actividad de Inicio de Sesión
 					</h3>
-					<p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+					<p className="mt-1 text-sm text-gray-500">
 						Aquí puedes ver tu actividad reciente y gestionar tus sesiones
 						activas.
 					</p>
 					<div className="mt-4">
-						<h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+						<h4 className="text-sm font-medium text-gray-700">
 							Sesiones Activas
 						</h4>
 						<div className="mt-2 space-y-3">
@@ -388,12 +388,12 @@ const SecurityPage = () => {
 								profile.devices.map((device, index) => (
 									<div
 										key={device.id || index}
-										className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+										className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
 									>
 										<div className="flex items-center">
 											<svg
 												xmlns="http://www.w3.org/2000/svg"
-												className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3"
+												className="h-5 w-5 text-gray-500 mr-3"
 												fill="none"
 												viewBox="0 0 24 24"
 												stroke="currentColor"
@@ -406,27 +406,27 @@ const SecurityPage = () => {
 												/>
 											</svg>
 											<div>
-												<div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+												<div className="text-sm font-medium text-gray-700">
 													{device.deviceType || "Navegador"}
 												</div>
-												<div className="text-xs text-gray-500 dark:text-gray-400">
+												<div className="text-xs text-gray-500">
 													{device.lastUsed
 														? new Date(device.lastUsed).toLocaleString()
 														: "Fecha desconocida"}
 												</div>
 											</div>
 										</div>
-										<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
+										<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
 											Activa
 										</span>
 									</div>
 								))
 							) : (
-								<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+								<div className="flex items-center justify-between p-3 bg-gray-100 rounded-lg">
 									<div className="flex items-center">
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
-											className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3"
+											className="h-5 w-5 text-gray-500 mr-3"
 											fill="none"
 											viewBox="0 0 24 24"
 											stroke="currentColor"
@@ -439,15 +439,15 @@ const SecurityPage = () => {
 											/>
 										</svg>
 										<div>
-											<div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+											<div className="text-sm font-medium text-gray-700">
 												Navegador en este dispositivo
 											</div>
-											<div className="text-xs text-gray-500 dark:text-gray-400">
+											<div className="text-xs text-gray-500">
 												Quito, Ecuador • {new Date().toLocaleDateString()}
 											</div>
 										</div>
 									</div>
-									<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300">
+									<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
 										Activa
 									</span>
 								</div>

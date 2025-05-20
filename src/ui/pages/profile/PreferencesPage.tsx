@@ -109,19 +109,19 @@ const PreferencesPage = () => {
 
 	return (
 		<div>
-			<h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+			<h2 className="text-2xl font-bold text-gray-900 mb-6">
 				Preferencias
 			</h2>
 
 			<form onSubmit={handleSubmit} className="space-y-8">
 				{/* Interfaz y Apariencia */}
 				<div>
-					<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+					<h3 className="text-lg font-medium text-gray-900 mb-4">
 						Interfaz y Apariencia
 					</h3>
 					<div className="space-y-4">
 						<div>
-							<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+							<label className="block text-sm font-medium text-gray-700 mb-2">
 								Tema
 							</label>
 							<div className="flex space-x-4">
@@ -130,8 +130,8 @@ const PreferencesPage = () => {
 									onClick={() => setTheme("light")}
 									className={`px-4 py-2 rounded-lg border ${
 										theme === "light"
-											? "bg-primary-50 dark:bg-primary-900/30 border-primary-500 dark:border-primary-500 text-primary-700 dark:text-primary-300"
-											: "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
+											? "bg-primary-50 border-primary-500 text-primary-700"
+											: "border-gray-300 text-gray-700"
 									}`}
 								>
 									Claro
@@ -141,8 +141,8 @@ const PreferencesPage = () => {
 									onClick={() => setTheme("dark")}
 									className={`px-4 py-2 rounded-lg border ${
 										theme === "dark"
-											? "bg-primary-50 dark:bg-primary-900/30 border-primary-500 dark:border-primary-500 text-primary-700 dark:text-primary-300"
-											: "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
+											? "bg-primary-50 border-primary-500 text-primary-100"
+											: "border-gray-300 text-white-700"
 									}`}
 								>
 									Oscuro
@@ -156,7 +156,7 @@ const PreferencesPage = () => {
 												: "light"
 										)
 									}
-									className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
+									className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700"
 								>
 									Sistema
 								</button>
@@ -166,7 +166,7 @@ const PreferencesPage = () => {
 						<div>
 							<label
 								htmlFor="language"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+								className="block text-sm font-medium text-gray-700 mb-2"
 							>
 								Idioma
 							</label>
@@ -174,7 +174,7 @@ const PreferencesPage = () => {
 								id="language"
 								value={preferences.language}
 								onChange={(e) => handleChange("language", e.target.value)}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							>
 								<option value="es">Español</option>
 								<option value="en">English</option>
@@ -186,14 +186,14 @@ const PreferencesPage = () => {
 
 				{/* Formato y Unidades */}
 				<div>
-					<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+					<h3 className="text-lg font-medium text-gray-900 mb-4">
 						Formato y Unidades
 					</h3>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div>
 							<label
 								htmlFor="currency"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+								className="block text-sm font-medium text-gray-700 mb-2"
 							>
 								Moneda
 							</label>
@@ -201,7 +201,7 @@ const PreferencesPage = () => {
 								id="currency"
 								value={preferences.currency}
 								onChange={(e) => handleChange("currency", e.target.value)}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							>
 								<option value="USD">Dólar estadounidense (USD)</option>
 								<option value="EUR">Euro (EUR)</option>
@@ -212,7 +212,7 @@ const PreferencesPage = () => {
 						<div>
 							<label
 								htmlFor="dateFormat"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+								className="block text-sm font-medium text-gray-700 mb-2"
 							>
 								Formato de Fecha
 							</label>
@@ -220,7 +220,7 @@ const PreferencesPage = () => {
 								id="dateFormat"
 								value={preferences.dateFormat}
 								onChange={(e) => handleChange("dateFormat", e.target.value)}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							>
 								<option value="dd/MM/yyyy">DD/MM/AAAA</option>
 								<option value="MM/dd/yyyy">MM/DD/AAAA</option>
@@ -231,7 +231,7 @@ const PreferencesPage = () => {
 						<div>
 							<label
 								htmlFor="timeFormat"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+								className="block text-sm font-medium text-gray-700 mb-2"
 							>
 								Formato de Hora
 							</label>
@@ -239,7 +239,7 @@ const PreferencesPage = () => {
 								id="timeFormat"
 								value={preferences.timeFormat}
 								onChange={(e) => handleChange("timeFormat", e.target.value)}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							>
 								<option value="12h">12 horas (AM/PM)</option>
 								<option value="24h">24 horas</option>
@@ -249,7 +249,7 @@ const PreferencesPage = () => {
 						<div>
 							<label
 								htmlFor="distanceUnit"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+								className="block text-sm font-medium text-gray-700 mb-2"
 							>
 								Sistema de Medidas
 							</label>
@@ -257,7 +257,7 @@ const PreferencesPage = () => {
 								id="distanceUnit"
 								value={preferences.distanceUnit}
 								onChange={(e) => handleChange("distanceUnit", e.target.value)}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							>
 								<option value="metric">Métrico (m, kg, etc.)</option>
 								<option value="imperial">Imperial (pies, libras, etc.)</option>
@@ -268,7 +268,7 @@ const PreferencesPage = () => {
 
 				{/* Accesibilidad */}
 				<div>
-					<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+					<h3 className="text-lg font-medium text-gray-900 mb-4">
 						Accesibilidad
 					</h3>
 					<div className="space-y-4">
@@ -280,11 +280,11 @@ const PreferencesPage = () => {
 								onChange={(e) =>
 									handleAccessibilityChange("reducedMotion", e.target.checked)
 								}
-								className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+								className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 accent-secondary-500"
 							/>
 							<label
 								htmlFor="reducedMotion"
-								className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+								className="ml-2 block text-sm text-gray-700"
 							>
 								Reducir movimiento (evitar animaciones)
 							</label>
@@ -297,11 +297,11 @@ const PreferencesPage = () => {
 								onChange={(e) =>
 									handleAccessibilityChange("highContrast", e.target.checked)
 								}
-								className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+								className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500  accent-secondary-500"
 							/>
 							<label
 								htmlFor="highContrast"
-								className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+								className="ml-2 block text-sm text-gray-700"
 							>
 								Alto contraste
 							</label>
@@ -314,11 +314,11 @@ const PreferencesPage = () => {
 								onChange={(e) =>
 									handleAccessibilityChange("largeText", e.target.checked)
 								}
-								className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+								className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500  accent-secondary-500"
 							/>
 							<label
 								htmlFor="largeText"
-								className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+								className="ml-2 block text-sm text-gray-700"
 							>
 								Texto grande
 							</label>
@@ -331,7 +331,7 @@ const PreferencesPage = () => {
 					<button
 						type="button"
 						onClick={handleResetDefaults}
-						className="mr-3 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50"
+						className="mr-3 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50"
 					>
 						Restablecer Valores Predeterminados
 					</button>

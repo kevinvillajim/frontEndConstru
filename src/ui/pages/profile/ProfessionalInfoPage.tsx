@@ -54,7 +54,7 @@ const ProfessionalInfoPage = () => {
   } = useForm<ProfessionalInfoFormValues>({
     resolver: zodResolver(professionalInfoSchema),
     defaultValues: {
-      professionalType: user?.professionalType as any || "architect",
+      professionalType: (user?.professionalType as ProfessionalInfoFormValues["professionalType"]) || "architect",
       companyName: user?.company?.name || "",
       position: user?.company?.position || "",
       licenseNumber: user?.nationalId || "", // Usando nationalId como licenseNumber
@@ -175,7 +175,7 @@ const ProfessionalInfoPage = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h2 className="text-2xl font-bold text-gray-900">
           Información Profesional
         </h2>
         {!isEditing ? (
@@ -191,7 +191,7 @@ const ProfessionalInfoPage = () => {
             <button
               type="button"
               onClick={handleCancel}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50"
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50"
             >
               Cancelar
             </button>
@@ -239,14 +239,14 @@ const ProfessionalInfoPage = () => {
             <div>
               <label
                 htmlFor="professionalType"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Tipo de Profesional
               </label>
               <select
                 id="professionalType"
                 {...register("professionalType")}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
               >
                 <option value="architect">Arquitecto</option>
                 <option value="civil_engineer">Ingeniero Civil</option>
@@ -262,7 +262,7 @@ const ProfessionalInfoPage = () => {
             <div>
               <label
                 htmlFor="licenseNumber"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Número de Licencia Profesional
               </label>
@@ -270,14 +270,14 @@ const ProfessionalInfoPage = () => {
                 type="text"
                 id="licenseNumber"
                 {...register("licenseNumber")}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
               />
             </div>
 
             <div>
               <label
                 htmlFor="companyName"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Empresa / Estudio
               </label>
@@ -285,14 +285,14 @@ const ProfessionalInfoPage = () => {
                 type="text"
                 id="companyName"
                 {...register("companyName")}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
               />
             </div>
 
             <div>
               <label
                 htmlFor="position"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Cargo / Posición
               </label>
@@ -300,14 +300,14 @@ const ProfessionalInfoPage = () => {
                 type="text"
                 id="position"
                 {...register("position")}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
               />
             </div>
 
             <div>
               <label
                 htmlFor="yearsOfExperience"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Años de Experiencia
               </label>
@@ -315,14 +315,14 @@ const ProfessionalInfoPage = () => {
                 type="number"
                 id="yearsOfExperience"
                 {...register("yearsOfExperience")}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
               />
             </div>
 
             <div>
               <label
                 htmlFor="website"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Sitio Web
               </label>
@@ -333,12 +333,12 @@ const ProfessionalInfoPage = () => {
                 className={`w-full px-4 py-2 rounded-lg border ${
                   errors.website
                     ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                    : "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-                } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                    : "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+                } bg-white text-gray-900`}
                 placeholder="https://tuwebsite.com"
               />
               {errors.website && (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                <p className="mt-1 text-sm text-red-600">
                   {errors.website.message}
                 </p>
               )}
@@ -348,7 +348,7 @@ const ProfessionalInfoPage = () => {
           <div>
             <label
               htmlFor="professionalBio"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-gray-700 mb-1"
             >
               Biografía Profesional
             </label>
@@ -359,36 +359,36 @@ const ProfessionalInfoPage = () => {
               className={`w-full px-4 py-2 rounded-lg border ${
                 errors.professionalBio
                   ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                  : "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-              } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+                  : "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+              } bg-white text-gray-900`}
               placeholder="Describe tu experiencia profesional, especialidades y enfoque..."
             ></textarea>
             {errors.professionalBio && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              <p className="mt-1 text-sm text-red-600">
                 {errors.professionalBio.message}
               </p>
             )}
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-xs text-gray-500">
               Máximo 500 caracteres
             </p>
           </div>
 
           {/* Especialidades */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Especialidades
             </label>
             <div className="flex flex-wrap gap-2 mb-2">
               {specialties.map((specialty, index) => (
                 <div
                   key={index}
-                  className="inline-flex items-center bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full text-sm"
+                  className="inline-flex items-center bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm"
                 >
                   {specialty}
                   <button
                     type="button"
                     onClick={() => handleRemoveSpecialty(specialty)}
-                    className="ml-1.5 text-primary-500 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                    className="ml-1.5 text-primary-500 hover:text-primary-700"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -411,7 +411,7 @@ const ProfessionalInfoPage = () => {
                 type="text"
                 value={newSpecialty}
                 onChange={(e) => setNewSpecialty(e.target.value)}
-                className="flex-1 px-4 py-2 rounded-l-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="flex-1 px-4 py-2 rounded-l-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
                 placeholder="Añadir nueva especialidad"
               />
               <button
@@ -427,13 +427,13 @@ const ProfessionalInfoPage = () => {
           {/* Educación */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block text-sm font-medium text-gray-700">
                 Educación
               </label>
               <button
                 type="button"
                 onClick={handleAddEducation}
-                className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center"
+                className="text-sm text-primary-600 hover:text-primary-700 flex items-center"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -454,10 +454,10 @@ const ProfessionalInfoPage = () => {
               {education.map((edu, index) => (
                 <div
                   key={index}
-                  className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
+                  className="p-3 border border-gray-200 rounded-lg"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <h4 className="text-sm font-medium text-gray-700">
                       Registro {index + 1}
                     </h4>
                     <button
@@ -481,7 +481,7 @@ const ProfessionalInfoPage = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      <label className="block text-xs text-gray-500 mb-1">
                         Institución
                       </label>
                       <input
@@ -490,11 +490,11 @@ const ProfessionalInfoPage = () => {
                         onChange={(e) =>
                           handleUpdateEducation(index, "institution", e.target.value)
                         }
-                        className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                        className="w-full px-3 py-1.5 rounded border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900 text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      <label className="block text-xs text-gray-500 mb-1">
                         Título/Grado
                       </label>
                       <input
@@ -503,11 +503,11 @@ const ProfessionalInfoPage = () => {
                         onChange={(e) =>
                           handleUpdateEducation(index, "degree", e.target.value)
                         }
-                        className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                        className="w-full px-3 py-1.5 rounded border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900 text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      <label className="block text-xs text-gray-500 mb-1">
                         Año de Graduación
                       </label>
                       <input
@@ -516,14 +516,14 @@ const ProfessionalInfoPage = () => {
                         onChange={(e) =>
                           handleUpdateEducation(index, "graduationYear", e.target.value)
                         }
-                        className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                        className="w-full px-3 py-1.5 rounded border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900 text-sm"
                       />
                     </div>
                   </div>
                 </div>
               ))}
               {education.length === 0 && (
-                <div className="text-center py-3 text-gray-500 dark:text-gray-400 text-sm">
+                <div className="text-center py-3 text-gray-500 text-sm">
                   No hay información de educación agregada.
                 </div>
               )}
@@ -535,10 +535,10 @@ const ProfessionalInfoPage = () => {
           {/* Información básica profesional */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              <h3 className="text-sm font-medium text-gray-500">
                 Tipo de Profesional
               </h3>
-              <p className="mt-1 text-lg text-gray-900 dark:text-white">
+              <p className="mt-1 text-lg text-gray-900">
                 {user?.professionalType === "architect"
                   ? "Arquitecto"
                   : user?.professionalType === "civil_engineer"
@@ -558,52 +558,52 @@ const ProfessionalInfoPage = () => {
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              <h3 className="text-sm font-medium text-gray-500">
                 Número de Licencia
               </h3>
-              <p className="mt-1 text-lg text-gray-900 dark:text-white">
+              <p className="mt-1 text-lg text-gray-900">
                 {user?.nationalId || "No especificado"}
               </p>
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              <h3 className="text-sm font-medium text-gray-500">
                 Empresa / Estudio
               </h3>
-              <p className="mt-1 text-lg text-gray-900 dark:text-white">
+              <p className="mt-1 text-lg text-gray-900">
                 {user?.company?.name || "No especificado"}
               </p>
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              <h3 className="text-sm font-medium text-gray-500">
                 Cargo / Posición
               </h3>
-              <p className="mt-1 text-lg text-gray-900 dark:text-white">
+              <p className="mt-1 text-lg text-gray-900">
                 {user?.company?.position || "No especificado"}
               </p>
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              <h3 className="text-sm font-medium text-gray-500">
                 Años de Experiencia
               </h3>
-              <p className="mt-1 text-lg text-gray-900 dark:text-white">
+              <p className="mt-1 text-lg text-gray-900">
                 {user?.yearsOfExperience || "No especificado"}
               </p>
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              <h3 className="text-sm font-medium text-gray-500">
                 Sitio Web
               </h3>
-              <p className="mt-1 text-lg text-gray-900 dark:text-white">
+              <p className="mt-1 text-lg text-gray-900">
                 {user?.socialLinks?.website ? (
                   <a
                     href={user.socialLinks.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary-600 dark:text-primary-400 hover:underline"
+                    className="text-primary-600 hover:underline"
                   >
                     {user.socialLinks.website}
                   </a>
@@ -616,11 +616,11 @@ const ProfessionalInfoPage = () => {
 
           {/* Biografía profesional */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">
               Biografía Profesional
             </h3>
-            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <p className="text-gray-900 dark:text-white">
+            <div className="p-4 bg-gray-100 rounded-lg">
+              <p className="text-gray-900">
                 {user?.bio || "No hay biografía profesional."}
               </p>
             </div>
@@ -628,7 +628,7 @@ const ProfessionalInfoPage = () => {
 
           {/* Especialidades */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">
               Especialidades
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -636,13 +636,13 @@ const ProfessionalInfoPage = () => {
                 specialties.map((specialty, index) => (
                   <span
                     key={index}
-                    className="inline-block bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full text-sm"
+                    className="inline-block bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm"
                   >
                     {specialty}
                   </span>
                 ))
               ) : (
-                <p className="text-gray-500 dark:text-gray-400">
+                <p className="text-gray-500">
                   No hay especialidades registradas.
                 </p>
               )}
@@ -651,7 +651,7 @@ const ProfessionalInfoPage = () => {
 
           {/* Educación */}
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">
               Educación
             </h3>
             {education && education.length > 0 ? (
@@ -659,22 +659,22 @@ const ProfessionalInfoPage = () => {
                 {education.map((edu, index) => (
                   <div
                     key={index}
-                    className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                    className="p-4 bg-gray-50 rounded-lg"
                   >
-                    <h4 className="font-medium text-lg text-gray-900 dark:text-white">
+                    <h4 className="font-medium text-lg text-gray-900">
                       {edu.degree}
                     </h4>
-                    <p className="text-gray-700 dark:text-gray-300">
+                    <p className="text-gray-700">
                       {edu.institution}
                     </p>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    <p className="text-gray-500 text-sm">
                       {edu.graduationYear}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="text-gray-500">
                 No hay información de educación registrada.
               </p>
             )}

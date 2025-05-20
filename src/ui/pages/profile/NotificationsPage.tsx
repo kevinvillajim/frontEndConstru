@@ -80,26 +80,26 @@ const NotificationsPage = () => {
 
 	return (
 		<div>
-			<h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+			<h2 className="text-2xl font-bold text-gray-900 mb-6">
 				Preferencias de Notificaciones
 			</h2>
 
 			<form onSubmit={handleSubmit} className="space-y-8">
 				{/* Canales de Notificación */}
 				<div>
-					<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+					<h3 className="text-lg font-medium text-gray-900 mb-4">
 						Canales de Notificación
 					</h3>
-					<p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+					<p className="text-sm text-gray-500 mb-4">
 						Selecciona cómo quieres recibir las notificaciones
 					</p>
 					<div className="space-y-3">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center">
-								<BellIcon className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+								<BellIcon className="h-5 w-5 text-gray-500 mr-3" />
 								<label
 									htmlFor="email"
-									className="text-sm text-gray-700 dark:text-gray-300"
+									className="text-sm text-gray-700"
 								>
 									Correo electrónico
 								</label>
@@ -116,7 +116,7 @@ const NotificationsPage = () => {
 									className={`block w-12 h-6 rounded-full ${
 										settings.email
 											? "bg-primary-600"
-											: "bg-gray-300 dark:bg-gray-600"
+											: "bg-gray-300"
 									}`}
 								></span>
 								<span
@@ -129,10 +129,10 @@ const NotificationsPage = () => {
 
 						<div className="flex items-center justify-between">
 							<div className="flex items-center">
-								<BellIcon className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+								<BellIcon className="h-5 w-5 text-gray-500" />
 								<label
 									htmlFor="push"
-									className="text-sm text-gray-700 dark:text-gray-300"
+									className="text-sm text-gray-700"
 								>
 									Notificaciones push (navegador)
 								</label>
@@ -149,7 +149,7 @@ const NotificationsPage = () => {
 									className={`block w-12 h-6 rounded-full ${
 										settings.push
 											? "bg-primary-600"
-											: "bg-gray-300 dark:bg-gray-600"
+											: "bg-gray-300"
 									}`}
 								></span>
 								<span
@@ -162,10 +162,10 @@ const NotificationsPage = () => {
 
 						<div className="flex items-center justify-between">
 							<div className="flex items-center">
-								<BellIcon className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+								<BellIcon className="h-5 w-5 text-gray-500 mr-3" />
 								<label
 									htmlFor="sms"
-									className="text-sm text-gray-700 dark:text-gray-300"
+									className="text-sm text-gray-700"
 								>
 									SMS
 								</label>
@@ -182,7 +182,7 @@ const NotificationsPage = () => {
 									className={`block w-12 h-6 rounded-full ${
 										settings.sms
 											? "bg-primary-600"
-											: "bg-gray-300 dark:bg-gray-600"
+											: "bg-gray-300"
 									}`}
 								></span>
 								<span
@@ -197,12 +197,12 @@ const NotificationsPage = () => {
 
 				{/* Tipos de Notificaciones */}
 				<div>
-					<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+					<h3 className="text-lg font-medium text-gray-900 mb-4">
 						Tipos de Notificaciones
 					</h3>
-					<div className="bg-primary-50 dark:bg-primary-900/20 p-4 rounded-lg flex items-start mb-4">
-						<InformationCircleIcon className="h-5 w-5 text-primary-600 dark:text-primary-400 mt-0.5 mr-2 flex-shrink-0" />
-						<p className="text-sm text-primary-700 dark:text-primary-300">
+					<div className="bg-primary-50 p-4 rounded-lg flex items-start mb-4">
+						<InformationCircleIcon className="h-5 w-5 text-primary-600 mt-0.5 mr-2 flex-shrink-0" />
+						<p className="text-sm">
 							Las notificaciones críticas relacionadas con tu cuenta, seguridad
 							y transacciones siempre serán enviadas independientemente de esta
 							configuración.
@@ -211,10 +211,10 @@ const NotificationsPage = () => {
 					<div className="space-y-4">
 						<div className="flex items-center justify-between">
 							<div>
-								<h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								<h4 className="text-sm font-medium text-gray-700">
 									Actualizaciones de Proyectos
 								</h4>
-								<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+								<p className="text-xs text-gray-500 mt-1">
 									Notificaciones sobre cambios, asignaciones y fechas límite en
 									tus proyectos
 								</p>
@@ -233,7 +233,7 @@ const NotificationsPage = () => {
 									className={`block w-12 h-6 rounded-full ${
 										settings.projectUpdates
 											? "bg-primary-600"
-											: "bg-gray-300 dark:bg-gray-600"
+											: "bg-gray-300"
 									}`}
 								></span>
 								<span
@@ -246,10 +246,10 @@ const NotificationsPage = () => {
 
 						<div className="flex items-center justify-between">
 							<div>
-								<h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								<h4 className="text-sm font-medium text-gray-700">
 									Recomendaciones de Materiales
 								</h4>
-								<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+								<p className="text-xs text-gray-500 mt-1">
 									Recibe recomendaciones personalizadas de materiales basadas en
 									tus proyectos
 								</p>
@@ -268,7 +268,7 @@ const NotificationsPage = () => {
 									className={`block w-12 h-6 rounded-full ${
 										settings.materialRecommendations
 											? "bg-primary-600"
-											: "bg-gray-300 dark:bg-gray-600"
+											: "bg-gray-300"
 									}`}
 								></span>
 								<span
@@ -283,10 +283,10 @@ const NotificationsPage = () => {
 
 						<div className="flex items-center justify-between">
 							<div>
-								<h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								<h4 className="text-sm font-medium text-gray-700">
 									Alertas de Precios
 								</h4>
-								<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+								<p className="text-xs text-gray-500 mt-1">
 									Notificaciones sobre cambios significativos en precios de
 									materiales
 								</p>
@@ -305,7 +305,7 @@ const NotificationsPage = () => {
 									className={`block w-12 h-6 rounded-full ${
 										settings.pricingAlerts
 											? "bg-primary-600"
-											: "bg-gray-300 dark:bg-gray-600"
+											: "bg-gray-300"
 									}`}
 								></span>
 								<span
@@ -318,10 +318,10 @@ const NotificationsPage = () => {
 
 						<div className="flex items-center justify-between">
 							<div>
-								<h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								<h4 className="text-sm font-medium text-gray-700">
 									Informes Semanales
 								</h4>
-								<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+								<p className="text-xs text-gray-500 mt-1">
 									Recibe un resumen semanal del progreso de tus proyectos
 								</p>
 							</div>
@@ -339,7 +339,7 @@ const NotificationsPage = () => {
 									className={`block w-12 h-6 rounded-full ${
 										settings.weeklyReports
 											? "bg-primary-600"
-											: "bg-gray-300 dark:bg-gray-600"
+											: "bg-gray-300"
 									}`}
 								></span>
 								<span
@@ -352,10 +352,10 @@ const NotificationsPage = () => {
 
 						<div className="flex items-center justify-between">
 							<div>
-								<h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								<h4 className="text-sm font-medium text-gray-700">
 									Anuncios del Sistema
 								</h4>
-								<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+								<p className="text-xs text-gray-500 mt-1">
 									Actualizaciones importantes sobre CONSTRU, nuevas
 									funcionalidades y mantenimiento
 								</p>
@@ -374,7 +374,7 @@ const NotificationsPage = () => {
 									className={`block w-12 h-6 rounded-full ${
 										settings.systemAnnouncements
 											? "bg-primary-600"
-											: "bg-gray-300 dark:bg-gray-600"
+											: "bg-gray-300"
 									}`}
 								></span>
 								<span
@@ -389,10 +389,10 @@ const NotificationsPage = () => {
 
 						<div className="flex items-center justify-between">
 							<div>
-								<h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								<h4 className="text-sm font-medium text-gray-700">
 									Correos de Marketing
 								</h4>
-								<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+								<p className="text-xs text-gray-500 mt-1">
 									Promociones, ofertas especiales y novedades sobre CONSTRU
 								</p>
 							</div>
@@ -410,7 +410,7 @@ const NotificationsPage = () => {
 									className={`block w-12 h-6 rounded-full ${
 										settings.marketingEmails
 											? "bg-primary-600"
-											: "bg-gray-300 dark:bg-gray-600"
+											: "bg-gray-300"
 									}`}
 								></span>
 								<span
@@ -425,7 +425,7 @@ const NotificationsPage = () => {
 
 				{/* Frecuencia de Notificaciones */}
 				<div>
-					<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+					<h3 className="text-lg font-medium text-gray-900 mb-4">
 						Frecuencia de Notificaciones
 					</h3>
 					<div className="space-y-3">
@@ -435,11 +435,11 @@ const NotificationsPage = () => {
 								type="radio"
 								name="frequency"
 								defaultChecked
-								className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+								className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500 accent-secondary-500"
 							/>
 							<label
 								htmlFor="immediate"
-								className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+								className="ml-2 block text-sm text-gray-700"
 							>
 								Inmediata (recibe cada notificación cuando ocurre)
 							</label>
@@ -449,11 +449,11 @@ const NotificationsPage = () => {
 								id="daily"
 								type="radio"
 								name="frequency"
-								className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+								className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500 accent-secondary-500"
 							/>
 							<label
 								htmlFor="daily"
-								className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+								className="ml-2 block text-sm text-gray-700"
 							>
 								Resumen diario (una vez al día)
 							</label>
@@ -463,11 +463,11 @@ const NotificationsPage = () => {
 								id="weekly"
 								type="radio"
 								name="frequency"
-								className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+								className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500 accent-secondary-500"
 							/>
 							<label
 								htmlFor="weekly"
-								className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+								className="ml-2 block text-sm text-gray-700"
 							>
 								Resumen semanal (una vez por semana)
 							</label>

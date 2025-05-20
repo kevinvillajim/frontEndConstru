@@ -80,9 +80,9 @@ const ProfilePage = () => {
 			<div className="flex flex-col md:flex-row gap-8">
 				{/* Profile Sidebar */}
 				<div className="md:w-1/4">
-					<div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+					<div className="bg-white rounded-xl shadow-md overflow-hidden">
 						{/* Profile Header */}
-						<div className="p-6 text-center border-b border-gray-200 dark:border-gray-700">
+						<div className="p-6 text-center border-b border-gray-200">
 							<div className="relative inline-block mb-4">
 								{user.profilePicture ? (
 									<img
@@ -94,7 +94,7 @@ const ProfilePage = () => {
 										}}
 									/>
 								) : (
-									<div className="w-24 h-24 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-700 dark:text-primary-300 text-3xl font-bold mx-auto">
+									<div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 text-3xl font-bold mx-auto">
 										{user.firstName.charAt(0)}
 										{user.lastName.charAt(0)}
 									</div>
@@ -110,13 +110,13 @@ const ProfilePage = () => {
 									</svg>
 								</button>
 							</div>
-							<h2 className="text-xl font-bold text-gray-900 dark:text-white">
+							<h2 className="text-xl font-bold text-gray-900">
 								{user.firstName} {user.lastName}
 							</h2>
-							<p className="text-gray-600 dark:text-gray-400 mt-1">
+							<p className="text-gray-600 mt-1">
 								{user.email}
 							</p>
-							<div className="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-300">
+							<div className="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100">
 								{user.professionalType === "architect"
 									? "Arquitecto"
 									: user.professionalType === "civil_engineer"
@@ -144,8 +144,8 @@ const ProfilePage = () => {
 											onClick={() => handleTabChange(tab.id)}
 											className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-all duration-300 ${
 												activeTab === tab.id
-													? "bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300"
-													: "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+													? "bg-primary-50"
+													: "hover:bg-gray-100"
 											}`}
 										>
 											<tab.icon className="h-5 w-5 mr-3" />
@@ -163,7 +163,7 @@ const ProfilePage = () => {
 
 				{/* Main Content Area */}
 				<div className="md:w-3/4">
-					<div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+					<div className="bg-white rounded-xl shadow-md p-6">
 						<UserProfileProvider>
 							<Outlet />
 						</UserProfileProvider>

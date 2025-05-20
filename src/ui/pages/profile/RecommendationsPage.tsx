@@ -10,7 +10,6 @@ import {
 	CubeIcon,
 	DocumentTextIcon,
 	ArrowPathIcon,
-	CheckCircleIcon,
 	XCircleIcon,
 } from "@heroicons/react/24/outline";
 
@@ -301,14 +300,14 @@ const RecommendationsPage = () => {
 	return (
 		<div>
 			<div className="mb-6 flex justify-between items-center">
-				<h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+				<h2 className="text-2xl font-bold text-gray-900">
 					Análisis y Recomendaciones
 				</h2>
 				<div className="flex items-center space-x-2">
 					<select
 						value={timeRange}
-						onChange={(e) => setTimeRange(e.target.value as any)}
-						className="px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+						onChange={(e) => setTimeRange(e.target.value as "30days" | "90days" | "allTime")}
+						className="px-3 py-1.5 rounded-md border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900 text-sm"
 					>
 						<option value="30days">Últimos 30 días</option>
 						<option value="90days">Últimos 90 días</option>
@@ -316,7 +315,7 @@ const RecommendationsPage = () => {
 					</select>
 					<button
 						onClick={handleRefresh}
-						className="p-1.5 rounded-md text-gray-500 hover:text-primary-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+						className="p-1.5 rounded-md text-gray-500 hover:text-primary-600 hover:bg-gray-100 transition-colors"
 						title="Actualizar datos"
 					>
 						<ArrowPathIcon className="h-5 w-5" />
@@ -325,13 +324,13 @@ const RecommendationsPage = () => {
 			</div>
 
 			{/* Tabs */}
-			<div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+			<div className="mb-6 border-b border-gray-200">
 				<div className="flex space-x-8">
 					<button
 						className={`py-3 border-b-2 font-medium text-sm ${
 							activeTab === "insights"
-								? "border-primary-500 text-primary-600 dark:text-primary-400"
-								: "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+								? "border-primary-500 text-primary-600"
+								: "border-transparent text-gray-500 hover:text-gray-700"
 						}`}
 						onClick={() => setActiveTab("insights")}
 					>
@@ -340,8 +339,8 @@ const RecommendationsPage = () => {
 					<button
 						className={`py-3 border-b-2 font-medium text-sm ${
 							activeTab === "recommendations"
-								? "border-primary-500 text-primary-600 dark:text-primary-400"
-								: "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+								? "border-primary-500 text-primary-600"
+								: "border-transparent text-gray-500 hover:text-gray-700"
 						}`}
 						onClick={() => setActiveTab("recommendations")}
 					>
@@ -354,14 +353,14 @@ const RecommendationsPage = () => {
 			{activeTab === "insights" && behaviorPattern && (
 				<div className="space-y-6">
 					{/* Usage patterns */}
-					<div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-						<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+					<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+						<h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
 							<ChartBarIcon className="h-5 w-5 mr-2 text-primary-500" />
 							Patrones de Uso
 						</h3>
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 							<div>
-								<h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+								<h4 className="text-sm font-medium text-gray-700 mb-2">
 									Materiales Frecuentes
 								</h4>
 								<ul className="space-y-2">
@@ -370,11 +369,11 @@ const RecommendationsPage = () => {
 											key={material.materialId}
 											className="flex items-center justify-between"
 										>
-											<span className="text-gray-800 dark:text-gray-200">
+											<span className="text-gray-800">
 												{material.name || `Material ${index + 1}`}
 											</span>
 											<div className="flex items-center">
-												<div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mr-2">
+												<div className="w-32 bg-gray-200 rounded-full h-2.5 mr-2">
 													<div
 														className="bg-primary-500 h-2.5 rounded-full"
 														style={{
@@ -382,7 +381,7 @@ const RecommendationsPage = () => {
 														}}
 													></div>
 												</div>
-												<span className="text-sm text-gray-500 dark:text-gray-400 min-w-[30px] text-right">
+												<span className="text-sm text-gray-500 min-w-[30px] text-right">
 													{material.frequency}
 												</span>
 											</div>
@@ -391,7 +390,7 @@ const RecommendationsPage = () => {
 								</ul>
 							</div>
 							<div>
-								<h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+								<h4 className="text-sm font-medium text-gray-700 mb-2">
 									Categorías Frecuentes
 								</h4>
 								<ul className="space-y-2">
@@ -400,11 +399,11 @@ const RecommendationsPage = () => {
 											key={category.categoryId}
 											className="flex items-center justify-between"
 										>
-											<span className="text-gray-800 dark:text-gray-200">
+											<span className="text-gray-800">
 												{category.name || `Categoría ${index + 1}`}
 											</span>
 											<div className="flex items-center">
-												<div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mr-2">
+												<div className="w-32 bg-gray-200 rounded-full h-2.5 mr-2">
 													<div
 														className="bg-secondary-500 h-2.5 rounded-full"
 														style={{
@@ -412,7 +411,7 @@ const RecommendationsPage = () => {
 														}}
 													></div>
 												</div>
-												<span className="text-sm text-gray-500 dark:text-gray-400 min-w-[30px] text-right">
+												<span className="text-sm text-gray-500 min-w-[30px] text-right">
 													{category.frequency}
 												</span>
 											</div>
@@ -424,36 +423,36 @@ const RecommendationsPage = () => {
 					</div>
 
 					{/* Session metrics */}
-					<div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-						<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+					<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+						<h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
 							<ClockIcon className="h-5 w-5 mr-2 text-primary-500" />
 							Métricas de Sesión
 						</h3>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-							<div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-								<span className="text-sm text-gray-500 dark:text-gray-400">
+							<div className="bg-gray-100 rounded-lg p-4">
+								<span className="text-sm text-gray-500">
 									Duración promedio
 								</span>
-								<p className="text-xl font-semibold text-gray-900 dark:text-white mt-1">
+								<p className="text-xl font-semibold text-gray-900 mt-1">
 									{behaviorPattern.sessionMetrics.averageDuration.toFixed(1)}{" "}
 									min
 								</p>
 							</div>
-							<div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-								<span className="text-sm text-gray-500 dark:text-gray-400">
+							<div className="bg-gray-100 rounded-lg p-4">
+								<span className="text-sm text-gray-500">
 									Acciones por sesión
 								</span>
-								<p className="text-xl font-semibold text-gray-900 dark:text-white mt-1">
+								<p className="text-xl font-semibold text-gray-900 mt-1">
 									{behaviorPattern.sessionMetrics.averageActionsPerSession.toFixed(
 										0
 									)}
 								</p>
 							</div>
-							<div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-								<span className="text-sm text-gray-500 dark:text-gray-400">
+							<div className="bg-gray-100 rounded-lg p-4">
+								<span className="text-sm text-gray-500">
 									Horario más activo
 								</span>
-								<p className="text-xl font-semibold text-gray-900 dark:text-white mt-1">
+								<p className="text-xl font-semibold text-gray-900 mt-1">
 									{formatTimeOfDay(
 										behaviorPattern.sessionMetrics.mostActiveTimeOfDay
 									)}
@@ -464,40 +463,40 @@ const RecommendationsPage = () => {
 
 					{/* Search patterns and calculation preferences */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-							<h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+						<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+							<h3 className="text-sm font-medium text-gray-700 mb-3">
 								Patrones de Búsqueda
 							</h3>
 							<div className="space-y-3">
 								{behaviorPattern.searchPatterns.map((pattern) => (
 									<div
 										key={pattern.term}
-										className="flex items-center bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2"
+										className="flex items-center bg-gray-100 rounded-lg px-3 py-2"
 									>
-										<span className="text-gray-600 dark:text-gray-300 flex-1">
+										<span className="text-gray-600 flex-1">
 											{pattern.term}
 										</span>
-										<span className="text-xs px-2 py-1 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+										<span className="text-xs px-2 py-1 rounded-full bg-primary-100">
 											{pattern.frequency}x
 										</span>
 									</div>
 								))}
 							</div>
 						</div>
-						<div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-							<h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+						<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+							<h3 className="text-sm font-medium text-gray-700 mb-3">
 								Cálculos Preferidos
 							</h3>
 							<div className="space-y-3">
 								{behaviorPattern.preferredCalculationTypes.map((type) => (
 									<div
 										key={type.type}
-										className="flex items-center bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2"
+										className="flex items-center bg-gray-100 rounded-lg px-3 py-2"
 									>
-										<span className="text-gray-600 dark:text-gray-300 flex-1">
+										<span className="text-gray-600 flex-1">
 											{type.type}
 										</span>
-										<span className="text-xs px-2 py-1 rounded-full bg-secondary-100 dark:bg-secondary-900/30 text-secondary-700 dark:text-secondary-300">
+										<span className="text-xs px-2 py-1 rounded-full bg-secondary-100 text-secondary-800">
 											{type.frequency}x
 										</span>
 									</div>
@@ -507,14 +506,14 @@ const RecommendationsPage = () => {
 					</div>
 
 					{/* Project preferences */}
-					<div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-						<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+					<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+						<h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
 							<DocumentTextIcon className="h-5 w-5 mr-2 text-primary-500" />
 							Preferencias de Proyectos
 						</h3>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-							<div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-								<span className="text-sm text-gray-500 dark:text-gray-400">
+							<div className="bg-gray-100 rounded-lg p-4">
+								<span className="text-sm text-gray-500">
 									Tipos frecuentes
 								</span>
 								<div className="mt-2 flex flex-wrap gap-2">
@@ -522,7 +521,7 @@ const RecommendationsPage = () => {
 										(type) => (
 											<span
 												key={type}
-												className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
+												className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
 											>
 												{type}
 											</span>
@@ -530,20 +529,20 @@ const RecommendationsPage = () => {
 									)}
 								</div>
 							</div>
-							<div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-								<span className="text-sm text-gray-500 dark:text-gray-400">
+							<div className="bg-gray-100 rounded-lg p-4">
+								<span className="text-sm text-gray-500">
 									Duración promedio
 								</span>
-								<p className="text-xl font-semibold text-gray-900 dark:text-white mt-1">
+								<p className="text-xl font-semibold text-gray-900 mt-1">
 									{behaviorPattern.projectPreferences.averageProjectDuration}{" "}
 									días
 								</p>
 							</div>
-							<div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-								<span className="text-sm text-gray-500 dark:text-gray-400">
+							<div className="bg-gray-100 rounded-lg p-4">
+								<span className="text-sm text-gray-500">
 									Rango presupuestario
 								</span>
-								<p className="text-xl font-semibold text-gray-900 dark:text-white mt-1">
+								<p className="text-xl font-semibold text-gray-900 mt-1">
 									$
 									{behaviorPattern.projectPreferences.averageBudgetRange.min.toLocaleString()}{" "}
 									- $
@@ -559,11 +558,11 @@ const RecommendationsPage = () => {
 				<div className="space-y-6">
 					{/* Recommendations heading */}
 					<div className="flex justify-between items-center">
-						<h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+						<h3 className="text-lg font-medium text-gray-900 flex items-center">
 							<LightBulbIcon className="h-5 w-5 mr-2 text-primary-500" />
 							Recomendaciones Personalizadas
 						</h3>
-						<span className="text-sm text-gray-500 dark:text-gray-400">
+						<span className="text-sm text-gray-500">
 							{recommendations.filter((r) => r.status === "pending").length}{" "}
 							nuevas recomendaciones
 						</span>
@@ -577,10 +576,10 @@ const RecommendationsPage = () => {
 								return (
 									<div
 										key={recommendation.id}
-										className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border ${
+										className={`bg-white rounded-lg shadow-sm border ${
 											recommendation.status === "pending"
-												? "border-primary-200 dark:border-primary-900"
-												: "border-gray-200 dark:border-gray-700"
+												? "border-primary-200"
+												: "border-gray-200"
 										} p-5 relative ${
 											recommendation.status === "dismissed" ? "opacity-60" : ""
 										}`}
@@ -589,20 +588,20 @@ const RecommendationsPage = () => {
 											<div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-primary-500"></div>
 										)}
 										<div className="flex items-start mb-3">
-											<div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400">
+											<div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
 												<Icon className="h-5 w-5" />
 											</div>
 											<div className="ml-3 flex-1">
-												<h4 className="text-base font-medium text-gray-900 dark:text-white">
+												<h4 className="text-base font-medium text-gray-900">
 													{recommendation.name || "Recomendación"}
 												</h4>
-												<p className="text-sm text-gray-500 dark:text-gray-400">
+												<p className="text-sm text-gray-500">
 													{formatRecommendationType(recommendation.type)} •
 													Relevancia: {(recommendation.score * 100).toFixed(0)}%
 												</p>
 											</div>
 										</div>
-										<p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+										<p className="text-gray-600 text-sm mb-4">
 											{recommendation.reason}
 										</p>
 										<div className="flex justify-between items-center">
@@ -626,19 +625,19 @@ const RecommendationsPage = () => {
 																"dismissed"
 															)
 														}
-														className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-md"
+														className="px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
 													>
 														Descartar
 													</button>
 												</div>
 											) : (
-												<div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+												<div className="flex items-center text-sm text-gray-500">
 													<XCircleIcon className="h-4 w-4 mr-1" /> Descartada
 												</div>
 											)}
 
 											{recommendation.expiresAt && (
-												<div className="text-xs text-gray-400 dark:text-gray-500">
+												<div className="text-xs text-gray-400">
 													Expira:{" "}
 													{new Date(
 														recommendation.expiresAt
@@ -651,12 +650,12 @@ const RecommendationsPage = () => {
 							})}
 						</div>
 					) : (
-						<div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
-							<LightBulbIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-							<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+						<div className="bg-gray-50 rounded-lg p-8 text-center">
+							<LightBulbIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+							<h3 className="text-lg font-medium text-gray-900 mb-2">
 								No hay recomendaciones
 							</h3>
-							<p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+							<p className="text-gray-500 max-w-md mx-auto">
 								Sigue utilizando la plataforma para generar recomendaciones
 								personalizadas basadas en tu comportamiento.
 							</p>
@@ -665,27 +664,27 @@ const RecommendationsPage = () => {
 
 					{/* Similar users section (simplified) */}
 					{similarUsers.length > 0 && (
-						<div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5 mt-6">
-							<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+						<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 mt-6">
+							<h3 className="text-lg font-medium text-gray-900 mb-4">
 								Basado en el Comportamiento de Usuarios Similares
 							</h3>
-							<p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+							<p className="text-sm text-gray-600 mb-3">
 								Nuestro sistema ha identificado patrones similares entre tus
 								actividades y las de otros profesionales, lo que nos permite
 								ofrecerte recomendaciones más precisas.
 							</p>
 							<div className="flex items-center">
-								<div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+								<div className="h-2.5 w-full rounded-full bg-gray-200">
 									<div
 										className="h-2.5 rounded-full bg-primary-500"
 										style={{width: "78%"}}
 									></div>
 								</div>
-								<span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+								<span className="ml-3 text-sm font-medium text-gray-700">
 									78%
 								</span>
 							</div>
-							<p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+							<p className="mt-2 text-xs text-gray-500">
 								Similitud con otros profesionales de tu área
 							</p>
 						</div>

@@ -316,7 +316,7 @@ const Header = () => {
 												</Link>
 
 												<Link
-													to="/proyectos/mis-proyectos"
+													to="/projects/my-projects"
 													className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
 													style={{color: "var(--text-main)"}}
 													onClick={() => setIsUserMenuOpen(false)}
@@ -326,7 +326,7 @@ const Header = () => {
 												</Link>
 
 												<Link
-													to="/notificaciones"
+													to="/notifications"
 													className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
 													style={{color: "var(--text-main)"}}
 													onClick={() => setIsUserMenuOpen(false)}

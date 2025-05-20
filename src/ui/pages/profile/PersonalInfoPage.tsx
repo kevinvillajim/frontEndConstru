@@ -174,7 +174,7 @@ const PersonalInfoPage = () => {
 	return (
 		<div>
 			<div className="flex justify-between items-center mb-6">
-				<h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+				<h2 className="text-2xl font-bold text-gray-900">
 					Información Personal
 				</h2>
 				{!isEditing ? (
@@ -190,7 +190,7 @@ const PersonalInfoPage = () => {
 						<button
 							type="button"
 							onClick={handleCancel}
-							className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50"
+							className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50"
 						>
 							Cancelar
 						</button>
@@ -242,7 +242,7 @@ const PersonalInfoPage = () => {
 						<div>
 							<label
 								htmlFor="firstName"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+								className="block text-sm font-medium text-gray-700 mb-1"
 							>
 								Nombre
 							</label>
@@ -253,11 +253,11 @@ const PersonalInfoPage = () => {
 								className={`w-full px-4 py-2 rounded-lg border ${
 									errors.firstName
 										? "border-red-500 focus:ring-red-500 focus:border-red-500"
-										: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-								} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+										: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+								} bg-white text-gray-900`}
 							/>
 							{errors.firstName && (
-								<p className="mt-1 text-sm text-red-600 dark:text-red-400">
+								<p className="mt-1 text-sm text-red-600">
 									{errors.firstName.message}
 								</p>
 							)}
@@ -266,7 +266,7 @@ const PersonalInfoPage = () => {
 						<div>
 							<label
 								htmlFor="lastName"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+								className="block text-sm font-medium text-gray-700 mb-1"
 							>
 								Apellido
 							</label>
@@ -277,11 +277,11 @@ const PersonalInfoPage = () => {
 								className={`w-full px-4 py-2 rounded-lg border ${
 									errors.lastName
 										? "border-red-500 focus:ring-red-500 focus:border-red-500"
-										: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-								} bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
+										: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+								} bg-white text-gray-900`}
 							/>
 							{errors.lastName && (
-								<p className="mt-1 text-sm text-red-600 dark:text-red-400">
+								<p className="mt-1 text-sm text-red-600">
 									{errors.lastName.message}
 								</p>
 							)}
@@ -290,7 +290,7 @@ const PersonalInfoPage = () => {
 						<div>
 							<label
 								htmlFor="email"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+								className="block text-sm font-medium text-gray-700 mb-1"
 							>
 								Correo Electrónico
 							</label>
@@ -302,15 +302,15 @@ const PersonalInfoPage = () => {
 								className={`w-full px-4 py-2 rounded-lg border ${
 									errors.email
 										? "border-red-500 focus:ring-red-500 focus:border-red-500"
-										: "border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500"
-								} bg-white dark:bg-gray-700 text-gray-900 dark:text-white opacity-70`}
+										: "border-gray-300 focus:ring-primary-500 focus:border-primary-500"
+								} bg-white text-gray-900 opacity-70`}
 							/>
 							{errors.email && (
-								<p className="mt-1 text-sm text-red-600 dark:text-red-400">
+								<p className="mt-1 text-sm text-red-600">
 									{errors.email.message}
 								</p>
 							)}
-							<p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+							<p className="mt-1 text-xs text-gray-500">
 								Para cambiar tu correo electrónico, contacta a soporte
 							</p>
 						</div>
@@ -318,7 +318,7 @@ const PersonalInfoPage = () => {
 						<div>
 							<label
 								htmlFor="phone"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+								className="block text-sm font-medium text-gray-700 mb-1"
 							>
 								Teléfono
 							</label>
@@ -326,14 +326,14 @@ const PersonalInfoPage = () => {
 								type="tel"
 								id="phone"
 								{...register("phone")}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							/>
 						</div>
 
 						<div>
 							<label
 								htmlFor="mobilePhone"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+								className="block text-sm font-medium text-gray-700 mb-1"
 							>
 								Teléfono Móvil
 							</label>
@@ -341,12 +341,12 @@ const PersonalInfoPage = () => {
 								type="tel"
 								id="mobilePhone"
 								{...register("mobilePhone")}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							/>
 						</div>
 
 						<div className="md:col-span-2">
-							<h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-3">
+							<h3 className="text-lg font-medium text-gray-800 mb-3">
 								Dirección Principal
 							</h3>
 						</div>
@@ -354,7 +354,7 @@ const PersonalInfoPage = () => {
 						<div className="md:col-span-2">
 							<label
 								htmlFor="street"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+								className="block text-sm font-medium text-gray-700 mb-1"
 							>
 								Dirección
 							</label>
@@ -362,14 +362,14 @@ const PersonalInfoPage = () => {
 								type="text"
 								id="street"
 								{...register("street")}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							/>
 						</div>
 
 						<div>
 							<label
 								htmlFor="city"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+								className="block text-sm font-medium text-gray-700 mb-1"
 							>
 								Ciudad
 							</label>
@@ -377,14 +377,14 @@ const PersonalInfoPage = () => {
 								type="text"
 								id="city"
 								{...register("city")}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							/>
 						</div>
 
 						<div>
 							<label
 								htmlFor="province"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+								className="block text-sm font-medium text-gray-700 mb-1"
 							>
 								Provincia
 							</label>
@@ -392,14 +392,14 @@ const PersonalInfoPage = () => {
 								type="text"
 								id="province"
 								{...register("province")}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							/>
 						</div>
 
 						<div>
 							<label
 								htmlFor="postalCode"
-								className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+								className="block text-sm font-medium text-gray-700 mb-1"
 							>
 								Código Postal
 							</label>
@@ -407,7 +407,7 @@ const PersonalInfoPage = () => {
 								type="text"
 								id="postalCode"
 								{...register("postalCode")}
-								className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+								className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900"
 							/>
 						</div>
 					</div>
@@ -415,25 +415,25 @@ const PersonalInfoPage = () => {
 					{/* Mostrar direcciones adicionales en modo edición */}
 					{additionalAddresses.length > 0 && (
 						<div className="mt-6">
-							<h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-3">
+							<h3 className="text-lg font-medium text-gray-800 mb-3">
 								Direcciones Adicionales
 							</h3>
 							<div className="space-y-4">
 								{additionalAddresses.map((address, index) => (
 									<div
 										key={address.id || index}
-										className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+										className="p-4 bg-gray-50 rounded-lg"
 									>
-										<p className="text-gray-900 dark:text-white">
+										<p className="text-gray-900">
 											{address.street}
 										</p>
-										<p className="text-gray-600 dark:text-gray-400">
+										<p className="text-gray-600">
 											{address.city}, {address.province}, {address.postalCode}
 										</p>
 										<div className="mt-2">
 											<button
 												type="button"
-												className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+												className="text-sm text-primary-600 hover:text-primary-700"
 												onClick={() => {
 													// Implementar edición de dirección adicional
 												}}
@@ -443,7 +443,7 @@ const PersonalInfoPage = () => {
 											<span className="text-gray-400 mx-2">|</span>
 											<button
 												type="button"
-												className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+												className="text-sm text-red-600 hover:text-red-700"
 												onClick={() => {
 													// Implementar eliminación de dirección
 												}}
@@ -456,7 +456,7 @@ const PersonalInfoPage = () => {
 							</div>
 							<button
 								type="button"
-								className="mt-4 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center"
+								className="mt-4 text-sm text-primary-600 hover:text-primary-700 flex items-center"
 								onClick={() => {
 									// Implementar agregado de nueva dirección
 								}}
@@ -483,67 +483,67 @@ const PersonalInfoPage = () => {
 			) : (
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<div>
-						<h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+						<h3 className="text-sm font-medium text-gray-500">
 							Nombre
 						</h3>
-						<p className="mt-1 text-lg text-gray-900 dark:text-white">
+						<p className="mt-1 text-lg text-gray-900">
 							{profile?.firstName}
 						</p>
 					</div>
 
 					<div>
-						<h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+						<h3 className="text-sm font-medium text-gray-500">
 							Apellido
 						</h3>
-						<p className="mt-1 text-lg text-gray-900 dark:text-white">
+						<p className="mt-1 text-lg text-gray-900">
 							{profile?.lastName}
 						</p>
 					</div>
 
 					<div>
-						<h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+						<h3 className="text-sm font-medium text-gray-500">
 							Correo Electrónico
 						</h3>
-						<p className="mt-1 text-lg text-gray-900 dark:text-white">
+						<p className="mt-1 text-lg text-gray-900">
 							{profile?.email}
 						</p>
 					</div>
 
 					<div>
-						<h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+						<h3 className="text-sm font-medium text-gray-500">
 							Teléfono
 						</h3>
-						<p className="mt-1 text-lg text-gray-900 dark:text-white">
+						<p className="mt-1 text-lg text-gray-900">
 							{profile?.phone || "No especificado"}
 						</p>
 					</div>
 
 					<div>
-						<h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+						<h3 className="text-sm font-medium text-gray-500">
 							Teléfono Móvil
 						</h3>
-						<p className="mt-1 text-lg text-gray-900 dark:text-white">
+						<p className="mt-1 text-lg text-gray-900">
 							{profile?.mobilePhone || "No especificado"}
 						</p>
 					</div>
 
 					<div className="md:col-span-2">
-						<h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
+						<h3 className="text-lg font-medium text-gray-800 mb-2">
 							Dirección Principal
 						</h3>
-						<div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+						<div className="bg-gray-100 p-4 rounded-lg">
 							{mainAddress ? (
 								<>
-									<p className="text-gray-900 dark:text-white">
+									<p className="text-gray-900">
 										{mainAddress.street}
 									</p>
-									<p className="text-gray-600 dark:text-gray-400">
+									<p className="text-gray-600">
 										{mainAddress.city}, {mainAddress.province},{" "}
 										{mainAddress.postalCode}
 									</p>
 								</>
 							) : (
-								<p className="text-gray-500 dark:text-gray-400">
+								<p className="text-gray-500">
 									No hay dirección registrada
 								</p>
 							)}
@@ -553,19 +553,19 @@ const PersonalInfoPage = () => {
 					{/* Mostrar direcciones adicionales en modo vista */}
 					{additionalAddresses.length > 0 && (
 						<div className="md:col-span-2 mt-4">
-							<h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
+							<h3 className="text-lg font-medium text-gray-800 mb-2">
 								Direcciones Adicionales
 							</h3>
 							<div className="space-y-3">
 								{additionalAddresses.map((address, index) => (
 									<div
 										key={address.id || index}
-										className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+										className="p-4 bg-gray-50 rounded-lg"
 									>
-										<p className="text-gray-900 dark:text-white">
+										<p className="text-gray-900">
 											{(address as UserAddress).street}
 										</p>
-										<p className="text-gray-600 dark:text-gray-400">
+										<p className="text-gray-600">
 											{(address as UserAddress).city},{" "}
 											{(address as UserAddress).province},{" "}
 											{(address as UserAddress).postalCode}
