@@ -1,11 +1,9 @@
-import {useState, useEffect} from "react";
+import {useState} from "react";
 import {
 	BellIcon,
 	CheckIcon,
 	XMarkIcon,
-	TrashIcon,
 	Cog6ToothIcon,
-	EllipsisHorizontalIcon,
 	CalculatorIcon,
 	CubeIcon,
 	DocumentTextIcon,

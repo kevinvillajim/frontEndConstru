@@ -13,7 +13,6 @@ import {
 	ArrowLeftIcon,
 	PlusIcon,
 	XMarkIcon,
-	TrashIcon,
 	EyeIcon,
 } from "@heroicons/react/24/outline";
 
@@ -97,7 +96,6 @@ const EditProjectPage: React.FC = () => {
 		handleSubmit,
 		formState: {errors, isDirty},
 		watch,
-		setValue,
 		reset,
 	} = useForm<ProjectFormValues>({
 		resolver: zodResolver(projectSchema),

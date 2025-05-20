@@ -1,22 +1,16 @@
-import React, {useState, useEffect} from "react";
+import React, {useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {
 	PlusIcon,
 	MagnifyingGlassIcon,
-	AdjustmentsHorizontalIcon,
 	ViewColumnsIcon,
 	Squares2X2Icon,
 	CalendarIcon,
-	ClockIcon,
 	CurrencyDollarIcon,
 	UserGroupIcon,
 	ChartBarIcon,
 	DocumentTextIcon,
 	EllipsisVerticalIcon,
-	EyeIcon,
-	PencilIcon,
-	TrashIcon,
-	ArchiveBoxIcon,
 	StarIcon,
 	PhotoIcon,
 } from "@heroicons/react/24/outline";
@@ -142,10 +136,10 @@ const ProjectsPage: React.FC = () => {
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
-	const [priorityFilter, setPriorityFilter] = useState<string>("all");
+	const [priorityFilter] = useState<string>("all");
 	const [showFavorites, setShowFavorites] = useState(false);
 	const [sortBy, setSortBy] = useState<string>("name");
-	const [showFilters, setShowFilters] = useState(false);
+	// const [showFilters, setShowFilters] = useState(false);
 
 	// Filtrar proyectos
 	const filteredProjects = projects.filter((project) => {

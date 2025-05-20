@@ -45,7 +45,6 @@ const CreateProjectPage: React.FC = () => {
 		handleSubmit,
 		formState: {errors},
 		watch,
-		setValue,
 	} = useForm<ProjectFormValues>({
 		resolver: zodResolver(projectSchema),
 		defaultValues: {
