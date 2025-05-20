@@ -141,7 +141,7 @@ const ProfessionalInfoPage = () => {
   // Cancelar la edición y restablecer los valores
   const handleCancel = () => {
     reset({
-      professionalType: user?.professionalType as any || "architect",
+      professionalType: user?.professionalType as ProfessionalInfoFormValues["professionalType"] || "architect",
       companyName: user?.company?.name || "",
       position: user?.company?.position || "",
       licenseNumber: user?.nationalId || "",

@@ -18,6 +18,7 @@ import {
 	TrashIcon,
 	ArchiveBoxIcon,
 	StarIcon,
+	PhotoIcon,
 } from "@heroicons/react/24/outline";
 import {StarIcon as StarSolidIcon} from "@heroicons/react/24/solid";
 
@@ -36,12 +37,13 @@ interface Project {
 	phase: string;
 	priority: "low" | "medium" | "high";
 	isFavorite: boolean;
-	thumbnail?: string;
+	thumbnail: string; // Imagen principal del proyecto
+	images: string[]; // Array de todas las imágenes
 	client: string;
 	location: string;
 }
 
-// Datos de ejemplo
+// Datos de ejemplo con imágenes
 const mockProjects: Project[] = [
 	{
 		id: "1",
@@ -58,6 +60,12 @@ const mockProjects: Project[] = [
 		phase: "Estructura",
 		priority: "high",
 		isFavorite: true,
+		thumbnail: "/api/placeholder/400/300",
+		images: [
+			"/api/placeholder/400/300",
+			"/api/placeholder/400/300",
+			"/api/placeholder/400/300",
+		],
 		client: "Inmobiliaria Del Centro",
 		location: "Quito, Pichincha",
 	},
@@ -76,6 +84,8 @@ const mockProjects: Project[] = [
 		phase: "Planificación",
 		priority: "medium",
 		isFavorite: false,
+		thumbnail: "/api/placeholder/400/300",
+		images: ["/api/placeholder/400/300", "/api/placeholder/400/300"],
 		client: "Grupo Aurora S.A.",
 		location: "Cuenca, Azuay",
 	},
@@ -94,6 +104,13 @@ const mockProjects: Project[] = [
 		phase: "Completado",
 		priority: "medium",
 		isFavorite: true,
+		thumbnail: "/api/placeholder/400/300",
+		images: [
+			"/api/placeholder/400/300",
+			"/api/placeholder/400/300",
+			"/api/placeholder/400/300",
+			"/api/placeholder/400/300",
+		],
 		client: "Constructora Jardines",
 		location: "Ambato, Tungurahua",
 	},
@@ -112,6 +129,8 @@ const mockProjects: Project[] = [
 		phase: "Pausado",
 		priority: "low",
 		isFavorite: false,
+		thumbnail: "/api/placeholder/400/300",
+		images: ["/api/placeholder/400/300"],
 		client: "Tech Solutions Ecuador",
 		location: "Quito, Pichincha",
 	},
@@ -268,7 +287,7 @@ const ProjectsPage: React.FC = () => {
 							</button>
 
 							<Link
-								to="/proyectos/crear"
+								to="/projects/create-new"
 								className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
 							>
 								<PlusIcon className="h-4 w-4" />
@@ -420,52 +439,80 @@ const ProjectsPage: React.FC = () => {
 						{sortedProjects.map((project, index) => (
 							<div
 								key={project.id}
-								className={`bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border-l-4 ${getPriorityColor(project.priority)} group cursor-pointer animate-fade-in-up`}
+								className={`bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border-l-4 ${getPriorityColor(project.priority)} group cursor-pointer animate-fade-in overflow-hidden`}
 								style={{animationDelay: `${index * 0.1}s`}}
-								onClick={() => navigate(`/proyectos/${project.id}`)}
+								onClick={() => navigate(`/projects/details/${project.id}`)}
 							>
-								{/* Card Header */}
-								<div className="p-6 pb-4">
-									<div className="flex items-start justify-between mb-4">
-										<div className="flex-1">
-											<h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2">
-												{project.name}
-											</h3>
-											<p className="text-sm text-gray-600 mt-1">
-												{project.client}
-											</p>
-										</div>
-										<div className="flex items-center gap-2 ml-4">
-											<button
-												onClick={(e) => {
-													e.stopPropagation();
-													toggleFavorite(project.id);
-												}}
-												className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-											>
-												{project.isFavorite ? (
-													<StarSolidIcon className="h-5 w-5 text-secondary-500" />
-												) : (
-													<StarIcon className="h-5 w-5 text-gray-400" />
-												)}
-											</button>
-											<div className="relative">
-												<button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-													<EllipsisVerticalIcon className="h-5 w-5 text-gray-400" />
-												</button>
+								{/* Imagen del proyecto */}
+								<div className="relative h-48 overflow-hidden">
+									<img
+										src={project.thumbnail}
+										alt={project.name}
+										className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+									/>
+
+									{/* Overlay con información */}
+									<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+										<div className="absolute bottom-4 left-4 right-4">
+											<div className="flex items-center gap-2 text-white text-sm">
+												<PhotoIcon className="h-4 w-4" />
+												<span>{project.images.length} imágenes</span>
 											</div>
 										</div>
 									</div>
 
-									{/* Status Badge */}
-									<div className="flex items-center justify-between mb-4">
+									{/* Badge de estado */}
+									<div className="absolute top-4 left-4">
 										<span
 											className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}
 										>
 											{getStatusText(project.status)}
 										</span>
+									</div>
+
+									{/* Botón de favorito */}
+									<button
+										onClick={(e) => {
+											e.stopPropagation();
+											toggleFavorite(project.id);
+										}}
+										className="absolute top-4 right-4 p-1.5 bg-white/90 hover:bg-white rounded-full transition-colors backdrop-blur-sm"
+									>
+										{project.isFavorite ? (
+											<StarSolidIcon className="h-4 w-4 text-secondary-500" />
+										) : (
+											<StarIcon className="h-4 w-4 text-gray-600" />
+										)}
+									</button>
+								</div>
+
+								{/* Contenido de la tarjeta */}
+								<div className="p-6">
+									<div className="flex items-start justify-between mb-3">
+										<div className="flex-1">
+											<h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2 mb-1">
+												{project.name}
+											</h3>
+											<p className="text-sm text-gray-600">{project.client}</p>
+										</div>
+										<div className="ml-4">
+											<div className="relative">
+												<button
+													onClick={(e) => e.stopPropagation()}
+													className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+												>
+													<EllipsisVerticalIcon className="h-4 w-4 text-gray-400" />
+												</button>
+											</div>
+										</div>
+									</div>
+
+									<div className="flex items-center justify-between mb-3">
 										<span className="text-sm text-gray-500">
 											{project.phase}
+										</span>
+										<span className="text-xs text-gray-500">
+											{project.location}
 										</span>
 									</div>
 
@@ -497,33 +544,19 @@ const ProjectsPage: React.FC = () => {
 											</span>
 										</div>
 
-										<div className="flex items-center text-sm text-gray-600">
-											<CurrencyDollarIcon className="h-4 w-4 mr-2 text-gray-400" />
-											<span>
-												{formatCurrency(project.spent)} /{" "}
-												{formatCurrency(project.budget)}
-											</span>
-										</div>
-
-										<div className="flex items-center justify-between text-sm text-gray-600">
-											<div className="flex items-center">
-												<UserGroupIcon className="h-4 w-4 mr-2 text-gray-400" />
-												<span>{project.teamMembers} miembros</span>
+										<div className="flex items-center justify-between text-sm">
+											<div className="flex items-center text-gray-600">
+												<CurrencyDollarIcon className="h-4 w-4 mr-2 text-gray-400" />
+												<span>
+													{formatCurrency(project.spent)} /{" "}
+													{formatCurrency(project.budget)}
+												</span>
 											</div>
-											<span className="text-xs text-gray-500">
-												{project.location}
-											</span>
+											<div className="flex items-center text-gray-600">
+												<UserGroupIcon className="h-4 w-4 mr-1 text-gray-400" />
+												<span>{project.teamMembers}</span>
+											</div>
 										</div>
-									</div>
-								</div>
-
-								{/* Card Footer */}
-								<div className="px-6 py-4 bg-gray-50 rounded-b-xl border-t border-gray-100">
-									<div className="flex items-center justify-between">
-										<p className="text-xs text-gray-500 line-clamp-2 flex-1">
-											{project.description}
-										</p>
-										<ChartBarIcon className="h-4 w-4 text-gray-400 ml-2 flex-shrink-0" />
 									</div>
 								</div>
 							</div>
@@ -563,12 +596,20 @@ const ProjectsPage: React.FC = () => {
 									{sortedProjects.map((project, index) => (
 										<tr
 											key={project.id}
-											className={`hover:bg-gray-50 cursor-pointer transition-colors animate-fade-in-up border-l-4 ${getPriorityColor(project.priority)}`}
+											className={`hover:bg-gray-50 cursor-pointer transition-colors animate-fade-in border-l-4 ${getPriorityColor(project.priority)}`}
 											style={{animationDelay: `${index * 0.05}s`}}
-											onClick={() => navigate(`/proyectos/${project.id}`)}
+											onClick={() => navigate(`/projects/details/${project.id}`)}
 										>
 											<td className="px-6 py-4 whitespace-nowrap">
 												<div className="flex items-center">
+													{/* Miniatura en vista de lista */}
+													<div className="flex-shrink-0 h-12 w-12 mr-4">
+														<img
+															src={project.thumbnail}
+															alt={project.name}
+															className="h-12 w-12 rounded-lg object-cover"
+														/>
+													</div>
 													<div className="flex-1">
 														<div className="flex items-center gap-3">
 															<button
@@ -674,7 +715,7 @@ const ProjectsPage: React.FC = () => {
 							priorityFilter === "all" &&
 							!showFavorites && (
 								<Link
-									to="/proyectos/crear"
+									to="/projects/create-new"
 									className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-all duration-200 transform hover:scale-105"
 								>
 									<PlusIcon className="h-5 w-5" />
@@ -698,7 +739,7 @@ const ProjectsPage: React.FC = () => {
 					}
 				}
 
-				.animate-fade-in-up {
+				.animate-fade-in {
 					animation: fadeInUp 0.5s ease-out forwards;
 					opacity: 0;
 				}
@@ -722,6 +763,11 @@ const ProjectsPage: React.FC = () => {
 						var(--color-primary-500),
 						var(--color-primary-600)
 					);
+				}
+
+				/* Image hover effects */
+				.group:hover img {
+					transform: scale(1.05);
 				}
 			`}</style>
 		</div>

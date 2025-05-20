@@ -23,9 +23,14 @@ const RecommendationsPage = lazy(
 const MainNotificationsPage = lazy(
 	() => import("../pages/NotificationsPage")
 );
-const ProjectsPage = lazy(() => import("../pages/projects/ProjectsPage"));
 const TwoFactorAuthPage = lazy(() => import("../pages/auth/TwoFactorAuthPage"));
-
+const CreateProjectPage = lazy(() => import("../pages/projects/CreateProjectPage"));
+const EditProjectPage = lazy(() => import("../pages/projects/EditProjectPage"));
+const ProjectDetailsPage = lazy(() => import("../pages/projects/ProjectDetailsPage"));
+const ProjectsPage = lazy(() => import("../pages/projects/ProjectsPage"));
+const ProjectDashboardPage = lazy(
+	() => import("../pages/projects/ProjectDashboardPage")
+);
 const appRoutes: RouteObject[] = [
 	//Public Routes
 	{
@@ -123,6 +128,36 @@ const appRoutes: RouteObject[] = [
 					<MainNotificationsPage />
 					//</ProtectedRoute>
 				),
+			},
+			{
+				path: "/projects",
+				children: [
+					{
+						index: true,
+						// <ProtectedRoute>
+						element: <ProjectsPage />, // <ProtectedRoute>
+					},
+					{
+						path: "my-projects",
+						element: <ProjectsPage />,
+					},
+					{
+						path: "create-new",
+						element: <CreateProjectPage />,
+					},
+					{
+						path: "edit/:id",
+						element: <EditProjectPage />,
+					},
+					{
+						path: "details/:id",
+						element: <ProjectDetailsPage />,
+					},
+					{
+						path: "dashboard/:projectId",
+						element: <ProjectDashboardPage />,
+					},
+				],
 			},
 			{
 				path: "projects/my-projects",
