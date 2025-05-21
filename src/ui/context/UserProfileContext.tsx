@@ -1,6 +1,6 @@
 // src/ui/context/UserProfileContext.tsx
 
-import React, {createContext, useContext, useState, useEffect} from "react";
+import React, {createContext, useContext, useState, useEffect, ReactNode} from "react";
 import {userService} from "../../core/application/ServiceFactory";
 import {useAuth} from "./AuthContext";
 import ToastService from "../components/common/ToastService";

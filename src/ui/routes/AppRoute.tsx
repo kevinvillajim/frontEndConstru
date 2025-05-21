@@ -31,7 +31,8 @@ const ProjectsPage = lazy(() => import("../pages/projects/ProjectsPage"));
 const ProjectDashboardPage = lazy(
 	() => import("../pages/projects/ProjectDashboardPage")
 );
-const appRoutes: RouteObject[] = [
+const Dashboard = lazy(() => import("../pages/Dashboard"));
+const SettingsOverviewPage = lazy(() => import("../pages/profile/SettingsOverviewPage"));const appRoutes: RouteObject[] = [
 	//Public Routes
 	{
 		path: "/",
@@ -160,10 +161,18 @@ const appRoutes: RouteObject[] = [
 				],
 			},
 			{
-				path: "projects/my-projects",
+				path: "dashboard",
 				element: (
 					// <ProtectedRoute>
-					<ProjectsPage />
+					<Dashboard />
+					//</ProtectedRoute>
+				),
+			},
+			{
+				path: "account/settings",
+				element: (
+					// <ProtectedRoute>
+					<SettingsOverviewPage />
 					//</ProtectedRoute>
 				),
 			},
