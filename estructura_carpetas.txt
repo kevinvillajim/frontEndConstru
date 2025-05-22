@@ -13,8 +13,7 @@ C:.
 |   tsconfig.app.json
 |   tsconfig.json
 |   tsconfig.node.json
-|   vite.config.ts
-|               
+|   vite.config.ts              
 +---public
 |       vite.svg
 |       
@@ -36,6 +35,7 @@ C:.
     |   |   +---api
     |   |   |       ApiAuthRepository.ts
     |   |   |       ApiClient.ts
+    |   |   |       ApiUserRepository.ts
     |   |   |       AxiosConfig.ts
     |   |   |       
     |   |   +---persistence
@@ -47,15 +47,21 @@ C:.
     |   |   |       AuthService.ts
     |   |   |       
     |   |   +---calculations
-    |   |   \---projects
+    |   |   +---projects
+    |   |   \---user
+    |   |           UserService.ts
+    |   |           
     |   \---domain
     |       +---models
     |       |   +---auth
     |       |   |       AuthModels.ts
     |       |   |       
     |       |   \---user
+    |       |           User.ts
+    |       |           
     |       +---repositories
     |       |       AuthRepository.ts
+    |       |       UserRepository.ts
     |       |       
     |       \---services
     +---infrastructure
@@ -79,21 +85,44 @@ C:.
     |   |   |       ToastService.ts
     |   |   |       
     |   |   +---debug
-    |   |   \---layout
-    |   |           Footer.tsx
-    |   |           Header.tsx
-    |   |           ThemeToggle.tsx
-    |   |           
+    |   |   +---layout
+    |   |   |       Footer.tsx
+    |   |   |       Header.tsx
+    |   |   |       ThemeToggle.tsx
+    |   |   |       
+    |   |   \---projects
+    |   |       |   ProjectCard.tsx
+    |   |       |   ProjectProgressWidget.tsx
+    |   |       |   
+    |   |       \---templates
+    |   |               CategoryFilter.tsx
+    |   |               FormSection.tsx
+    |   |               StepIndicator.tsx
+    |   |               TemplateCard.tsx
+    |   |               ToggleButton.tsx
+    |   |               
+    |   +---config
+    |   |       projectTemplatesConfig.ts
+    |   |       settingsConfig.ts
+    |   |       
     |   +---context
     |   |       AuthContext.tsx
     |   |       ThemeContext.tsx
+    |   |       UserProfileContext.tsx
     |   |       
     |   +---hooks
+    |   |       useProjectTemplates.ts
+    |   |       useTemplateValidation.ts
+    |   |       useTemplateWizard.ts
     |   |       useTheme.ts
+    |   |       useUserProfile.ts
+    |   |       useUserSettings.ts
     |   |       
     |   +---pages
+    |   |   |   Dashboard.tsx
     |   |   |   HomePage.tsx
     |   |   |   NotFoundPage.tsx
+    |   |   |   NotificationsPage.tsx
     |   |   |   
     |   |   +---auth
     |   |   |       ChangePasswordPage.tsx
@@ -104,18 +133,36 @@ C:.
     |   |   |       ResetPasswordPage.tsx
     |   |   |       TwoFactorAuthPage.tsx
     |   |   |       
+    |   |   +---calulations
+    |   |   |       CalculationsCatalog.tsx
+    |   |   |       
     |   |   +---layouts
     |   |   |       MainLayout.tsx
     |   |   |       
-    |   |   \---profile
-    |   |           NotificationsPage.tsx
-    |   |           PersonalInfoPage.tsx
-    |   |           PreferencesPage.tsx
-    |   |           ProfessionalInfoPage.tsx
-    |   |           ProfilePage.tsx
-    |   |           SecurityPage.tsx
-    |   |           SubscriptionPage.tsx
-    |   |           
+    |   |   +---profile
+    |   |   |       NotificationsPage.tsx
+    |   |   |       PersonalInfoPage.tsx
+    |   |   |       PreferencesPage.tsx
+    |   |   |       ProfessionalInfoPage.tsx
+    |   |   |       ProfilePage.tsx
+    |   |   |       RecommendationsPage.tsx
+    |   |   |       SecurityPage.tsx
+    |   |   |       SettingsOverviewPage.tsx
+    |   |   |       SubscriptionPage.tsx
+    |   |   |       
+    |   |   \---projects
+    |   |       |   CreateProjectPage.tsx
+    |   |       |   EditProjectPage.tsx
+    |   |       |   ProjectDashboardPage.tsx
+    |   |       |   ProjectDetailsPage.tsx
+    |   |       |   ProjectsPage.tsx
+    |   |       |   
+    |   |       \---templates
+    |   |               ProjectPreview.tsx
+    |   |               ProjectTemplatesPage.tsx
+    |   |               TemplateCustomizer.tsx
+    |   |               TemplateSelector.tsx
+    |   |               
     |   \---routes
     |           AppRoute.tsx
     |           ProtectedRoute.tsx
