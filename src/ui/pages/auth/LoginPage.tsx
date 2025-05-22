@@ -39,7 +39,7 @@ const LoginPage = () => {
 	const from =
 		(location.state &&
 			(location.state as {from?: {pathname: string}}).from?.pathname) ||
-		"/";
+		"/dashboard";
 
 	// Configurar react-hook-form con validación de Zod
 	const {

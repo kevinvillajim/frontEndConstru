@@ -1,6 +1,6 @@
 // src/ui/hooks/useTemplateWizard.ts
 import { useState, useCallback } from "react";
-import type { TemplateCustomization, ProjectTemplate } from "../hooks/useProjectTemplates";
+import type { ProjectTemplate, TemplateCustomization } from "./useProjectTemplates";
 
 type WizardStep = 'select' | 'customize' | 'preview';
 
@@ -18,6 +18,22 @@ export const useTemplateWizard = () => {
 		customization: {},
 		isAnimating: false,
 	});
+
+	const setIsAnimating = useCallback((isAnimating: boolean) => {
+		setState(prev => ({ ...prev, isAnimating }));
+	}, []);
+
+	const setCurrentStep = useCallback((currentStep: WizardStep) => {
+		setState(prev => ({ ...prev, currentStep }));
+	}, []);
+
+	const setSelectedTemplate = useCallback((selectedTemplate: ProjectTemplate | null) => {
+		setState(prev => ({ ...prev, selectedTemplate }));
+	}, []);
+
+	const setCustomization = useCallback((customization: Partial<TemplateCustomization>) => {
+		setState(prev => ({ ...prev, customization }));
+	}, []);
 
 	const handleStepTransition = useCallback((newStep: WizardStep) => {
 		setState(prev => ({ ...prev, isAnimating: true }));
@@ -94,11 +110,24 @@ export const useTemplateWizard = () => {
 	}, []);
 
 	return {
-		...state,
+		// Estado actual
+		currentStep: state.currentStep,
+		selectedTemplate: state.selectedTemplate,
+		customization: state.customization,
+		isAnimating: state.isAnimating,
+		
+		// Setters individuales (para compatibilidad)
+		setIsAnimating,
+		setCurrentStep,
+		setSelectedTemplate,
+		setCustomization,
+		
+		// Acciones del wizard
 		selectTemplate,
 		updateCustomization,
 		goBack,
 		reset,
 		getStepInfo,
+		handleStepTransition,
 	};
 };

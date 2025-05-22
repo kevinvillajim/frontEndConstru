@@ -45,12 +45,12 @@ const navigationItems = [
 	},
 	{
 		name: "Proyectos",
-		to: "/proyectos",
+		to: "/projects",
 		icon: DocumentTextIcon,
 		submenu: [
-			{name: "Mis Proyectos", to: "/proyectos/mis-proyectos"},
-			{name: "Crear Proyecto", to: "/proyectos/crear"},
-			{name: "Plantillas", to: "/proyectos/plantillas"},
+			{name: "Mis Proyectos", to: "/projects/my-projects"},
+			{name: "Crear Proyecto", to: "/projects/create-new"},
+			{name: "Plantillas", to: "/projects/templates"},
 		],
 	},
 	{

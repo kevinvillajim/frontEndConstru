@@ -1,4 +1,4 @@
-import React, { useState} from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	ArrowLeftIcon,
@@ -11,10 +11,13 @@ import ProjectPreview from "./ProjectPreview";
 
 import { useTemplateWizard } from "../../../hooks/useTemplateWizard";
 import { useProjectTemplates } from "../../../hooks/useProjectTemplates";
-export type { ProjectTemplate } from "../../../hooks/useProjectTemplates";
+import type { ProjectTemplate } from "../../../hooks/useProjectTemplates";
 
 // Configuración de plantillas
 import { PROJECT_TEMPLATES } from "../../../config/projectTemplatesConfig";
+
+// Re-exportar el tipo para uso en otros componentes
+export type { ProjectTemplate };
 
 const ProjectTemplatesPage: React.FC = () => {
 	const navigate = useNavigate();
@@ -29,70 +32,57 @@ const ProjectTemplatesPage: React.FC = () => {
 		getStepInfo,
 	} = useTemplateWizard();
 
-	// Manejar transiciones suaves entre pasos
-	const handleStepTransition = (newStep: typeof currentStep) => {
-		setIsAnimating(true);
-		setTimeout(() => {
-			setCurrentStep(newStep);
-			setIsAnimating(false);
-		}, 300);
-	};
+	const { createProjectFromTemplate, isLoading } = useProjectTemplates();
 
 	const handleTemplateSelect = (template: ProjectTemplate) => {
-		setSelectedTemplate(template);
-		handleStepTransition('customize');
+		selectTemplate(template);
 	};
 
 	const handleCustomizationComplete = (data: any) => {
-		setCustomization(data);
-		handleStepTransition('preview');
+		updateCustomization(data);
 	};
 
-	const handleCreateProject = () => {
-		// Aquí se crearían los datos del proyecto y se redirigiría
-		navigate('/projects/create', {
-			state: {
-				template: selectedTemplate,
-				customization: customization
-			}
-		});
+	const handleCreateProject = async () => {
+		if (!selectedTemplate || !customization) return;
+
+		try {
+			const result = await createProjectFromTemplate(
+				selectedTemplate, 
+				customization as any // Cast necesario por tipos parciales
+			);
+			
+			// Navegar al proyecto creado o a la lista de proyectos
+			navigate('/projects', {
+				state: {
+					message: `Proyecto "${customization.projectName}" creado exitosamente`,
+					projectId: result.id
+				}
+			});
+		} catch (error) {
+			console.error('Error creating project:', error);
+			// Aquí podrías mostrar un toast de error
+		}
 	};
 
 	const handleBack = () => {
-		if (currentStep === 'customize') {
-			handleStepTransition('select');
-		} else if (currentStep === 'preview') {
-			handleStepTransition('customize');
-		} else {
+		if (currentStep === 'select') {
 			navigate('/projects');
+		} else {
+			goBack();
 		}
 	};
 
 	const getStepTitle = () => {
-		switch (currentStep) {
-			case 'select':
-				return 'Elige tu Plantilla';
-			case 'customize':
-				return 'Personaliza tu Proyecto';
-			case 'preview':
-				return 'Confirma y Crea';
-			default:
-				return '';
-		}
+		const stepInfo = getStepInfo(currentStep);
+		return stepInfo.title;
 	};
 
 	const getStepDescription = () => {
-		switch (currentStep) {
-			case 'select':
-				return 'Selecciona el tipo de proyecto que mejor se adapte a tus necesidades';
-			case 'customize':
-				return 'Ajusta los detalles específicos para tu proyecto';
-			case 'preview':
-				return 'Revisa todos los detalles antes de crear tu proyecto';
-			default:
-				return '';
-		}
+		const stepInfo = getStepInfo(currentStep);
+		return stepInfo.description;
 	};
+
+	const getProgressSteps = () => ['select', 'customize', 'preview'] as const;
 
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-primary-50">
@@ -104,6 +94,7 @@ const ProjectTemplatesPage: React.FC = () => {
 							<button
 								onClick={handleBack}
 								className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 hover:scale-105"
+								disabled={isLoading}
 							>
 								<ArrowLeftIcon className="h-5 w-5 text-gray-600" />
 							</button>
@@ -124,9 +115,9 @@ const ProjectTemplatesPage: React.FC = () => {
 
 						{/* Progress indicator */}
 						<div className="hidden md:flex items-center gap-3">
-							{['select', 'customize', 'preview'].map((step, index) => {
+							{getProgressSteps().map((step, index) => {
 								const isActive = step === currentStep;
-								const isCompleted = ['select', 'customize', 'preview'].indexOf(currentStep) > index;
+								const isCompleted = getProgressSteps().indexOf(currentStep) > index;
 								
 								return (
 									<div key={step} className="flex items-center">
@@ -141,7 +132,7 @@ const ProjectTemplatesPage: React.FC = () => {
 										>
 											{index + 1}
 										</div>
-										{index < 2 && (
+										{index < getProgressSteps().length - 1 && (
 											<ChevronRightIcon className={`h-4 w-4 mx-2 transition-colors duration-300 ${
 												isCompleted ? 'text-primary-600' : 'text-gray-400'
 											}`} />
@@ -155,7 +146,9 @@ const ProjectTemplatesPage: React.FC = () => {
 			</div>
 
 			{/* Contenido principal con transiciones */}
-			<div className={`transition-all duration-300 ${isAnimating ? 'opacity-0 transform translate-y-4' : 'opacity-100 transform translate-y-0'}`}>
+			<div className={`transition-all duration-300 ${
+				isAnimating ? 'opacity-0 transform translate-y-4' : 'opacity-100 transform translate-y-0'
+			}`}>
 				{currentStep === 'select' && (
 					<TemplateSelector
 						templates={PROJECT_TEMPLATES}
@@ -174,12 +167,22 @@ const ProjectTemplatesPage: React.FC = () => {
 				{currentStep === 'preview' && selectedTemplate && (
 					<ProjectPreview
 						template={selectedTemplate}
-						customization={customization}
+						customization={customization as any}
 						onCreateProject={handleCreateProject}
 						onBack={handleBack}
 					/>
 				)}
 			</div>
+
+			{/* Loading overlay */}
+			{isLoading && (
+				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+					<div className="bg-white rounded-xl p-8 flex flex-col items-center gap-4">
+						<div className="animate-spin h-8 w-8 border-2 border-primary-600 border-t-transparent rounded-full"></div>
+						<p className="text-gray-900 font-medium">Creando proyecto...</p>
+					</div>
+				</div>
+			)}
 
 			{/* Background decorativo arquitectónico */}
 			<div className="fixed inset-0 pointer-events-none overflow-hidden opacity-5">
