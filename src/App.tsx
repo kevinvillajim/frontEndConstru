@@ -4,6 +4,7 @@ import appRoutes from "./ui/routes/AppRoute";
 import AuthProvider from "./ui/context/AuthContext";
 import "./App.css";
 import "./core/adapters/api/AxiosConfig";
+import UserProfileProvider from "./ui/context/UserProfileContext";
 
 const LoadingFallback = () => (
 	<div className="flex items-center justify-center min-h-screen">
@@ -20,9 +21,11 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
 	return (
 		<AuthProvider>
-			<Suspense fallback={<LoadingFallback />}>
-				<AppRoutes />
-			</Suspense>
+			<UserProfileProvider>
+				<Suspense fallback={<LoadingFallback />}>
+					<AppRoutes />
+				</Suspense>
+			</UserProfileProvider>
 		</AuthProvider>
 	);
 };

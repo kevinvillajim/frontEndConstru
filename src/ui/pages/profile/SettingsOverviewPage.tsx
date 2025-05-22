@@ -1,8 +1,8 @@
 // src/ui/pages/profile/SettingsOverviewPage.tsx
-import React, {useState, useEffect} from "react";
+import {useState, useEffect} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {useAuth} from "../../context/AuthContext";
-import {useTheme} from "../../hooks/useTheme";
+// import {useTheme} from "../../hooks/useTheme";
 import {useUserProfile} from "../../context/UserProfileContext";
 import {useUserSettings} from "../../hooks/useUserSettings";
 import {
@@ -20,7 +20,6 @@ import {
 	ExclamationTriangleIcon,
 	ClockIcon,
 	ArrowPathIcon,
-	InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 
 interface ConfigurationSection {
@@ -37,7 +36,7 @@ interface ConfigurationSection {
 
 const SettingsOverviewPage = () => {
 	const {user} = useAuth();
-	const {theme} = useTheme(); // Usando tu implementación existente
+	// const {theme} = useTheme(); // Usando tu implementación existente
 	const {profile} = useUserProfile();
 	const navigate = useNavigate();
 	const {
@@ -204,8 +203,8 @@ const SettingsOverviewPage = () => {
 		});
 	};
 
-	const completeSections = sections.filter(s => s.status === "complete").length;
-	const totalSections = sections.length;
+	// const completeSections = sections.filter(s => s.status === "complete").length;
+	// const totalSections = sections.length;
 
 	return (
 		<div className="space-y-8">

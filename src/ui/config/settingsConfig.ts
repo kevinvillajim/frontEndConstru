@@ -3,7 +3,6 @@ import {
 	UserCircleIcon,
 	ShieldCheckIcon,
 	BellIcon,
-	CogIcon,
 	BuildingOfficeIcon,
 	StarIcon,
 	GlobeAltIcon,
