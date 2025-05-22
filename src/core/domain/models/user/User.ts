@@ -149,6 +149,7 @@ export interface UserProfile {
 	educationLevel?: string;
 	certifications?: string[];
 	bio?: string;
+	location?: string; // Ubicación del usuario
 	company?: UserCompany;
 	addresses?: UserAddress[];
 	preferences?: UserPreferences;
@@ -164,7 +165,18 @@ export interface UserProfile {
 	twoFactorSecret?: string;
 	recoveryCodes?: string[];
 	devices?: UserDevice[];
+	professionalInfo?: ProfessionalInfo; // Información profesional agrupada
 	createdAt?: Date | string;
 	updatedAt?: Date | string;
 	deletedAt?: Date | string;
+}
+
+export interface ProfessionalInfo {
+	yearsOfExperience?: number;
+	educationLevel?: string;
+	certifications?: string[];
+	specializations?: string[];
+	portfolio?: string[];
+	bio?: string;
+	updatedAt?: Date | string;
 }

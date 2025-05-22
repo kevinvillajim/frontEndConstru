@@ -53,7 +53,7 @@ interface Notification {
 interface QuickAction {
 	title: string;
 	description: string;
-	icon: React.ComponentType<any>;
+	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 	href: string;
 	color: string;
 }

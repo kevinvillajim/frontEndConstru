@@ -26,7 +26,7 @@ interface ConfigurationSection {
 	id: string;
 	title: string;
 	description: string;
-	icon: any;
+	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 	href: string;
 	status: "complete" | "incomplete" | "attention";
 	progress?: number;
