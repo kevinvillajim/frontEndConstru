@@ -80,7 +80,7 @@ const calculatePersonalStatus = (user: User | null, profile: UserProfile | null)
 	};
 };
 
-const calculateProfessionalStatus = (user: User | null, profile: UserProfile | null) => {
+const calculateProfessionalStatus = (_user: User | null, profile: UserProfile | null) => {
 	const issues: string[] = [];
 	let progress = 0;
 
@@ -116,7 +116,7 @@ const calculateProfessionalStatus = (user: User | null, profile: UserProfile | n
 	};
 };
 
-const calculateSecurityStatus = (user: User | null, profile: UserProfile | null) => {
+const calculateSecurityStatus = (user: User | null) => {
 	const issues: string[] = [];
 	let progress = 40; // Base por tener cuenta
 	let needsAttention = false;
@@ -161,7 +161,7 @@ const calculatePreferencesStatus = () => {
 	};
 };
 
-const calculateSubscriptionStatus = (user: User | null, profile: UserProfile | null) => {
+const calculateSubscriptionStatus = (user: User | null) => {
 	const issues: string[] = [];
 	let progress = 60; // Base por tener cuenta
 	let needsUpgrade = false;
@@ -181,9 +181,9 @@ const calculateSubscriptionStatus = (user: User | null, profile: UserProfile | n
 	};
 };
 
-const calculateRecommendationsStatus = (user: User | null, profile: UserProfile | null) => {
+const calculateRecommendationsStatus = (user: User | null) => {
 	// El sistema de recomendaciones se considera completo si el usuario ha usado la plataforma
-	const hasActivity = profile?.lastLogin || user?.createdAt;
+	const hasActivity = user?.createdAt;
 	const progress = hasActivity ? 85 : 20;
 
 	return {
@@ -220,16 +220,16 @@ export const useUserSettings = () => {
 
 	// Usar useMemo para calcular el estado de configuración
 	const settingsStatus = useMemo((): UserSettingsStatus | null => {
-		if (!user || !profile) return null;
+		if (!user) return null;
 
 		return {
 			personal: calculatePersonalStatus(user, profile),
 			professional: calculateProfessionalStatus(user, profile),
-			security: calculateSecurityStatus(user, profile),
+			security: calculateSecurityStatus(user),
 			notifications: calculateNotificationsStatus(),
 			preferences: calculatePreferencesStatus(),
-			subscription: calculateSubscriptionStatus(user, profile),
-			recommendations: calculateRecommendationsStatus(user, profile),
+			subscription: calculateSubscriptionStatus(user),
+			recommendations: calculateRecommendationsStatus(user),
 		};
 	}, [user, profile]);
 
@@ -281,7 +281,7 @@ export const useUserSettings = () => {
 
 	// Manejar estado de carga
 	useEffect(() => {
-		if (user && profile) {
+		if (user) {
 			setIsLoading(false);
 		} else {
 			setIsLoading(true);

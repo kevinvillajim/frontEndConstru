@@ -2,18 +2,15 @@
 import {useState, useEffect} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {useAuth} from "../../context/AuthContext";
-// import {useTheme} from "../../hooks/useTheme";
 import {useUserProfile} from "../../context/UserProfileContext";
 import {useUserSettings} from "../../hooks/useUserSettings";
 import {
 	UserCircleIcon,
 	ShieldCheckIcon,
 	BellIcon,
-	CogIcon,
 	BuildingOfficeIcon,
 	StarIcon,
 	GlobeAltIcon,
-	DevicePhoneMobileIcon,
 	CreditCardIcon,
 	ChevronRightIcon,
 	CheckCircleIcon,
@@ -36,7 +33,6 @@ interface ConfigurationSection {
 
 const SettingsOverviewPage = () => {
 	const {user} = useAuth();
-	// const {theme} = useTheme(); // Usando tu implementación existente
 	const {profile} = useUserProfile();
 	const navigate = useNavigate();
 	const {
@@ -60,7 +56,9 @@ const SettingsOverviewPage = () => {
 					href: "/profile/personal",
 					status: settingsStatus.personal.complete ? "complete" : "incomplete",
 					progress: settingsStatus.personal.progress,
-					lastUpdated: profile?.updatedAt,
+					lastUpdated: profile?.updatedAt ? 
+						(typeof profile.updatedAt === 'string' ? profile.updatedAt : profile.updatedAt.toISOString())
+						: undefined,
 					issues: settingsStatus.personal.issues,
 				},
 				{
@@ -71,7 +69,9 @@ const SettingsOverviewPage = () => {
 					href: "/profile/professional",
 					status: settingsStatus.professional.complete ? "complete" : "incomplete",
 					progress: settingsStatus.professional.progress,
-					lastUpdated: profile?.professionalInfo?.updatedAt,
+					lastUpdated: profile?.professionalInfo?.updatedAt ? 
+						(typeof profile.professionalInfo.updatedAt === 'string' ? profile.professionalInfo.updatedAt : profile.professionalInfo.updatedAt.toISOString())
+						: undefined,
 					issues: settingsStatus.professional.issues,
 				},
 				{
@@ -128,7 +128,7 @@ const SettingsOverviewPage = () => {
 				},
 				{
 					id: "recommendations",
-					title: "Recomendaciones y Analytics",
+					title: "Recomendaciones",
 					description: "Análisis de comportamiento y sugerencias personalizadas",
 					icon: StarIcon,
 					href: "/profile/recommendations",
@@ -157,17 +157,18 @@ const SettingsOverviewPage = () => {
 		}
 	};
 
-	const getTopIssuesDisplay = () => {
-		const issues = getTopIssues();
-		return issues.slice(0, 3); // Mostrar solo los 3 principales
-	};
-
-	const completionSummary = getCompletionSummary();
+	// Corregir las llamadas a las funciones
+	const topIssues = getTopIssues;
+	const completionSummary = getCompletionSummary;
 
 	if (isLoading) {
 		return (
-			<div className="flex items-center justify-center h-64">
-				<div className="animate-spin h-8 w-8 border-2 border-primary-600 border-t-transparent rounded-full"></div>
+			<div className="min-h-screen" style={{backgroundColor: "var(--bg-main)"}}>
+				<div className="max-w-4xl mx-auto px-6 py-16">
+					<div className="flex items-center justify-center">
+						<div className="animate-spin h-8 w-8 border-2 border-primary-600 border-t-transparent rounded-full"></div>
+					</div>
+				</div>
 			</div>
 		);
 	}
@@ -183,14 +184,14 @@ const SettingsOverviewPage = () => {
 		}
 	};
 
-	const getStatusColor = (status: string) => {
+	const getStatusText = (status: string) => {
 		switch (status) {
 			case "complete":
-				return "border-green-200 bg-green-50";
+				return "Completo";
 			case "attention":
-				return "border-yellow-200 bg-yellow-50";
+				return "Atención";
 			default:
-				return "border-gray-200 bg-gray-50";
+				return "Pendiente";
 		}
 	};
 
@@ -199,258 +200,280 @@ const SettingsOverviewPage = () => {
 		return new Date(dateString).toLocaleDateString("es-EC", {
 			day: "numeric",
 			month: "short",
-			year: "numeric",
 		});
 	};
 
-	// const completeSections = sections.filter(s => s.status === "complete").length;
-	// const totalSections = sections.length;
-
 	return (
-		<div className="space-y-8">
-			{/* Header con resumen general */}
-			<div className="relative overflow-hidden">
-				<div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-8 text-white relative">
-					{/* Patrón arquitectónico de fondo */}
-					<div className="absolute inset-0 opacity-10">
-						<div className="grid-pattern"></div>
-					</div>
-					
-					<div className="relative z-10">
-						<div className="flex items-center justify-between mb-6">
-							<div>
-								<h1 className="text-3xl font-bold mb-2">
-									Configuración de la Cuenta
-								</h1>
-								<p className="text-primary-100 text-lg">
-									Personaliza tu experiencia en CONSTRU
-								</p>
-							</div>
+		<div className="min-h-screen" style={{backgroundColor: "var(--bg-main)"}}>
+			{/* Header minimalista */}
+			<div
+				className="border-b"
+				style={{
+					backgroundColor: "var(--bg-card)",
+					borderColor: "var(--border-subtle)",
+				}}
+			>
+				<div className="max-w-4xl mx-auto px-6 py-8">
+					<div className="flex items-center justify-between">
+						<div>
+							<h1
+								className="text-3xl font-light tracking-tight"
+								style={{color: "var(--text-main)"}}
+							>
+								Configuración
+							</h1>
+							<p
+								className="text-sm mt-1"
+								style={{color: "var(--text-secondary)"}}
+							>
+								{completionSummary.complete} de {completionSummary.total} secciones completadas
+							</p>
+						</div>
+
+						<div className="flex items-center space-x-6">
 							<div className="text-right">
-								<div className="text-3xl font-bold">
+								<div
+									className="text-2xl font-light"
+									style={{color: "var(--text-main)"}}
+								>
 									{overallProgress}%
 								</div>
-								<div className="text-sm text-primary-200">
-									Configuración completa
-								</div>
-								<button
-									onClick={refreshStatus}
-									className="text-primary-200 hover:text-white mt-2 transition-colors"
-									title="Actualizar estado"
+								<div
+									className="text-xs"
+									style={{color: "var(--text-secondary)"}}
 								>
-									<ArrowPathIcon className="h-4 w-4" />
-								</button>
+									Completado
+								</div>
 							</div>
-						</div>
 
-						{/* Barra de progreso general */}
-						<div className="w-full bg-primary-800 rounded-full h-3 mb-4">
-							<div
-								className="bg-secondary-400 h-3 rounded-full transition-all duration-1000 ease-out relative overflow-hidden"
-								style={{width: `${overallProgress}%`}}
+							<button
+								onClick={refreshStatus}
+								className="p-2 rounded-full transition-colors duration-200 hover:bg-gray-200"
+								style={{color: "var(--text-secondary)"}}
+								title="Actualizar estado"
 							>
-								<div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-shimmer"></div>
-							</div>
+								<ArrowPathIcon className="h-5 w-5" />
+							</button>
 						</div>
+					</div>
 
-						<div className="flex items-center text-primary-100">
-							<span className="text-sm">
-								{completionSummary.complete} de {completionSummary.total} secciones completadas
-							</span>
+					{/* Progress bar minimalista */}
+					<div className="mt-6">
+						<div className="w-full bg-gray-200 rounded-full h-1">
+							<div
+								className="bg-primary-500 h-1 rounded-full transition-all duration-1000 ease-out"
+								style={{width: `${overallProgress}%`}}
+							></div>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			{/* Lista de secciones de configuración */}
-			<div className="grid gap-6">
-				{sections.map((section, index) => (
-					<Link
-						key={section.id}
-						to={section.href}
-						className={`block animate-fade-in group`}
-						style={{animationDelay: `${index * 0.1}s`}}
-					>
-						<div className={`border-2 rounded-xl p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${getStatusColor(section.status)}`}>
-							<div className="flex items-center justify-between">
-								<div className="flex items-center space-x-4 flex-1">
-									<div className="flex-shrink-0">
-										<div className="h-12 w-12 rounded-xl bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-											<section.icon className="h-6 w-6 text-primary-600" />
-										</div>
-									</div>
-									
-									<div className="flex-1 min-w-0">
-										<h3 className="text-lg font-semibold text-gray-900 mb-1 group-hover:text-primary-600 transition-colors">
+			<div className="max-w-4xl mx-auto px-6 py-8">
+				{/* Secciones de configuración */}
+				<div className="space-y-1">
+					{sections.map((section, index) => (
+						<Link
+							key={section.id}
+							to={section.href}
+							className="group flex items-center space-x-4 p-6 rounded-lg transition-all duration-200 bg-gray-100 hover:bg-gray-200 animate-fade-in"
+							style={{animationDelay: `${index * 0.05}s`}}
+						>
+							{/* Icono */}
+							<div className="flex-shrink-0">
+								<section.icon
+									className="h-5 w-5"
+									style={{color: "var(--text-muted)"}}
+								/>
+							</div>
+
+							{/* Contenido */}
+							<div className="flex-1 min-w-0">
+								<div className="flex items-start justify-between">
+									<div className="flex-1">
+										<h3
+											className="font-medium leading-snug"
+											style={{color: "var(--text-main)"}}
+										>
 											{section.title}
 										</h3>
-										<p className="text-gray-600 text-sm mb-3">
+										<p
+											className="text-sm mt-1 leading-relaxed"
+											style={{color: "var(--text-secondary)"}}
+										>
 											{section.description}
 										</p>
-										
-										{/* Mostrar issues si existen */}
+
+										{/* Issues si existen */}
 										{section.issues && section.issues.length > 0 && (
-											<div className="mb-3">
-												<div className="text-xs text-red-600 font-medium">
+											<div className="mt-2">
+												<p className="text-xs text-secondary-500">
 													{section.issues[0]}
-												</div>
+												</p>
 											</div>
 										)}
-										
-										{/* Barra de progreso individual */}
+
+										{/* Progress bar individual */}
 										{section.progress !== undefined && (
-											<div className="flex items-center space-x-3">
-												<div className="flex-1 bg-gray-200 rounded-full h-2">
+											<div className="flex items-center space-x-3 mt-3">
+												<div className="flex-1 bg-gray-200 rounded-full h-1">
 													<div
-														className="bg-primary-500 h-2 rounded-full transition-all duration-500"
+														className="bg-primary-500 h-1 rounded-full transition-all duration-500"
 														style={{width: `${section.progress}%`}}
 													></div>
 												</div>
-												<span className="text-xs font-medium text-gray-500">
+												<span
+													className="text-xs"
+													style={{color: "var(--text-muted)"}}
+												>
 													{section.progress}%
 												</span>
 											</div>
 										)}
 									</div>
-								</div>
 
-								<div className="flex items-center space-x-4">
-									<div className="text-right">
-										<div className="flex items-center space-x-2 mb-1">
-											{getStatusIcon(section.status)}
-											<span className="text-sm font-medium text-gray-700">
-												{section.status === "complete" 
-													? "Completo" 
-													: section.status === "attention" 
-													? "Atención" 
-													: "Pendiente"
-												}
-											</span>
+									{/* Estado y acciones */}
+									<div className="flex items-center space-x-4 ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+										<div className="text-right">
+											<div className="flex items-center space-x-2 mb-1">
+												{getStatusIcon(section.status)}
+												<span
+													className="text-sm"
+													style={{color: "var(--text-secondary)"}}
+												>
+													{getStatusText(section.status)}
+												</span>
+											</div>
+											<div
+												className="text-xs"
+												style={{color: "var(--text-muted)"}}
+											>
+												{formatDate(section.lastUpdated)}
+											</div>
 										</div>
-										<div className="text-xs text-gray-500">
-											{formatDate(section.lastUpdated)}
-										</div>
+
+										<ChevronRightIcon
+											className="h-4 w-4 transition-colors duration-200"
+											style={{color: "var(--text-muted)"}}
+										/>
 									</div>
-									
-									<ChevronRightIcon className="h-5 w-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all duration-300" />
 								</div>
 							</div>
-						</div>
-					</Link>
-				))}
-			</div>
-
-			{/* Accesos rápidos */}
-			<div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-				<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-					<CogIcon className="h-5 w-5 mr-2 text-primary-600" />
-					Accesos Rápidos
-				</h3>
-				
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<button 
-						onClick={() => handleQuickAction("change-password")}
-						className="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 group"
-					>
-						<DevicePhoneMobileIcon className="h-5 w-5 text-gray-400 group-hover:text-primary-600 mr-3" />
-						<span className="text-sm font-medium text-gray-700">
-							Cambiar Contraseña
-						</span>
-					</button>
-					
-					<button 
-						onClick={() => handleQuickAction("notifications")}
-						className="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 group"
-					>
-						<BellIcon className="h-5 w-5 text-gray-400 group-hover:text-primary-600 mr-3" />
-						<span className="text-sm font-medium text-gray-700">
-							Configurar Alertas
-						</span>
-					</button>
-					
-					<button 
-						onClick={() => handleQuickAction("upgrade")}
-						className="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 group"
-					>
-						<CreditCardIcon className="h-5 w-5 text-gray-400 group-hover:text-primary-600 mr-3" />
-						<span className="text-sm font-medium text-gray-700">
-							Gestionar Plan
-						</span>
-					</button>
+						</Link>
+					))}
 				</div>
-			</div>
 
-			{/* Resumen de problemas prioritarios */}
-			{getTopIssuesDisplay().length > 0 && (
-				<div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-					<div className="flex items-start space-x-3">
-						<div className="flex-shrink-0">
-							<div className="h-8 w-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-								<ExclamationTriangleIcon className="h-4 w-4 text-yellow-600" />
-							</div>
-						</div>
-						<div>
-							<h4 className="text-sm font-semibold text-yellow-900 mb-2">
-								Requiere Atención
-							</h4>
-							<ul className="text-sm text-yellow-700 space-y-1">
-								{getTopIssuesDisplay().map((issue, index) => (
-									<li key={index} className="flex items-center">
-										<span className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-2"></span>
-										{issue}
-									</li>
-								))}
-							</ul>
-						</div>
+				{/* Accesos rápidos */}
+				<div className="mt-12">
+					<h3
+						className="text-lg font-medium mb-6"
+						style={{color: "var(--text-main)"}}
+					>
+						Accesos Rápidos
+					</h3>
+					
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+						<button 
+							onClick={() => handleQuickAction("change-password")}
+							className="flex items-center p-4 rounded-lg border transition-colors duration-200 hover:bg-gray-50 group"
+							style={{borderColor: "var(--border-subtle)"}}
+						>
+							<ShieldCheckIcon
+								className="h-5 w-5 mr-3"
+								style={{color: "var(--text-muted)"}}
+							/>
+							<span
+								className="text-sm font-medium"
+								style={{color: "var(--text-main)"}}
+							>
+								Cambiar Contraseña
+							</span>
+						</button>
+						
+						<button 
+							onClick={() => handleQuickAction("notifications")}
+							className="flex items-center p-4 rounded-lg border transition-colors duration-200 hover:bg-gray-50 group"
+							style={{borderColor: "var(--border-subtle)"}}
+						>
+							<BellIcon
+								className="h-5 w-5 mr-3"
+								style={{color: "var(--text-muted)"}}
+							/>
+							<span
+								className="text-sm font-medium"
+								style={{color: "var(--text-main)"}}
+							>
+								Configurar Alertas
+							</span>
+						</button>
+						
+						<button 
+							onClick={() => handleQuickAction("upgrade")}
+							className="flex items-center p-4 rounded-lg border transition-colors duration-200 hover:bg-gray-50 group"
+							style={{borderColor: "var(--border-subtle)"}}
+						>
+							<CreditCardIcon
+								className="h-5 w-5 mr-3"
+								style={{color: "var(--text-muted)"}}
+							/>
+							<span
+								className="text-sm font-medium"
+								style={{color: "var(--text-main)"}}
+							>
+								Gestionar Plan
+							</span>
+						</button>
 					</div>
 				</div>
-			)}
 
-			{/* Información adicional */}
-			<div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-				<div className="flex items-start space-x-3">
-					<div className="flex-shrink-0">
-						<div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
-							<svg className="h-4 w-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+				{/* Problemas prioritarios */}
+				{topIssues.length > 0 && (
+					<div className="mt-8 p-6 rounded-lg border-l-4 border-yellow-500 bg-yellow-50">
+						<div className="flex items-start space-x-3">
+							<ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+							<div>
+								<h4 className="text-sm font-medium text-yellow-900 mb-2">
+									Requiere Atención
+								</h4>
+								<ul className="text-sm text-yellow-700 space-y-1">
+									{topIssues.map((issue: string, index: number) => (
+										<li key={index} className="flex items-center">
+											<span className="w-1 h-1 bg-yellow-600 rounded-full mr-2 flex-shrink-0"></span>
+											{issue}
+										</li>
+									))}
+								</ul>
+							</div>
+						</div>
+					</div>
+				)}
+
+				{/* Información adicional */}
+				<div className="mt-8 p-6 rounded-lg bg-blue-50 border border-blue-200">
+					<div className="flex items-start space-x-3">
+						<div className="flex-shrink-0">
+							<svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
 								<path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
 							</svg>
 						</div>
-					</div>
-					<div>
-						<h4 className="text-sm font-semibold text-blue-900 mb-1">
-							Optimiza tu Perfil Profesional
-						</h4>
-						<p className="text-sm text-blue-700">
-							Un perfil completo te ayuda a obtener mejores recomendaciones y conectar con proyectos relevantes. 
-							Completa todas las secciones para aprovechar al máximo CONSTRU.
-						</p>
+						<div>
+							<h4 className="text-sm font-medium text-blue-900 mb-1">
+								Optimiza tu Perfil Profesional
+							</h4>
+							<p className="text-sm text-blue-700">
+								Un perfil completo te ayuda a obtener mejores recomendaciones y conectar con proyectos relevantes.
+							</p>
+						</div>
 					</div>
 				</div>
 			</div>
 
 			{/* Estilos para animaciones */}
 			<style>{`
-				.grid-pattern {
-					background-image:
-						linear-gradient(
-							to right,
-							rgba(255, 255, 255, 0.1) 1px,
-							transparent 1px
-						),
-						linear-gradient(
-							to bottom,
-							rgba(255, 255, 255, 0.1) 1px,
-							transparent 1px
-						);
-					background-size: 20px 20px;
-					width: 100%;
-					height: 100%;
-				}
-
 				@keyframes fadeIn {
 					from {
 						opacity: 0;
-						transform: translateY(20px);
+						transform: translateY(10px);
 					}
 					to {
 						opacity: 1;
@@ -458,22 +481,21 @@ const SettingsOverviewPage = () => {
 					}
 				}
 
-				@keyframes shimmer {
-					0% {
-						transform: translateX(-100%);
-					}
-					100% {
-						transform: translateX(100%);
-					}
-				}
-
 				.animate-fade-in {
-					animation: fadeIn 0.5s ease-out forwards;
+					animation: fadeIn 0.3s ease-out forwards;
 					opacity: 0;
 				}
 
-				.animate-shimmer {
-					animation: shimmer 2s infinite;
+				/* Hover effects */
+				.group:hover .opacity-0 {
+					opacity: 1;
+				}
+
+				/* Focus states */
+				button:focus,
+				a:focus {
+					outline: 2px solid var(--color-primary-500);
+					outline-offset: 2px;
 				}
 			`}</style>
 		</div>
