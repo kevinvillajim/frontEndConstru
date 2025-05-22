@@ -34,8 +34,33 @@ const ProjectDashboardPage = lazy(
 const Dashboard = lazy(() => import("../pages/Dashboard"));
 const SettingsOverviewPage = lazy(() => import("../pages/profile/SettingsOverviewPage"));
 const ProjectTemplatesPage = lazy(() => import("../pages/projects/templates/ProjectTemplatesPage"));
-const CalculationsCatalog = lazy(() => import("../pages/calulations/CalculationsCatalog"));
-
+const CalculationsHub = lazy(
+	() => import("../pages/calulations/CalculationsHub")
+);
+const CalculationsCatalog = lazy(
+	() => import("../pages/calulations/CalculationsCatalog")
+);
+const CalculationsDashboard = lazy(
+	() => import("../pages/calulations/CalculationsDashboard")
+);
+const CalculationInterface = lazy(
+	() => import("../pages/calulations/CalculationInterface")
+);
+const SavedCalculations = lazy(
+	() => import("../pages/calulations/SavedCalculations")
+);
+const CalculationComparison = lazy(
+	() => import("../pages/calulations/CalculationComparison")
+);
+const CollaborationWorkspace = lazy(
+	() => import("../pages/calulations/CollaborationWorkspace")
+);
+const TemplateEditor = lazy(
+	() => import("../pages/calulations/TemplateEditor")
+);
+const CalculationsSettings = lazy(
+	() => import("../pages/calulations/CalculationsSettings")
+);
 
 const appRoutes: RouteObject[] = [
 	//Public Routes
@@ -174,32 +199,48 @@ const appRoutes: RouteObject[] = [
 				children: [
 					{
 						index: true,
-						// <ProtectedRoute>
-						element: <CalculationsCatalog />, // <ProtectedRoute>
+						element: <CalculationsHub />, // Página principal del módulo
 					},
 					{
-						path: "my-projects",
-						element: <ProjectsPage />,
+						path: "catalog",
+						element: <CalculationsCatalog />,
 					},
 					{
-						path: "create-new",
-						element: <CreateProjectPage />,
+						path: "dashboard",
+						element: <CalculationsDashboard />,
 					},
 					{
-						path: "edit/:id",
-						element: <EditProjectPage />,
+						path: "interface/:templateId?",
+						element: <CalculationInterface />,
 					},
 					{
-						path: "details/:id",
-						element: <ProjectDetailsPage />,
+						path: "saved",
+						element: <SavedCalculations />,
 					},
 					{
-						path: "dashboard/:projectId",
-						element: <ProjectDashboardPage />,
+						path: "comparison",
+						element: <CalculationComparison />,
+					},
+					{
+						path: "collaboration",
+						element: <CollaborationWorkspace />,
 					},
 					{
 						path: "templates",
-						element: <ProjectTemplatesPage />,
+						children: [
+							{
+								index: true,
+								element: <CalculationsCatalog />,
+							},
+							{
+								path: "editor/:id?",
+								element: <TemplateEditor />,
+							},
+						],
+					},
+					{
+						path: "settings",
+						element: <CalculationsSettings />,
 					},
 				],
 			},
