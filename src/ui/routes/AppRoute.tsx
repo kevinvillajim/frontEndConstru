@@ -34,6 +34,9 @@ const ProjectDashboardPage = lazy(
 const Dashboard = lazy(() => import("../pages/Dashboard"));
 const SettingsOverviewPage = lazy(() => import("../pages/profile/SettingsOverviewPage"));
 const ProjectTemplatesPage = lazy(() => import("../pages/projects/templates/ProjectTemplatesPage"));
+const CalculationsCatalog = lazy(() => import("../pages/calulations/CalculationsCatalog"));
+
+
 const appRoutes: RouteObject[] = [
 	//Public Routes
 	{
@@ -163,7 +166,41 @@ const appRoutes: RouteObject[] = [
 					{
 						path: "templates",
 						element: <ProjectTemplatesPage />,
-					}
+					},
+				],
+			},
+			{
+				path: "/calculations",
+				children: [
+					{
+						index: true,
+						// <ProtectedRoute>
+						element: <CalculationsCatalog />, // <ProtectedRoute>
+					},
+					{
+						path: "my-projects",
+						element: <ProjectsPage />,
+					},
+					{
+						path: "create-new",
+						element: <CreateProjectPage />,
+					},
+					{
+						path: "edit/:id",
+						element: <EditProjectPage />,
+					},
+					{
+						path: "details/:id",
+						element: <ProjectDetailsPage />,
+					},
+					{
+						path: "dashboard/:projectId",
+						element: <ProjectDashboardPage />,
+					},
+					{
+						path: "templates",
+						element: <ProjectTemplatesPage />,
+					},
 				],
 			},
 			{

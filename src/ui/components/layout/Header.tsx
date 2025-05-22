@@ -24,10 +24,10 @@ const navigationItems = [
 	{name: "Inicio", to: "/", icon: HomeIcon},
 	{
 		name: "Calculadoras",
-		to: "/calculadoras",
+		to: "/calculations",
 		icon: CalculatorIcon,
 		submenu: [
-			{name: "Cálculos Estructurales", to: "/calculadoras/estructurales"},
+			{name: "Cálculos Estructurales", to: "/calculations"},
 			{name: "Estimación de Materiales", to: "/calculadoras/materiales"},
 			{name: "Presupuestos", to: "/calculadoras/presupuestos"},
 			{name: "Cronogramas", to: "/calculadoras/cronogramas"},
