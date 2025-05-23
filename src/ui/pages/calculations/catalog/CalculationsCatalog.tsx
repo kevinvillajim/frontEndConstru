@@ -1,4 +1,6 @@
-import React, {useState, useMemo} from "react";
+// ui/pages/calculations/catalog/CalculationsCatalog.tsx
+
+import React, {useState, useMemo, useEffect} from "react";
 import {
 	CheckBadgeIcon,
 	MagnifyingGlassIcon,
@@ -8,24 +10,24 @@ import {
 	FireIcon,
 	ClockIcon,
 	ArrowTrendingUpIcon,
+	ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import {TemplateCard} from "./components/TemplateCard";
 import {CategoryFilter} from "./components/CategoryFilter";
 import {TemplatePreview} from "./components/TemplatePreview";
-import {useTemplates} from "../shared/hooks/useTemplates";
-import type {
-	CalculationTemplate,
-	TemplateFilters,
-	SortOption,
-} from "../shared/types/template.types";
+import {
+	useTemplates,
+	UITemplate,
+	UITemplateFilters,
+} from "../shared/hooks/useTemplates";
 
 interface CalculationsCatalogProps {
-	onTemplateSelect: (template: CalculationTemplate) => void;
-	onPreviewTemplate?: (template: CalculationTemplate) => void;
+	onTemplateSelect: (template: UITemplate) => void;
+	onPreviewTemplate?: (template: UITemplate) => void;
 }
 
 const SORT_OPTIONS: {
-	value: SortOption;
+	value: UITemplateFilters["sortBy"];
 	label: string;
 	icon: React.ComponentType<any>;
 }[] = [
@@ -41,9 +43,10 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 	onPreviewTemplate,
 }) => {
 	// Estados locales
-	const [previewTemplate, setPreviewTemplate] =
-		useState<CalculationTemplate | null>(null);
-	const [filters, setFilters] = useState<TemplateFilters>({
+	const [previewTemplate, setPreviewTemplate] = useState<UITemplate | null>(
+		null
+	);
+	const [filters, setFilters] = useState<UITemplateFilters>({
 		category: null,
 		subcategory: null,
 		searchTerm: "",
@@ -53,14 +56,25 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 		difficulty: null,
 	});
 
-	// Hook personalizado para gestionar plantillas
+	// Hook personalizado para gestionar plantillas con Clean Architecture
 	const {
+		templates,
 		categories,
 		isLoading,
-		toggleFavorite,
+		error,
+		stats,
 		getFilteredTemplates,
-		getTemplateStats,
+		toggleFavorite,
+		refreshTemplates,
+		setCurrentUserId,
 	} = useTemplates();
+
+	// Simular usuario logueado (en producción esto vendría del contexto de auth)
+	useEffect(() => {
+		// TODO: Obtener del contexto de autenticación real
+		const mockUserId = localStorage.getItem("current_user_id") || "user_123";
+		setCurrentUserId(mockUserId);
+	}, [setCurrentUserId]);
 
 	// Templates filtrados y ordenados
 	const filteredTemplates = useMemo(() => {
@@ -68,21 +82,29 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 	}, [getFilteredTemplates, filters]);
 
 	// Estadísticas para mostrar
-	const stats = useMemo(() => {
-		return getTemplateStats(filteredTemplates);
-	}, [getTemplateStats, filteredTemplates]);
+	const currentStats = useMemo(() => {
+		return {
+			verifiedCount: filteredTemplates.filter((t) => t.verified).length,
+			avgRating:
+				filteredTemplates.length > 0
+					? filteredTemplates.reduce((sum, t) => sum + t.rating, 0) /
+						filteredTemplates.length
+					: 0,
+			totalUsage: filteredTemplates.reduce((sum, t) => sum + t.usageCount, 0),
+		};
+	}, [filteredTemplates]);
 
 	// Handlers
-	const handleFilterChange = (newFilters: Partial<TemplateFilters>) => {
+	const handleFilterChange = (newFilters: Partial<UITemplateFilters>) => {
 		setFilters((prev) => ({...prev, ...newFilters}));
 	};
 
-	const handleTemplatePreview = (template: CalculationTemplate) => {
+	const handleTemplatePreview = (template: UITemplate) => {
 		setPreviewTemplate(template);
 		onPreviewTemplate?.(template);
 	};
 
-	const handleTemplateSelect = (template: CalculationTemplate) => {
+	const handleTemplateSelect = (template: UITemplate) => {
 		setPreviewTemplate(null);
 		onTemplateSelect(template);
 	};
@@ -99,12 +121,34 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 		});
 	};
 
+	// Estado de carga
 	if (isLoading) {
 		return (
 			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
 				<div className="text-center">
 					<div className="animate-spin h-12 w-12 border-4 border-primary-600 rounded-full border-t-transparent mx-auto mb-4" />
 					<p className="text-gray-600">Cargando catálogo de plantillas...</p>
+				</div>
+			</div>
+		);
+	}
+
+	// Estado de error
+	if (error) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="text-center max-w-md">
+					<ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+					<h2 className="text-xl font-semibold text-gray-900 mb-2">
+						Error al cargar plantillas
+					</h2>
+					<p className="text-gray-600 mb-4">{error}</p>
+					<button
+						onClick={refreshTemplates}
+						className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+					>
+						Reintentar
+					</button>
 				</div>
 			</div>
 		);
@@ -123,15 +167,18 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 							<div className="flex items-center gap-4 text-sm text-gray-600">
 								<div className="flex items-center gap-1">
 									<CheckBadgeIcon className="h-4 w-4 text-green-600" />
-									<span>{stats.verifiedCount} verificadas</span>
+									<span>{currentStats.verifiedCount} verificadas</span>
 								</div>
 								<div className="flex items-center gap-1">
 									<StarIcon className="h-4 w-4 text-yellow-500" />
-									<span>{stats.avgRating.toFixed(1)} promedio</span>
+									<span>{currentStats.avgRating.toFixed(1)} promedio</span>
 								</div>
 								<div className="flex items-center gap-1">
 									<CalculatorIcon className="h-4 w-4 text-primary-600" />
-									<span>{stats.totalUsage} cálculos realizados</span>
+									<span>
+										{currentStats.totalUsage.toLocaleString()} cálculos
+										realizados
+									</span>
 								</div>
 							</div>
 						</div>
@@ -168,6 +215,14 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 							>
 								<CheckBadgeIcon className="h-4 w-4" />
 								Solo Verificadas
+							</button>
+
+							<button
+								onClick={refreshTemplates}
+								className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-all duration-200"
+								title="Actualizar plantillas"
+							>
+								🔄 Actualizar
 							</button>
 						</div>
 					</div>
@@ -222,7 +277,9 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 													name="difficulty"
 													checked={filters.difficulty === option.value}
 													onChange={() =>
-														handleFilterChange({difficulty: option.value})
+														handleFilterChange({
+															difficulty: option.value as any,
+														})
 													}
 													className="h-4 w-4 text-primary-600 focus:ring-primary-500"
 												/>
@@ -264,7 +321,9 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 									<select
 										value={filters.sortBy}
 										onChange={(e) =>
-											handleFilterChange({sortBy: e.target.value as SortOption})
+											handleFilterChange({
+												sortBy: e.target.value as UITemplateFilters["sortBy"],
+											})
 										}
 										className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white min-w-[180px]"
 									>
@@ -321,7 +380,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 						</div>
 
 						{/* Estado vacío */}
-						{filteredTemplates.length === 0 && (
+						{filteredTemplates.length === 0 && !isLoading && (
 							<div className="text-center py-16">
 								<div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
 									<CalculatorIcon className="h-12 w-12 text-gray-400" />
@@ -352,6 +411,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 					template={previewTemplate}
 					onClose={() => setPreviewTemplate(null)}
 					onSelect={() => handleTemplateSelect(previewTemplate)}
+					onToggleFavorite={() => toggleFavorite(previewTemplate.id)}
 				/>
 			)}
 
