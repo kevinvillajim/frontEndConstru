@@ -6,7 +6,6 @@ import {
 	ExclamationTriangleIcon,
 	CheckCircleIcon,
 	ArrowTrendingUpIcon,
-	ArrowTrendingDownIcon,
 } from "@heroicons/react/24/outline";
 
 interface ProgressData {
@@ -45,7 +44,8 @@ const ProjectProgressWidget: React.FC<ProjectProgressWidgetProps> = ({
 }) => {
 	const [progressData, setProgressData] =
 		useState<ProgressData>(mockProgressData);
-	const [isLoading, setIsLoading] = useState(false);
+	//, setIsLoading
+	const [isLoading] = useState(false);
 
 	useEffect(() => {
 		// Simular actualizaciones en tiempo real

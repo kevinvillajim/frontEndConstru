@@ -1,4 +1,5 @@
 import React, {useState, useEffect} from "react";
+import {useParams, useLocation, useNavigate} from "react-router-dom";
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
@@ -13,12 +14,12 @@ import {
 	ExclamationTriangleIcon,
 	LightBulbIcon,
 	CheckIcon,
+	UserGroupIcon,
+	InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import {HeartIcon as HeartSolidIcon} from "@heroicons/react/24/solid";
-import {useCalculations} from "../../hooks/useCalculations";
-import TemplateSelector from "./TemplateSelector";
 
-// Tipos de datos
+// Interfaces para tipado
 interface CalculationParameter {
 	id: string;
 	name: string;
@@ -39,6 +40,7 @@ interface CalculationTemplate {
 	id: string;
 	name: string;
 	description: string;
+	longDescription?: string;
 	category: string;
 	necReference: string;
 	verified: boolean;
@@ -47,6 +49,12 @@ interface CalculationTemplate {
 	estimatedTime: string;
 	parameters: CalculationParameter[];
 	tags: string[];
+	isCollaborative?: boolean;
+	createdBy?: string;
+	shareLevel: "public" | "organization" | "private";
+	requirements: string[];
+	applicationCases?: string[];
+	limitations?: string[];
 }
 
 interface CalculationResult {
@@ -74,85 +82,119 @@ interface CalculationResult {
 }
 
 // Template de ejemplo para demanda eléctrica residencial
-const sampleTemplate: CalculationTemplate = {
-	id: "elec-demand-residential",
-	name: "Demanda Eléctrica Residencial",
-	description:
-		"Calcula la demanda eléctrica de una vivienda según normativa ecuatoriana NEC-SB-IE",
-	category: "electrical",
-	necReference: "NEC-SB-IE, Sección 1.1",
-	verified: true,
-	rating: 4.8,
-	usageCount: 127,
-	estimatedTime: "5-8 min",
-	tags: ["demanda", "residencial", "eléctrico", "NEC"],
-	parameters: [
-		{
-			id: "house_area",
-			name: "houseArea",
-			label: "Área de vivienda",
-			type: "number",
-			unit: "m²",
-			required: true,
-			min: 50,
-			max: 500,
-			placeholder: "150",
-			tooltip: "Área total construida de la vivienda",
-			typicalRange: "120-200 m² típico",
+const getTemplateById = (id: string): CalculationTemplate | null => {
+	const templates: Record<string, CalculationTemplate> = {
+		"nec-elec-01": {
+			id: "nec-elec-01",
+			name: "Demanda Eléctrica Residencial",
+			description:
+				"Cálculo de demanda eléctrica para viviendas según normativa ecuatoriana NEC-SB-IE",
+			longDescription:
+				"Herramienta completa para determinar la demanda eléctrica de instalaciones residenciales aplicando los factores de diversidad establecidos en la normativa ecuatoriana. Considera circuitos de iluminación, tomacorrientes, cargas especiales y sistemas de emergencia.",
+			category: "electrical",
+			necReference: "NEC-SB-IE, Sección 1.1",
+			verified: true,
+			rating: 4.8,
+			usageCount: 3420,
+			estimatedTime: "5-8 min",
+			shareLevel: "public",
+			tags: ["demanda", "residencial", "eléctrico", "NEC"],
+			requirements: [
+				"Área construida de la vivienda",
+				"Número y tipo de circuitos",
+				"Cargas especiales instaladas",
+			],
+			applicationCases: [
+				"Viviendas unifamiliares estándar",
+				"Departamentos en edificios multifamiliares",
+				"Casas con cargas especiales (piscinas, saunas)",
+			],
+			limitations: [
+				"Aplicable solo a instalaciones residenciales",
+				"No incluye cargas industriales o comerciales",
+				"Requiere verificación para instalaciones especiales",
+			],
+			parameters: [
+				{
+					id: "house_area",
+					name: "houseArea",
+					label: "Área de vivienda",
+					type: "number",
+					unit: "m²",
+					required: true,
+					min: 50,
+					max: 500,
+					placeholder: "150",
+					tooltip: "Área total construida de la vivienda",
+					typicalRange: "120-200 m² típico",
+				},
+				{
+					id: "voltage",
+					name: "voltage",
+					label: "Voltaje nominal",
+					type: "select",
+					unit: "V",
+					required: true,
+					defaultValue: "220",
+					options: ["110", "220", "240"],
+					tooltip: "Voltaje de suministro estándar en Ecuador: 220V",
+				},
+				{
+					id: "lighting_circuits",
+					name: "lightingCircuits",
+					label: "N° circuitos de iluminación",
+					type: "number",
+					unit: "und",
+					required: true,
+					min: 1,
+					max: 10,
+					defaultValue: 3,
+					tooltip: "Número de circuitos dedicados a iluminación",
+					typicalRange: "2-4 circuitos típico",
+				},
+				{
+					id: "outlets_circuits",
+					name: "outletsCircuits",
+					label: "N° circuitos de tomacorrientes",
+					type: "number",
+					unit: "und",
+					required: true,
+					min: 1,
+					max: 15,
+					defaultValue: 4,
+					tooltip: "Número de circuitos para tomacorrientes generales",
+					typicalRange: "3-6 circuitos típico",
+				},
+				{
+					id: "special_loads",
+					name: "specialLoads",
+					label: "Cargas especiales",
+					type: "number",
+					unit: "W",
+					required: false,
+					defaultValue: 2000,
+					tooltip: "Cargas adicionales como cocina eléctrica, calentador, etc.",
+					typicalRange: "1500-3000 W típico",
+				},
+			],
 		},
-		{
-			id: "voltage",
-			name: "voltage",
-			label: "Voltaje nominal",
-			type: "select",
-			unit: "V",
-			required: true,
-			defaultValue: "220",
-			options: ["110", "220", "240"],
-			tooltip: "Voltaje de suministro estándar en Ecuador: 220V",
-		},
-		{
-			id: "lighting_circuits",
-			name: "lightingCircuits",
-			label: "N° circuitos de iluminación",
-			type: "number",
-			unit: "und",
-			required: true,
-			min: 1,
-			max: 10,
-			defaultValue: 3,
-			tooltip: "Número de circuitos dedicados a iluminación",
-			typicalRange: "2-4 circuitos típico",
-		},
-		{
-			id: "outlets_circuits",
-			name: "outletsCircuits",
-			label: "N° circuitos de tomacorrientes",
-			type: "number",
-			unit: "und",
-			required: true,
-			min: 1,
-			max: 15,
-			defaultValue: 4,
-			tooltip: "Número de circuitos para tomacorrientes generales",
-			typicalRange: "3-6 circuitos típico",
-		},
-		{
-			id: "special_loads",
-			name: "specialLoads",
-			label: "Cargas especiales",
-			type: "number",
-			unit: "W",
-			required: false,
-			defaultValue: 2000,
-			tooltip: "Cargas adicionales como cocina eléctrica, calentador, etc.",
-			typicalRange: "1500-3000 W típico",
-		},
-	],
+		// Agregar más templates aquí según sea necesario
+	};
+
+	return templates[id] || null;
 };
 
 const CalculationInterface: React.FC = () => {
-	const [template] = useState<CalculationTemplate>(sampleTemplate);
+	const {templateId} = useParams<{templateId: string}>();
+	const location = useLocation();
+	const navigate = useNavigate();
+
+	// Obtener template desde params o location state
+	const [template, setTemplate] = useState<CalculationTemplate | null>(
+		location.state?.template ||
+			(templateId ? getTemplateById(templateId) : null)
+	);
+
 	const [isFavorite, setIsFavorite] = useState(false);
 	const [currentStep, setCurrentStep] = useState(1);
 	const [parameters, setParameters] = useState<Record<string, string | number>>(
@@ -164,16 +206,42 @@ const CalculationInterface: React.FC = () => {
 		Record<string, string>
 	>({});
 
+	// Cargar template si no está disponible
+	useEffect(() => {
+		if (!template && templateId) {
+			const loadedTemplate = getTemplateById(templateId);
+			if (loadedTemplate) {
+				setTemplate(loadedTemplate);
+			} else {
+				// Redirigir si no se encuentra el template
+				navigate("/calculations/catalog");
+			}
+		}
+	}, [templateId, template, navigate]);
+
 	// Inicializar parámetros con valores por defecto
 	useEffect(() => {
-		const defaultParams: Record<string, string | number> = {};
-		template.parameters.forEach((param) => {
-			if (param.defaultValue !== undefined) {
-				defaultParams[param.name] = param.defaultValue;
-			}
-		});
-		setParameters(defaultParams);
+		if (template) {
+			const defaultParams: Record<string, string | number> = {};
+			template.parameters.forEach((param) => {
+				if (param.defaultValue !== undefined) {
+					defaultParams[param.name] = param.defaultValue;
+				}
+			});
+			setParameters(defaultParams);
+		}
 	}, [template]);
+
+	if (!template) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin h-8 w-8 border-2 border-primary-500 rounded-full border-t-transparent mx-auto mb-4"></div>
+					<p className="text-gray-600">Cargando plantilla...</p>
+				</div>
+			</div>
+		);
+	}
 
 	// Validar parámetros en tiempo real
 	const validateParameter = (
@@ -222,7 +290,6 @@ const CalculationInterface: React.FC = () => {
 
 		// Simular cálculo
 		setTimeout(() => {
-			// const area = Number(parameters.houseArea) || 150;
 			const lightingCircuits = Number(parameters.lightingCircuits) || 3;
 			const outletsCircuits = Number(parameters.outletsCircuits) || 4;
 			const specialLoads = Number(parameters.specialLoads) || 2000;
@@ -308,6 +375,17 @@ const CalculationInterface: React.FC = () => {
 		});
 	};
 
+	const handleSuggestChange = () => {
+		navigate(`/calculations/suggest-change/${template.id}`, {
+			state: {template},
+		});
+	};
+
+	const handleSaveCalculation = () => {
+		// TODO: Implementar guardado del cálculo
+		console.log("Guardando cálculo...", {template, parameters, results});
+	};
+
 	const renderStepIndicator = () => (
 		<div className="flex items-center justify-center mb-8">
 			<div className="flex items-center">
@@ -340,11 +418,22 @@ const CalculationInterface: React.FC = () => {
 			<div className="flex items-start justify-between mb-4">
 				<div className="flex-1">
 					<div className="flex items-center gap-3 mb-2">
+						<button
+							onClick={() => navigate("/calculations/catalog")}
+							className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+						>
+							<ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+						</button>
 						<h1 className="text-2xl font-bold text-gray-900">
 							{template.name}
 						</h1>
 						{template.verified && (
 							<CheckBadgeIcon className="h-6 w-6 text-green-600" />
+						)}
+						{template.isCollaborative && (
+							<span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+								COLABORATIVA
+							</span>
 						)}
 					</div>
 					<p className="text-gray-600 mb-4">{template.description}</p>
@@ -364,6 +453,12 @@ const CalculationInterface: React.FC = () => {
 							<ClockIcon className="h-4 w-4" />
 							<span>{template.estimatedTime}</span>
 						</div>
+						{template.isCollaborative && template.createdBy && (
+							<div className="flex items-center gap-1">
+								<UserGroupIcon className="h-4 w-4" />
+								<span>Por: {template.createdBy}</span>
+							</div>
+						)}
 					</div>
 				</div>
 
@@ -381,8 +476,76 @@ const CalculationInterface: React.FC = () => {
 					<button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
 						<ShareIcon className="h-5 w-5 text-gray-400" />
 					</button>
+					{template.shareLevel === "public" && (
+						<button
+							onClick={handleSuggestChange}
+							className="px-3 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors flex items-center gap-2"
+						>
+							<LightBulbIcon className="h-4 w-4" />
+							Sugerir Mejora
+						</button>
+					)}
 				</div>
 			</div>
+
+			{/* Información adicional expandible */}
+			{template.longDescription && (
+				<div className="border-t border-gray-200 pt-4 mt-4">
+					<h3 className="font-medium text-gray-900 mb-2">
+						Descripción Detallada
+					</h3>
+					<p className="text-gray-600 text-sm leading-relaxed">
+						{template.longDescription}
+					</p>
+				</div>
+			)}
+
+			{/* Casos de aplicación y limitaciones */}
+			{(template.applicationCases || template.limitations) && (
+				<div className="border-t border-gray-200 pt-4 mt-4">
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+						{template.applicationCases && (
+							<div>
+								<h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+									<InformationCircleIcon className="h-4 w-4 text-blue-500" />
+									Casos de Aplicación
+								</h4>
+								<ul className="space-y-1">
+									{template.applicationCases.map((useCase, index) => (
+										<li
+											key={index}
+											className="text-sm text-gray-600 flex items-start gap-2"
+										>
+											<div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+											<span>{useCase}</span>
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
+
+						{template.limitations && (
+							<div>
+								<h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+									<ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
+									Limitaciones
+								</h4>
+								<ul className="space-y-1">
+									{template.limitations.map((limitation, index) => (
+										<li
+											key={index}
+											className="text-sm text-gray-600 flex items-start gap-2"
+										>
+											<div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mt-2 flex-shrink-0" />
+											<span>{limitation}</span>
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 
@@ -599,16 +762,25 @@ const CalculationInterface: React.FC = () => {
 
 				{/* Acciones */}
 				<div className="flex justify-center gap-4">
-					<button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
+					<button
+						onClick={() => {
+							setCurrentStep(2);
+							setResults(null);
+						}}
+						className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+					>
 						<ArrowLeftIcon className="h-4 w-4" />
 						Recalcular
+					</button>
+					<button
+						onClick={handleSaveCalculation}
+						className="px-6 py-3 bg-secondary-500 text-gray-900 rounded-lg hover:bg-secondary-600 transition-colors flex items-center gap-2"
+					>
+						💾 Guardar Cálculo
 					</button>
 					<button className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2">
 						<DocumentArrowDownIcon className="h-4 w-4" />
 						Exportar PDF
-					</button>
-					<button className="px-6 py-3 bg-secondary-500 text-gray-900 rounded-lg hover:bg-secondary-600 transition-colors flex items-center gap-2">
-						💾 Guardar en Proyecto
 					</button>
 				</div>
 			</div>

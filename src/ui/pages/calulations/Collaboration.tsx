@@ -15,23 +15,14 @@ import {
   ShareIcon,
   ChatBubbleLeftRightIcon,
   XMarkIcon,
-  CheckIcon,
-  ClockIcon,
   UserIcon,
-  AcademicCapIcon,
-  TrophyIcon,
   FireIcon,
-  BoltIcon,
   ShieldCheckIcon,
   DocumentTextIcon,
-  HeartIcon,
-  ArrowUpIcon,
 } from "@heroicons/react/24/outline";
 import {
   StarIcon as StarSolidIcon,
   HandThumbUpIcon as HandThumbUpSolidIcon,
-  HeartIcon as HeartSolidIcon,
-  TrophyIcon as TrophySolidIcon,
 } from "@heroicons/react/24/solid";
 
 // Interfaces mejoradas
