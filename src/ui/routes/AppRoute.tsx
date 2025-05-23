@@ -1,5 +1,6 @@
 import {lazy} from "react";
 import type { RouteObject } from "react-router";
+import type { CalculationTemplate } from "../pages/calculations/shared/types/template.types";
 
 const MainLayout = lazy(() => import("../pages/layouts/MainLayout"));
 const HomePage = lazy(() => import("../pages/HomePage"));
@@ -34,35 +35,54 @@ const ProjectDashboardPage = lazy(
 const Dashboard = lazy(() => import("../pages/Dashboard"));
 const SettingsOverviewPage = lazy(() => import("../pages/profile/SettingsOverviewPage"));
 const ProjectTemplatesPage = lazy(() => import("../pages/projects/templates/ProjectTemplatesPage"));
+const MyTemplates = lazy(
+	() => import("../pages/calculations/templates/MyTemplates")
+);
+const SuggestTemplateChange = lazy(
+	() => import("../pages/calculations/templates/SuggestTemplateChange")
+);
+
+const TemplateEditor = lazy(()=> import("../pages/calculations/templates/TemplateEditor"))
+
+
+
 const CalculationsHub = lazy(
-	() => import("../pages/calulations/core/CalculationsHub")
-);
-const CalculationsCatalog = lazy(
-	() => import("../pages/calulations/CalculationsCatalog")
-);
-const CalculationsDashboard = lazy(
-	() => import("../pages/admin/CalculationsDashboard")
-);
-const CalculationInterface = lazy(
-	() => import("../pages/calulations/catalog/CalculationInterface")
-);
-const SavedCalculations = lazy(
-	() => import("../pages/calulations/comparison/SavedCalculations")
-);
-const CalculationComparison = lazy(
-	() => import("../pages/calulations/comparison/CalculationComparison")
-);
-const Collaboration = lazy(
-	() => import("../pages/calulations/Collaboration")
-);
-const TemplateEditor = lazy(
-	() => import("../pages/calulations/templates/TemplateEditor")
-);
-const CalculationsSettings = lazy(
-	() => import("../pages/calulations/CalculationsSettings")
+	() => import("../pages/calculations/core/CalculationsHub")
 );
 const CalculationsRouter = lazy(
-	() => import("../pages/calulations/CalculationsRouter")
+	() => import("../pages/calculations/core/CalculationsRouter")
+);
+// Catalog Components
+const CalculationsCatalog = lazy(
+	() => import("../pages/calculations/catalog/CalculationsCatalog")
+);
+const CalculationInterface = lazy(
+	() => import("../pages/calculations/catalog/CalculationInterface")
+);
+// Comparison Components
+const CalculationComparison = lazy(
+	() => import("../pages/calculations/comparison/CalculationComparison")
+);
+const SavedCalculations = lazy(
+	() => import("../pages/calculations/comparison/SavedCalculations")
+);
+// Collaboration Components
+const CollaborationHub = lazy(
+	() => import("../pages/calculations/collaboration/CollaborationHub")
+);
+const CollaborationWorkspace = lazy(
+	() => import("../pages/calculations/collaboration/CollaborationWorkspace")
+);
+const TrendingCalculations = lazy(
+	() => import("../pages/calculations/collaboration/TrendingCalculations")
+);
+const ProposedVoting = lazy(
+	() => import("../pages/calculations/collaboration/ProposedVoting")
+);
+
+// Settings
+const CalculationsSettings = lazy(
+	() => import("../pages/calculations/CalculationsSettings")
 );
 
 const appRoutes: RouteObject[] = [
@@ -200,59 +220,167 @@ const appRoutes: RouteObject[] = [
 			{
 				path: "/calculations",
 				children: [
+					// Main Hub - Entry point with 4 main sections
 					{
 						index: true,
-						element: <CalculationsHub />, // Página principal del módulo
+						element: <CalculationsHub />,
 					},
+
+					// Alternative router (if needed for testing)
 					{
-						path: "test",
+						path: "router",
 						element: <CalculationsRouter />,
 					},
+
+					// ==============================================
+					// CATALOG SECTION - Public verified templates
+					// ==============================================
+					{
+						path: "catalog",
+						children: [
+							{
+								index: true,
+								element: (
+									<CalculationsCatalog
+										onTemplateSelect={function (): void {
+											throw new Error("Function not implemented.");
+										}}
+									/>
+								),
+							},
+							{
+								path: "template/:templateId",
+								element: (
+									<CalculationInterface
+										template={undefined}
+										onBack={function (): void {
+											throw new Error("Function not implemented.");
+										}}
+									/>
+								),
+							},
+						],
+					},
+
+					// ==============================================
+					// TEMPLATES SECTION - Personal templates
+					// ==============================================
 					// {
-					// 	path: "catalog",
-					// 	element: <CalculationsCatalog onSelectTemplate={function (template: CalculationTemplate): void {
-					// 		throw new Error("Function not implemented.");
-					// 	} } />,
+					// 	path: "templates",
+					// 	children: [
+					// 		{
+					// 			index: true,
+					// 			element: <MyTemplates />,
+					// 		},
+					// 		{
+					// 			path: "my-templates", // Ruta alternativa
+					// 			element: <MyTemplates />,
+					// 		},
+					// 		{
+					// 			path: "create",
+					// 			element: <TemplateEditor />,
+					// 		},
+					// 		{
+					// 			path: "edit/:id",
+					// 			element: <TemplateEditor />,
+					// 		},
+					// 		{
+					// 			path: "suggest/:id",
+					// 			element: <SuggestTemplateChange />,
+					// 		},
+					// 	],
 					// },
-					{
-						path: "dashboard",
-						element: <CalculationsDashboard />,
-					},
-					// {
-					// 	path: "interface/:templateId?",
-					// 	element: <CalculationInterface template={undefined} onBack={function (): void {
-					// 		throw new Error("Function not implemented.");
-					// 	} } />,
-					// },
-					{
-						path: "saved",
-						element: <SavedCalculations />,
-					},
-					{
-						path: "comparison",
-						element: <CalculationComparison />,
-					},
-					{
-						path: "collaboration",
-						element: <Collaboration />,
-					},
 					{
 						path: "templates",
 						children: [
-							// {
-							// 	index: true,
-							// 	element: <CalculationsCatalog />,
-							// },
 							{
-								path: "editor/:id?",
+								index: true,
+								element: <MyTemplates />, // Página principal de mis plantillas
+							},
+							{
+								path: "my-templates", // Ruta alternativa
+								element: <MyTemplates />,
+							},
+							{
+								path: "new", // Crear nueva plantilla
+								element: <TemplateEditor />,
+							},
+							{
+								path: "edit/:templateId", // Editar plantilla existente
+								element: <TemplateEditor />,
+							},
+							{
+								path: "duplicate/:templateId", // Duplicar plantilla
+								element: <TemplateEditor />,
+							},
+							{
+								path: ":templateId/suggest-change", // Sugerir cambios a plantilla
+								element: <SuggestTemplateChange />,
+							},
+							{
+								path: "editor/:id?", // Ruta legacy - mantener por compatibilidad
 								element: <TemplateEditor />,
 							},
 						],
 					},
+
+					// ==============================================
+					// COMPARISON SECTION - Compare calculations
+					// ==============================================
+					{
+						path: "comparison",
+						children: [
+							{
+								index: true,
+								element: <CalculationComparison />,
+							},
+							{
+								path: "saved",
+								element: <SavedCalculations />,
+							},
+						],
+					},
+
+					// ==============================================
+					// COLLABORATION SECTION - Team & Community
+					// ==============================================
+					{
+						path: "collaboration",
+						children: [
+							{
+								index: true,
+								element: <CollaborationHub />,
+							},
+							{
+								path: "workspace/:workspaceId?",
+								element: <CollaborationWorkspace />,
+							},
+							{
+								path: "trending",
+								element: <TrendingCalculations />,
+							},
+							{
+								path: "voting",
+								element: <ProposedVoting />,
+							},
+						],
+					},
+
+					// ==============================================
+					// SETTINGS SECTION - Separated from main nav
+					// ==============================================
 					{
 						path: "settings",
 						element: <CalculationsSettings />,
 					},
+
+					// ==============================================
+					// ADMIN ROUTES (Keep if needed for admin users)
+					// ==============================================
+					// {
+					// 	path: "admin/dashboard",
+					// 	element: <CalculationsDashboard />,
+					// },
 				],
 			},
 			{

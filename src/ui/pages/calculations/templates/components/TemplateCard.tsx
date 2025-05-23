@@ -7,7 +7,7 @@ import {
 	ShareIcon,
 	BookOpenIcon,
 	ClockIcon,
-} from "@heroicons/react/24/outline";
+	LightBulbIcon } from "@heroicons/react/24/outline";
 import {StarIcon as StarSolidIcon} from "@heroicons/react/24/solid";
 import type {MyCalculationTemplate} from "../../shared/types/template.types";
 
@@ -20,6 +20,7 @@ interface TemplateCardProps {
 	onView: (templateId: string) => void;
 	onEdit: (templateId: string) => void;
 	onShare: (template: MyCalculationTemplate) => void;
+	onSuggestChange?: (templateId: string) => void;
 	animationDelay?: number;
 }
 
@@ -60,6 +61,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
 	onView,
 	onEdit,
 	onShare,
+	onSuggestChange,
 	animationDelay = 0,
 }) => {
 	const formatDate = (dateString: string) => {
@@ -209,13 +211,24 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
 							<DocumentDuplicateIcon className="h-4 w-4" />
 						</button>
 						{template.isPublic && (
-							<button
-								onClick={() => onShare(template)}
-								className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
-								title="Compartir plantilla"
-							>
-								<ShareIcon className="h-4 w-4" />
-							</button>
+							<>
+								<button
+									onClick={() => onShare(template)}
+									className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+									title="Compartir plantilla"
+								>
+									<ShareIcon className="h-4 w-4" />
+								</button>
+								{onSuggestChange && (
+									<button
+										onClick={() => onSuggestChange(template.id)}
+										className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+										title="Sugerir mejoras"
+									>
+										<LightBulbIcon className="h-4 w-4" />
+									</button>
+								)}
+							</>
 						)}
 						<button
 							onClick={() => onDelete(template)}

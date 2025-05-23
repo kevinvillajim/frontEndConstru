@@ -8,11 +8,10 @@ import {
 	CalculatorIcon,
 	EyeIcon,
 	FireIcon,
-	TrendingUpIcon,
 	HeartIcon,
+	ArrowTrendingUpIcon
 } from "@heroicons/react/24/outline";
 import {
-	StarIcon as StarSolidIcon,
 	HeartIcon as HeartSolidIcon,
 } from "@heroicons/react/24/solid";
 import type {CalculationTemplate} from "../../shared/types/template.types";
@@ -63,7 +62,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 
 	const getTrendingIcon = () => {
 		if (template.trending) {
-			return <TrendingUpIcon className="h-4 w-4 text-orange-500" />;
+			return <ArrowTrendingUpIcon className="h-4 w-4 text-orange-500" />;
 		}
 		if (template.popular) {
 			return <FireIcon className="h-4 w-4 text-red-500" />;

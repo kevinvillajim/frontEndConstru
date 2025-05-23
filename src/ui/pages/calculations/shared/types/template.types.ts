@@ -622,6 +622,9 @@ export interface UseTemplateOptions {
 
 // ==================== ESTADOS DE FORMULARIO ====================
 export interface TemplateFormState {
+	basic: any;
+	parameters: any;
+	formulas: any;
 	data: TemplateFormData;
 	errors: Record<string, string>;
 	isSubmitting: boolean;

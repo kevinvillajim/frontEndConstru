@@ -11,7 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 // Componentes modulares
-import TemplateCard from "./components/TemplateCards";
+import TemplateCard from "./components/TemplateCard";
 import {
 	DeleteModal,
 	ShareModal,
@@ -230,11 +230,33 @@ const MyTemplates: React.FC = () => {
 	};
 
 	const handleView = (templateId: string) => {
-		navigate(`/calculations/templates/${templateId}/view`);
+		navigate(`/calculations/templates/edit/${templateId}`, {
+			state: {mode: "view"},
+		});	
 	};
 
+
 	const handleEdit = (templateId: string) => {
-		navigate(`/calculations/templates/${templateId}/edit`);
+		navigate(`/calculations/templates/edit/${templateId}`);
+	};
+
+	const handleDuplicate = (templateId: string) => {
+		const template = templates.find((t) => t.id === templateId);
+		if (template) {
+			navigate(`/calculations/templates/duplicate/${templateId}`, {
+				state: {template}, // Pasar el template completo para pre-llenar el formulario
+			});
+		}
+	};
+
+	// AGREGAR handler para sugerir cambios:
+	const handleSuggestChange = (templateId: string) => {
+		const template = templates.find((t) => t.id === templateId);
+		if (template) {
+			navigate(`/calculations/templates/${templateId}/suggest-change`, {
+				state: {template}, // Pasar el template para el formulario de sugerencias
+			});
+		}
 	};
 
 	const clearFilters = () => {
@@ -536,12 +558,13 @@ const MyTemplates: React.FC = () => {
 							template={template}
 							animationDelay={index}
 							onToggleFavorite={templateActions.toggleFavorite}
-							onDuplicate={templateActions.duplicateTemplate}
+							onDuplicate={handleDuplicate}
 							onDelete={templateActions.openDeleteModal}
 							onToggleStatus={templateActions.toggleTemplateStatus}
 							onView={handleView}
 							onEdit={handleEdit}
 							onShare={templateActions.openShareModal}
+							onSuggestChange={handleSuggestChange}
 						/>
 					))}
 				</div>

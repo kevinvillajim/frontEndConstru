@@ -11,6 +11,7 @@ import {
 	FolderIcon,
 	ChartBarIcon,
 	SparklesIcon,
+	ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import CalculationsLayout from "./CalculationsLayout";
 import {useCalculations} from "../shared/hooks/useCalculations";
@@ -25,14 +26,19 @@ const CalculationsHub: React.FC = () => {
 		templates,
 		savedCalculations,
 		loading,
+		error,
 		fetchTemplates,
 		fetchSavedCalculations,
 		getRecommendations,
+		clearError,
 	} = useCalculations();
 
 	const [quickStats, setQuickStats] = useState<QuickStat[]>([]);
 	const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
 	const [recommendedTemplates, setRecommendedTemplates] = useState([]);
+	const [recommendationsError, setRecommendationsError] = useState<
+		string | null
+	>(null);
 
 	// Navegación principal simplificada a 4 secciones
 	const navigationItems: NavigationItem[] = [
@@ -70,10 +76,43 @@ const CalculationsHub: React.FC = () => {
 	];
 
 	useEffect(() => {
-		// Cargar datos iniciales
-		fetchTemplates({searchTerm: ""});
-		fetchSavedCalculations();
-		loadRecommendations();
+		// Cargar datos iniciales con manejo de errores mejorado
+		const loadInitialData = async () => {
+			try {
+				// Usar Promise.allSettled para que los errores no bloqueen otras cargas
+				const results = await Promise.allSettled([
+					fetchTemplates({searchTerm: ""}).catch((err) => {
+						console.warn("⚠️ Templates endpoint failed:", err.message);
+						return [];
+					}),
+					fetchSavedCalculations().catch((err) => {
+						console.warn("⚠️ Saved calculations endpoint failed:", err.message);
+						return [];
+					}),
+				]);
+
+				// Log resultados para debugging
+				results.forEach((result, index) => {
+					const operation = index === 0 ? "Templates" : "Saved Calculations";
+					if (result.status === "rejected") {
+						console.warn(`${operation} loading failed:`, result.reason);
+					} else {
+						console.log(`✅ ${operation} loaded successfully`);
+					}
+				});
+
+				// Cargar recomendaciones por separado para no bloquear la interfaz
+				// Usar setTimeout para asegurar que no bloquee el render inicial
+				setTimeout(() => {
+					loadRecommendations();
+				}, 100);
+			} catch (error) {
+				console.error("Error in loadInitialData:", error);
+				// No establecer error crítico para problemas de carga inicial
+			}
+		};
+
+		loadInitialData();
 	}, [fetchTemplates, fetchSavedCalculations]);
 
 	useEffect(() => {
@@ -142,10 +181,24 @@ const CalculationsHub: React.FC = () => {
 
 	const loadRecommendations = async () => {
 		try {
+			setRecommendationsError(null);
+			console.log("🔍 Loading recommendations...");
+
 			const recommendations = await getRecommendations({limit: 3});
-			setRecommendedTemplates(recommendations);
+
+			if (recommendations && recommendations.length > 0) {
+				setRecommendedTemplates(recommendations);
+				console.log("✅ Recommendations loaded:", recommendations.length);
+			} else {
+				console.log("ℹ️ No recommendations available");
+				setRecommendedTemplates([]);
+			}
 		} catch (error) {
-			console.error("Error loading recommendations:", error);
+			console.warn("⚠️ Recommendations failed:", error);
+			setRecommendationsError(
+				"Las recomendaciones no están disponibles temporalmente"
+			);
+			setRecommendedTemplates([]);
 		}
 	};
 
@@ -183,8 +236,52 @@ const CalculationsHub: React.FC = () => {
 		</Link>
 	);
 
+	// Mostrar mensaje de error si hay problemas críticos
+	if (error) {
+		return (
+			<CalculationsLayout headerActions={headerActions} loading={false}>
+				<div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
+					<div className="flex items-center gap-3">
+						<ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
+						<div>
+							<h3 className="text-lg font-semibold text-red-900 mb-1">
+								Error al cargar los datos
+							</h3>
+							<p className="text-red-700 text-sm">{error}</p>
+							<button
+								onClick={() => {
+									clearError();
+									window.location.reload();
+								}}
+								className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+							>
+								Reintentar
+							</button>
+						</div>
+					</div>
+				</div>
+			</CalculationsLayout>
+		);
+	}
+
 	return (
 		<CalculationsLayout headerActions={headerActions} loading={loading}>
+			{/* Mostrar advertencia si hay errores en recomendaciones */}
+			{recommendationsError && (
+				<div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+					<div className="flex items-center gap-2">
+						<ExclamationTriangleIcon className="h-5 w-5 text-yellow-600" />
+						<p className="text-yellow-800 text-sm">{recommendationsError}</p>
+						<button
+							onClick={loadRecommendations}
+							className="ml-auto px-3 py-1 bg-yellow-600 text-white rounded text-xs hover:bg-yellow-700 transition-colors"
+						>
+							Reintentar
+						</button>
+					</div>
+				</div>
+			)}
+
 			{/* Estadísticas rápidas */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 				{quickStats.map((stat, index) => (

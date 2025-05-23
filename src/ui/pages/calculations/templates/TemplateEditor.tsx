@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useMemo} from "react";
 import {useNavigate, useParams, useLocation} from "react-router-dom";
 import {
 	ArrowLeftIcon,
@@ -102,6 +102,16 @@ const TemplateEditor: React.FC = () => {
 	const location = useLocation();
 	const existingTemplate = location.state?.template;
 
+	// CORREGIDO: Detectar modo basado en la ruta actual
+	const currentPath = location.pathname;
+	const mode = useMemo(() => {
+		if (currentPath.includes("/new")) return "create";
+		if (currentPath.includes("/duplicate/")) return "duplicate";
+		if (currentPath.includes("/edit/")) return "edit";
+		if (currentPath.includes("/editor/")) return templateId ? "edit" : "create"; // Legacy route
+		return "create";
+	}, [currentPath, templateId]);
+
 	// Hooks
 	const {createTemplate, updateTemplate} = useTemplates({
 		autoLoad: false,
@@ -137,12 +147,26 @@ const TemplateEditor: React.FC = () => {
 	const [newApplicationCase, setNewApplicationCase] = useState("");
 	const [newLimitation, setNewLimitation] = useState("");
 
-	const isEditing = Boolean(templateId && existingTemplate);
+	const isEditing = mode === "edit";
+	const isDuplicating = mode === "duplicate";
 
-	// Inicializar con datos existentes si es edición
+	// CORREGIDO: Efecto para cargar template si es necesario
+	useEffect(() => {
+		if (
+			(mode === "edit" || mode === "duplicate") &&
+			templateId &&
+			!existingTemplate
+		) {
+			// Aquí deberías cargar el template por ID
+			// loadTemplate(templateId);
+			console.log("Loading template:", templateId);
+		}
+	}, [mode, templateId, existingTemplate]);
+
+	// CORREGIDO: Inicializar con datos existentes, manejando duplicación
 	useEffect(() => {
 		if (existingTemplate) {
-			setFormData({
+			const baseData = {
 				name: existingTemplate.name || "",
 				description: existingTemplate.description || "",
 				longDescription: existingTemplate.longDescription || "",
@@ -162,9 +186,48 @@ const TemplateEditor: React.FC = () => {
 				requirements: existingTemplate.requirements || [],
 				applicationCases: existingTemplate.applicationCases || [],
 				limitations: existingTemplate.limitations || [],
-			});
+			};
+
+			if (isDuplicating) {
+				// Para duplicar, cambiar el nombre y hacer privada
+				setFormData({
+					...baseData,
+					name: `${existingTemplate.name} (Copia)`,
+					isPublic: false,
+				});
+			} else {
+				// Para editar, usar datos tal como están
+				setFormData(baseData);
+			}
 		}
-	}, [existingTemplate]);
+	}, [existingTemplate, isDuplicating]);
+
+	// AGREGADO: Funciones para obtener título y descripción dinámicos
+	const getTitle = () => {
+		switch (mode) {
+			case "create":
+				return "Nueva Plantilla";
+			case "duplicate":
+				return "Duplicar Plantilla";
+			case "edit":
+				return "Editar Plantilla";
+			default:
+				return "Plantilla";
+		}
+	};
+
+	const getDescription = () => {
+		switch (mode) {
+			case "create":
+				return "Crea una nueva plantilla de cálculo personalizada";
+			case "duplicate":
+				return "Crea una copia de la plantilla existente";
+			case "edit":
+				return "Modifica tu plantilla existente";
+			default:
+				return "";
+		}
+	};
 
 	// Manejadores de cambio
 	const handleInputChange = (field: keyof TemplateFormData, value: any) => {
@@ -354,14 +417,9 @@ const TemplateEditor: React.FC = () => {
 							<ArrowLeftIcon className="h-5 w-5 text-gray-600" />
 						</button>
 						<div>
-							<h1 className="text-2xl font-bold text-gray-900">
-								{isEditing ? "Editar Plantilla" : "Nueva Plantilla"}
-							</h1>
-							<p className="text-gray-600">
-								{isEditing
-									? "Modifica tu plantilla existente"
-									: "Crea una nueva plantilla de cálculo personalizada"}
-							</p>
+							{/* CORREGIDO: Usar funciones dinámicas para título y descripción */}
+							<h1 className="text-2xl font-bold text-gray-900">{getTitle()}</h1>
+							<p className="text-gray-600">{getDescription()}</p>
 						</div>
 					</div>
 				</div>
