@@ -1,5 +1,4 @@
 import React, {useState, useEffect} from "react";
-import {useParams, useLocation, useNavigate} from "react-router-dom";
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
@@ -14,12 +13,14 @@ import {
 	ExclamationTriangleIcon,
 	LightBulbIcon,
 	CheckIcon,
+	PencilSquareIcon,
 	UserGroupIcon,
-	InformationCircleIcon,
+	TagIcon,
+	SparklesIcon,
 } from "@heroicons/react/24/outline";
 import {HeartIcon as HeartSolidIcon} from "@heroicons/react/24/solid";
 
-// Interfaces para tipado
+// Tipos de datos
 interface CalculationParameter {
 	id: string;
 	name: string;
@@ -40,7 +41,6 @@ interface CalculationTemplate {
 	id: string;
 	name: string;
 	description: string;
-	longDescription?: string;
 	category: string;
 	necReference: string;
 	verified: boolean;
@@ -49,12 +49,13 @@ interface CalculationTemplate {
 	estimatedTime: string;
 	parameters: CalculationParameter[];
 	tags: string[];
-	isCollaborative?: boolean;
-	createdBy?: string;
-	shareLevel: "public" | "organization" | "private";
+	profession: string[];
+	difficulty: "basic" | "intermediate" | "advanced";
 	requirements: string[];
-	applicationCases?: string[];
-	limitations?: string[];
+	allowSuggestions?: boolean;
+	isPublic?: boolean;
+	createdBy?: string;
+	lastUpdated: string;
 }
 
 interface CalculationResult {
@@ -81,120 +82,108 @@ interface CalculationResult {
 	};
 }
 
-// Template de ejemplo para demanda eléctrica residencial
-const getTemplateById = (id: string): CalculationTemplate | null => {
-	const templates: Record<string, CalculationTemplate> = {
-		"nec-elec-01": {
-			id: "nec-elec-01",
-			name: "Demanda Eléctrica Residencial",
-			description:
-				"Cálculo de demanda eléctrica para viviendas según normativa ecuatoriana NEC-SB-IE",
-			longDescription:
-				"Herramienta completa para determinar la demanda eléctrica de instalaciones residenciales aplicando los factores de diversidad establecidos en la normativa ecuatoriana. Considera circuitos de iluminación, tomacorrientes, cargas especiales y sistemas de emergencia.",
-			category: "electrical",
-			necReference: "NEC-SB-IE, Sección 1.1",
-			verified: true,
-			rating: 4.8,
-			usageCount: 3420,
-			estimatedTime: "5-8 min",
-			shareLevel: "public",
-			tags: ["demanda", "residencial", "eléctrico", "NEC"],
-			requirements: [
-				"Área construida de la vivienda",
-				"Número y tipo de circuitos",
-				"Cargas especiales instaladas",
-			],
-			applicationCases: [
-				"Viviendas unifamiliares estándar",
-				"Departamentos en edificios multifamiliares",
-				"Casas con cargas especiales (piscinas, saunas)",
-			],
-			limitations: [
-				"Aplicable solo a instalaciones residenciales",
-				"No incluye cargas industriales o comerciales",
-				"Requiere verificación para instalaciones especiales",
-			],
-			parameters: [
-				{
-					id: "house_area",
-					name: "houseArea",
-					label: "Área de vivienda",
-					type: "number",
-					unit: "m²",
-					required: true,
-					min: 50,
-					max: 500,
-					placeholder: "150",
-					tooltip: "Área total construida de la vivienda",
-					typicalRange: "120-200 m² típico",
-				},
-				{
-					id: "voltage",
-					name: "voltage",
-					label: "Voltaje nominal",
-					type: "select",
-					unit: "V",
-					required: true,
-					defaultValue: "220",
-					options: ["110", "220", "240"],
-					tooltip: "Voltaje de suministro estándar en Ecuador: 220V",
-				},
-				{
-					id: "lighting_circuits",
-					name: "lightingCircuits",
-					label: "N° circuitos de iluminación",
-					type: "number",
-					unit: "und",
-					required: true,
-					min: 1,
-					max: 10,
-					defaultValue: 3,
-					tooltip: "Número de circuitos dedicados a iluminación",
-					typicalRange: "2-4 circuitos típico",
-				},
-				{
-					id: "outlets_circuits",
-					name: "outletsCircuits",
-					label: "N° circuitos de tomacorrientes",
-					type: "number",
-					unit: "und",
-					required: true,
-					min: 1,
-					max: 15,
-					defaultValue: 4,
-					tooltip: "Número de circuitos para tomacorrientes generales",
-					typicalRange: "3-6 circuitos típico",
-				},
-				{
-					id: "special_loads",
-					name: "specialLoads",
-					label: "Cargas especiales",
-					type: "number",
-					unit: "W",
-					required: false,
-					defaultValue: 2000,
-					tooltip: "Cargas adicionales como cocina eléctrica, calentador, etc.",
-					typicalRange: "1500-3000 W típico",
-				},
-			],
-		},
-		// Agregar más templates aquí según sea necesario
-	};
+interface CalculationInterfaceProps {
+	template: CalculationTemplate;
+	onBack: () => void;
+	onSuggestChange?: (template: CalculationTemplate) => void;
+}
 
-	return templates[id] || null;
+// Template de ejemplo actualizado
+const sampleTemplate: CalculationTemplate = {
+	id: "elec-demand-residential",
+	name: "Demanda Eléctrica Residencial",
+	description:
+		"Calcula la demanda eléctrica de una vivienda según normativa ecuatoriana NEC-SB-IE",
+	category: "electrical",
+	necReference: "NEC-SB-IE, Sección 1.1",
+	verified: true,
+	rating: 4.8,
+	usageCount: 127,
+	estimatedTime: "5-8 min",
+	tags: ["demanda", "residencial", "eléctrico", "NEC"],
+	profession: ["electrical_engineer", "architect"],
+	difficulty: "basic",
+	requirements: [
+		"Área construida de la vivienda",
+		"Número y tipo de circuitos",
+		"Cargas especiales instaladas",
+	],
+	allowSuggestions: true,
+	isPublic: true,
+	lastUpdated: "2024-03-10",
+	parameters: [
+		{
+			id: "house_area",
+			name: "houseArea",
+			label: "Área de vivienda",
+			type: "number",
+			unit: "m²",
+			required: true,
+			min: 50,
+			max: 500,
+			placeholder: "150",
+			tooltip: "Área total construida de la vivienda",
+			typicalRange: "120-200 m² típico",
+		},
+		{
+			id: "voltage",
+			name: "voltage",
+			label: "Voltaje nominal",
+			type: "select",
+			unit: "V",
+			required: true,
+			defaultValue: "220",
+			options: ["110", "220", "240"],
+			tooltip: "Voltaje de suministro estándar en Ecuador: 220V",
+		},
+		{
+			id: "lighting_circuits",
+			name: "lightingCircuits",
+			label: "N° circuitos de iluminación",
+			type: "number",
+			unit: "und",
+			required: true,
+			min: 1,
+			max: 10,
+			defaultValue: 3,
+			tooltip: "Número de circuitos dedicados a iluminación",
+			typicalRange: "2-4 circuitos típico",
+		},
+		{
+			id: "outlets_circuits",
+			name: "outletsCircuits",
+			label: "N° circuitos de tomacorrientes",
+			type: "number",
+			unit: "und",
+			required: true,
+			min: 1,
+			max: 15,
+			defaultValue: 4,
+			tooltip: "Número de circuitos para tomacorrientes generales",
+			typicalRange: "3-6 circuitos típico",
+		},
+		{
+			id: "special_loads",
+			name: "specialLoads",
+			label: "Cargas especiales",
+			type: "number",
+			unit: "W",
+			required: false,
+			defaultValue: 2000,
+			tooltip: "Cargas adicionales como cocina eléctrica, calentador, etc.",
+			typicalRange: "1500-3000 W típico",
+		},
+	],
 };
 
-const CalculationInterface: React.FC = () => {
-	const {templateId} = useParams<{templateId: string}>();
-	const location = useLocation();
-	const navigate = useNavigate();
-
-	// Obtener template desde params o location state
-	const [template, setTemplate] = useState<CalculationTemplate | null>(
-		location.state?.template ||
-			(templateId ? getTemplateById(templateId) : null)
+const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
+	template: propTemplate,
+	onBack,
+	onSuggestChange,
+}) => {
+	const [template] = useState<CalculationTemplate>(
+		propTemplate || sampleTemplate
 	);
-
 	const [isFavorite, setIsFavorite] = useState(false);
 	const [currentStep, setCurrentStep] = useState(1);
 	const [parameters, setParameters] = useState<Record<string, string | number>>(
@@ -206,42 +195,16 @@ const CalculationInterface: React.FC = () => {
 		Record<string, string>
 	>({});
 
-	// Cargar template si no está disponible
-	useEffect(() => {
-		if (!template && templateId) {
-			const loadedTemplate = getTemplateById(templateId);
-			if (loadedTemplate) {
-				setTemplate(loadedTemplate);
-			} else {
-				// Redirigir si no se encuentra el template
-				navigate("/calculations/catalog");
-			}
-		}
-	}, [templateId, template, navigate]);
-
 	// Inicializar parámetros con valores por defecto
 	useEffect(() => {
-		if (template) {
-			const defaultParams: Record<string, string | number> = {};
-			template.parameters.forEach((param) => {
-				if (param.defaultValue !== undefined) {
-					defaultParams[param.name] = param.defaultValue;
-				}
-			});
-			setParameters(defaultParams);
-		}
+		const defaultParams: Record<string, string | number> = {};
+		template.parameters.forEach((param) => {
+			if (param.defaultValue !== undefined) {
+				defaultParams[param.name] = param.defaultValue;
+			}
+		});
+		setParameters(defaultParams);
 	}, [template]);
-
-	if (!template) {
-		return (
-			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
-				<div className="text-center">
-					<div className="animate-spin h-8 w-8 border-2 border-primary-500 rounded-full border-t-transparent mx-auto mb-4"></div>
-					<p className="text-gray-600">Cargando plantilla...</p>
-				</div>
-			</div>
-		);
-	}
 
 	// Validar parámetros en tiempo real
 	const validateParameter = (
@@ -375,15 +338,30 @@ const CalculationInterface: React.FC = () => {
 		});
 	};
 
-	const handleSuggestChange = () => {
-		navigate(`/calculations/suggest-change/${template.id}`, {
-			state: {template},
-		});
+	const getDifficultyColor = (difficulty: string) => {
+		switch (difficulty) {
+			case "basic":
+				return "bg-green-100 text-green-700 border-green-200";
+			case "intermediate":
+				return "bg-yellow-100 text-yellow-700 border-yellow-200";
+			case "advanced":
+				return "bg-red-100 text-red-700 border-red-200";
+			default:
+				return "bg-gray-100 text-gray-700 border-gray-200";
+		}
 	};
 
-	const handleSaveCalculation = () => {
-		// TODO: Implementar guardado del cálculo
-		console.log("Guardando cálculo...", {template, parameters, results});
+	const getDifficultyText = (difficulty: string) => {
+		switch (difficulty) {
+			case "basic":
+				return "Básico";
+			case "intermediate":
+				return "Intermedio";
+			case "advanced":
+				return "Avanzado";
+			default:
+				return difficulty;
+		}
 	};
 
 	const renderStepIndicator = () => (
@@ -415,54 +393,102 @@ const CalculationInterface: React.FC = () => {
 
 	const renderTemplateHeader = () => (
 		<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+			{/* Botón de regreso */}
+			<div className="flex items-center gap-4 mb-6">
+				<button
+					onClick={onBack}
+					className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+				>
+					<ArrowLeftIcon className="h-4 w-4" />
+					<span>Volver al catálogo</span>
+				</button>
+			</div>
+
 			<div className="flex items-start justify-between mb-4">
 				<div className="flex-1">
 					<div className="flex items-center gap-3 mb-2">
-						<button
-							onClick={() => navigate("/calculations/catalog")}
-							className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-						>
-							<ArrowLeftIcon className="h-5 w-5 text-gray-600" />
-						</button>
 						<h1 className="text-2xl font-bold text-gray-900">
 							{template.name}
 						</h1>
 						{template.verified && (
 							<CheckBadgeIcon className="h-6 w-6 text-green-600" />
 						)}
-						{template.isCollaborative && (
-							<span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-								COLABORATIVA
+						{template.isPublic && (
+							<span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+								PÚBLICA
 							</span>
 						)}
 					</div>
 					<p className="text-gray-600 mb-4">{template.description}</p>
 
-					<div className="flex items-center gap-6 text-sm text-gray-500">
-						<div className="flex items-center gap-1">
-							<BookOpenIcon className="h-4 w-4" />
+					{/* Metadatos */}
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+						<div className="flex items-center gap-2 text-sm text-gray-600">
+							<BookOpenIcon className="h-4 w-4 text-primary-600" />
 							<span>{template.necReference}</span>
 						</div>
-						<div className="flex items-center gap-1">
+						<div className="flex items-center gap-2 text-sm text-gray-600">
 							<StarIcon className="h-4 w-4 text-yellow-500" />
 							<span>
 								{template.rating}/5 ({template.usageCount} usos)
 							</span>
 						</div>
-						<div className="flex items-center gap-1">
-							<ClockIcon className="h-4 w-4" />
+						<div className="flex items-center gap-2 text-sm text-gray-600">
+							<ClockIcon className="h-4 w-4 text-green-600" />
 							<span>{template.estimatedTime}</span>
 						</div>
-						{template.isCollaborative && template.createdBy && (
-							<div className="flex items-center gap-1">
-								<UserGroupIcon className="h-4 w-4" />
-								<span>Por: {template.createdBy}</span>
-							</div>
-						)}
+						<div className="flex items-center gap-2">
+							<span
+								className={`px-2 py-1 rounded-lg text-xs font-medium border ${getDifficultyColor(template.difficulty)}`}
+							>
+								{getDifficultyText(template.difficulty)}
+							</span>
+						</div>
+					</div>
+
+					{/* Profesiones */}
+					<div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+						<UserGroupIcon className="h-4 w-4 text-gray-500" />
+						<span>Dirigido a: {template.profession.join(", ")}</span>
+					</div>
+
+					{/* Tags */}
+					<div className="flex items-center gap-2 mb-4">
+						<TagIcon className="h-4 w-4 text-gray-500" />
+						<div className="flex flex-wrap gap-1">
+							{template.tags.map((tag, index) => (
+								<span
+									key={index}
+									className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md"
+								>
+									{tag}
+								</span>
+							))}
+						</div>
+					</div>
+
+					{/* Requerimientos */}
+					<div className="bg-blue-50 rounded-lg p-4">
+						<h4 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+							<ExclamationTriangleIcon className="h-4 w-4" />
+							Requisitos para el cálculo:
+						</h4>
+						<ul className="space-y-1">
+							{template.requirements.map((req, index) => (
+								<li
+									key={index}
+									className="text-sm text-blue-800 flex items-start gap-2"
+								>
+									<CheckIcon className="h-3 w-3 mt-0.5 text-blue-600" />
+									<span>{req}</span>
+								</li>
+							))}
+						</ul>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-2">
+				{/* Acciones laterales */}
+				<div className="flex flex-col items-center gap-2 ml-6">
 					<button
 						onClick={() => setIsFavorite(!isFavorite)}
 						className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -476,74 +502,29 @@ const CalculationInterface: React.FC = () => {
 					<button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
 						<ShareIcon className="h-5 w-5 text-gray-400" />
 					</button>
-					{template.shareLevel === "public" && (
+					{template.allowSuggestions && onSuggestChange && (
 						<button
-							onClick={handleSuggestChange}
-							className="px-3 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors flex items-center gap-2"
+							onClick={() => onSuggestChange(template)}
+							className="p-2 hover:bg-gray-100 rounded-full transition-colors group"
+							title="Sugerir mejora"
 						>
-							<LightBulbIcon className="h-4 w-4" />
-							Sugerir Mejora
+							<PencilSquareIcon className="h-5 w-5 text-gray-400 group-hover:text-primary-600" />
 						</button>
 					)}
 				</div>
 			</div>
 
-			{/* Información adicional expandible */}
-			{template.longDescription && (
-				<div className="border-t border-gray-200 pt-4 mt-4">
-					<h3 className="font-medium text-gray-900 mb-2">
-						Descripción Detallada
-					</h3>
-					<p className="text-gray-600 text-sm leading-relaxed">
-						{template.longDescription}
-					</p>
-				</div>
-			)}
-
-			{/* Casos de aplicación y limitaciones */}
-			{(template.applicationCases || template.limitations) && (
-				<div className="border-t border-gray-200 pt-4 mt-4">
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-						{template.applicationCases && (
-							<div>
-								<h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-									<InformationCircleIcon className="h-4 w-4 text-blue-500" />
-									Casos de Aplicación
-								</h4>
-								<ul className="space-y-1">
-									{template.applicationCases.map((useCase, index) => (
-										<li
-											key={index}
-											className="text-sm text-gray-600 flex items-start gap-2"
-										>
-											<div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-											<span>{useCase}</span>
-										</li>
-									))}
-								</ul>
-							</div>
-						)}
-
-						{template.limitations && (
-							<div>
-								<h4 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
-									<ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />
-									Limitaciones
-								</h4>
-								<ul className="space-y-1">
-									{template.limitations.map((limitation, index) => (
-										<li
-											key={index}
-											className="text-sm text-gray-600 flex items-start gap-2"
-										>
-											<div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mt-2 flex-shrink-0" />
-											<span>{limitation}</span>
-										</li>
-									))}
-								</ul>
-							</div>
-						)}
-					</div>
+			{/* Botón de sugerir cambio prominente */}
+			{template.allowSuggestions && onSuggestChange && (
+				<div className="border-t border-gray-200 pt-4">
+					<button
+						onClick={() => onSuggestChange(template)}
+						className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-yellow-100 text-orange-700 rounded-lg hover:from-orange-200 hover:to-yellow-200 transition-all duration-200 text-sm font-medium"
+					>
+						<SparklesIcon className="h-4 w-4" />
+						<span>¿Tienes una sugerencia de mejora para esta plantilla?</span>
+						<ArrowRightIcon className="h-4 w-4" />
+					</button>
 				</div>
 			)}
 		</div>
@@ -763,24 +744,18 @@ const CalculationInterface: React.FC = () => {
 				{/* Acciones */}
 				<div className="flex justify-center gap-4">
 					<button
-						onClick={() => {
-							setCurrentStep(2);
-							setResults(null);
-						}}
+						onClick={() => setCurrentStep(2)}
 						className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
 					>
 						<ArrowLeftIcon className="h-4 w-4" />
 						Recalcular
 					</button>
-					<button
-						onClick={handleSaveCalculation}
-						className="px-6 py-3 bg-secondary-500 text-gray-900 rounded-lg hover:bg-secondary-600 transition-colors flex items-center gap-2"
-					>
-						💾 Guardar Cálculo
-					</button>
 					<button className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2">
 						<DocumentArrowDownIcon className="h-4 w-4" />
 						Exportar PDF
+					</button>
+					<button className="px-6 py-3 bg-secondary-500 text-gray-900 rounded-lg hover:bg-secondary-600 transition-colors flex items-center gap-2">
+						💾 Guardar en Proyecto
 					</button>
 				</div>
 			</div>
@@ -800,7 +775,7 @@ const CalculationInterface: React.FC = () => {
 								onClick={() => setCurrentStep(2)}
 								className="px-8 py-3 bg-gradient-to-r from-primary-600 to-secondary-500 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-[1.02] flex items-center gap-2 mx-auto"
 							>
-								▶️ Usar Plantilla
+								▶️ Comenzar Cálculo
 								<ArrowRightIcon className="h-4 w-4" />
 							</button>
 						</div>

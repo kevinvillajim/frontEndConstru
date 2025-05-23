@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, {useState} from "react";
 import {
 	BuildingOffice2Icon,
 	BoltIcon,
@@ -22,12 +22,11 @@ import {
 	ArrowPathIcon,
 	ShieldCheckIcon,
 	ExclamationCircleIcon,
-	PlusIcon,
+	PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import {StarIcon as StarSolidIcon} from "@heroicons/react/24/solid";
-import {useNavigate} from "react-router-dom";
 
-// Interfaces para tipado
+// Tipos de datos
 interface CalculationTemplate {
 	id: string;
 	name: string;
@@ -43,21 +42,26 @@ interface CalculationTemplate {
 	usageCount: number;
 	isFavorite: boolean;
 	isNew: boolean;
-	isCollaborative: boolean;
-	shareLevel: "public" | "organization" | "private";
-	createdBy?: string;
 	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 	tags: string[];
 	lastUpdated: string;
 	requirements: string[];
+	isPublic?: boolean;
+	createdBy?: string;
+	allowSuggestions?: boolean;
 }
 
-// Mock data separando plantillas públicas de las colaborativas
-const publicTemplates: CalculationTemplate[] = [
-	// ESTRUCTURAL - NEC
+interface CalculationsCatalogProps {
+	onSelectTemplate: (template: CalculationTemplate) => void;
+	onSuggestChange?: (template: CalculationTemplate) => void;
+}
+
+// Mock data con más plantillas organizadas por categoría
+const allTemplates: CalculationTemplate[] = [
+	// ESTRUCTURAL
 	{
-		id: "nec-str-01",
-		name: "Análisis Sísmico Estático NEC",
+		id: "str-01",
+		name: "Análisis Sísmico Estático",
 		description:
 			"Cálculo de fuerzas sísmicas según NEC-SE-DS para estructuras regulares",
 		category: "structural",
@@ -68,23 +72,23 @@ const publicTemplates: CalculationTemplate[] = [
 		necReference: "NEC-SE-DS, Cap. 2",
 		verified: true,
 		rating: 4.9,
-		usageCount: 1256,
+		usageCount: 156,
 		isFavorite: false,
-		isNew: false,
-		isCollaborative: false,
-		shareLevel: "public",
+		isNew: true,
 		icon: BuildingOffice2Icon,
-		tags: ["sísmico", "fuerzas", "análisis", "estructura", "nec"],
+		tags: ["sísmico", "fuerzas", "análisis", "estructura"],
 		lastUpdated: "2024-03-15",
 		requirements: [
 			"Geometría estructura",
 			"Cargas permanentes",
 			"Zona sísmica",
 		],
+		isPublic: true,
+		allowSuggestions: true,
 	},
 	{
-		id: "nec-str-02",
-		name: "Diseño de Vigas de Hormigón Armado NEC",
+		id: "str-02",
+		name: "Diseño de Vigas de Hormigón Armado",
 		description:
 			"Cálculo y verificación de vigas rectangulares y T según NEC-SE-HM",
 		category: "structural",
@@ -95,24 +99,75 @@ const publicTemplates: CalculationTemplate[] = [
 		necReference: "NEC-SE-HM, Cap. 9",
 		verified: true,
 		rating: 4.8,
-		usageCount: 2134,
+		usageCount: 234,
 		isFavorite: true,
 		isNew: false,
-		isCollaborative: false,
-		shareLevel: "public",
 		icon: BuildingOffice2Icon,
-		tags: ["hormigón", "vigas", "armado", "flexión", "nec"],
+		tags: ["hormigón", "vigas", "armado", "flexión"],
 		lastUpdated: "2024-02-28",
 		requirements: [
 			"Dimensiones viga",
 			"Cargas aplicadas",
 			"Resistencia hormigón",
 		],
+		isPublic: true,
+		allowSuggestions: true,
 	},
-	// ELÉCTRICO - NEC
 	{
-		id: "nec-elec-01",
-		name: "Demanda Eléctrica Residencial NEC",
+		id: "str-03",
+		name: "Cálculo de Columnas Compuestas",
+		description:
+			"Diseño de columnas circulares y rectangulares con carga axial y momento",
+		category: "structural",
+		subcategory: "concrete",
+		profession: ["structural_engineer"],
+		difficulty: "advanced",
+		estimatedTime: "30-40 min",
+		necReference: "NEC-SE-HM, Cap. 10",
+		verified: true,
+		rating: 4.7,
+		usageCount: 89,
+		isFavorite: false,
+		isNew: false,
+		icon: BuildingOffice2Icon,
+		tags: ["columnas", "hormigón", "compresión", "pandeo"],
+		lastUpdated: "2024-01-20",
+		requirements: ["Geometría columna", "Cargas axiales", "Momentos flectores"],
+		isPublic: true,
+		allowSuggestions: true,
+	},
+	{
+		id: "str-04",
+		name: "Diseño de Zapatas Aisladas",
+		description:
+			"Cálculo de zapatas cuadradas y rectangulares según capacidad portante",
+		category: "structural",
+		subcategory: "foundations",
+		profession: ["civil_engineer", "geotechnical_engineer"],
+		difficulty: "intermediate",
+		estimatedTime: "15-25 min",
+		necReference: "NEC-SE-CG, Cap. 16",
+		verified: true,
+		rating: 4.6,
+		usageCount: 178,
+		isFavorite: true,
+		isNew: false,
+		icon: WrenchScrewdriverIcon,
+		tags: ["zapatas", "cimentación", "suelo", "capacidad portante"],
+		lastUpdated: "2024-03-01",
+		requirements: [
+			"Capacidad portante suelo",
+			"Cargas columna",
+			"Nivel freático",
+		],
+		isPublic: true,
+		allowSuggestions: true,
+	},
+
+	// ELÉCTRICO
+	{
+		id: "elec-01",
+		name: "Demanda Eléctrica Residencial",
 		description:
 			"Cálculo de demanda eléctrica para viviendas según factores NEC-SB-IE",
 		category: "electrical",
@@ -123,69 +178,220 @@ const publicTemplates: CalculationTemplate[] = [
 		necReference: "NEC-SB-IE, Sección 1.1",
 		verified: true,
 		rating: 4.8,
-		usageCount: 3420,
+		usageCount: 342,
 		isFavorite: true,
 		isNew: false,
-		isCollaborative: false,
-		shareLevel: "public",
 		icon: BoltIcon,
-		tags: ["demanda", "residencial", "factores", "carga", "nec"],
+		tags: ["demanda", "residencial", "factores", "carga"],
 		lastUpdated: "2024-03-10",
 		requirements: ["Área vivienda", "Número circuitos", "Cargas especiales"],
+		isPublic: true,
+		allowSuggestions: true,
 	},
-];
-
-const collaborativeTemplates: CalculationTemplate[] = [
 	{
-		id: "collab-01",
-		name: "Cálculo de Losas Optimizado",
+		id: "elec-02",
+		name: "Cálculo de Conductores Eléctricos",
 		description:
-			"Método mejorado para cálculo de losas con consideraciones sísmicas locales",
-		category: "structural",
-		subcategory: "concrete",
-		profession: ["structural_engineer"],
-		difficulty: "advanced",
-		estimatedTime: "30-40 min",
-		necReference: "Basado en NEC-SE-HM",
+			"Dimensionamiento de conductores por capacidad de corriente y caída de voltaje",
+		category: "electrical",
+		subcategory: "conductors",
+		profession: ["electrical_engineer"],
+		difficulty: "intermediate",
+		estimatedTime: "12-18 min",
+		necReference: "NEC-SB-IE, Tablas 310.15",
 		verified: true,
-		rating: 4.6,
-		usageCount: 89,
+		rating: 4.7,
+		usageCount: 198,
 		isFavorite: false,
-		isNew: true,
-		isCollaborative: true,
-		shareLevel: "public",
-		createdBy: "Ing. María González",
-		icon: BuildingOffice2Icon,
-		tags: ["losas", "optimizado", "sísmico", "colaborativo"],
-		lastUpdated: "2024-03-20",
-		requirements: [
-			"Geometría losa",
-			"Cargas distribuidas",
-			"Condiciones apoyo",
-		],
+		isNew: false,
+		icon: CpuChipIcon,
+		tags: ["conductores", "corriente", "caída voltaje", "ampacidad"],
+		lastUpdated: "2024-02-15",
+		requirements: ["Corriente carga", "Distancia", "Tipo instalación"],
+		isPublic: true,
+		allowSuggestions: true,
 	},
 	{
-		id: "collab-02",
-		name: "Instalaciones Eléctricas Comerciales Mejoradas",
-		description: "Cálculo especializado para comercios con cargas variables",
+		id: "elec-03",
+		name: "Sistema de Puesta a Tierra",
+		description:
+			"Diseño de electrodo y conductor de puesta a tierra según NEC-SB-IE",
 		category: "electrical",
-		subcategory: "commercial",
+		subcategory: "grounding",
 		profession: ["electrical_engineer"],
 		difficulty: "intermediate",
 		estimatedTime: "15-20 min",
-		necReference: "Adaptación NEC-SB-IE",
+		necReference: "NEC-SB-IE, Cap. 25",
 		verified: true,
-		rating: 4.4,
-		usageCount: 156,
+		rating: 4.9,
+		usageCount: 134,
+		isFavorite: false,
+		isNew: true,
+		icon: ShieldCheckIcon,
+		tags: ["puesta tierra", "seguridad", "electrodo", "resistividad"],
+		lastUpdated: "2024-03-20",
+		requirements: ["Resistividad suelo", "Corriente falla", "Tipo electrodo"],
+		isPublic: true,
+		allowSuggestions: true,
+	},
+	{
+		id: "elec-04",
+		name: "Iluminación Artificial",
+		description: "Cálculo de niveles de iluminación y eficiencia energética",
+		category: "electrical",
+		subcategory: "lighting",
+		profession: ["electrical_engineer", "architect"],
+		difficulty: "basic",
+		estimatedTime: "10-15 min",
+		necReference: "NEC-HS-EE, Sección 4.1",
+		verified: true,
+		rating: 4.5,
+		usageCount: 267,
 		isFavorite: false,
 		isNew: false,
-		isCollaborative: true,
-		shareLevel: "public",
-		createdBy: "Ing. Carlos Mendoza",
-		icon: BoltIcon,
-		tags: ["comercial", "cargas variables", "mejorado", "colaborativo"],
+		icon: LightBulbIcon,
+		tags: ["iluminación", "luxes", "eficiencia", "LED"],
+		lastUpdated: "2024-01-25",
+		requirements: ["Área local", "Actividad", "Tipo luminarias"],
+		isPublic: true,
+		allowSuggestions: true,
+	},
+
+	// ARQUITECTÓNICO
+	{
+		id: "arch-01",
+		name: "Cálculo de Áreas",
+		description:
+			"Cómputo de áreas útiles, construidas y computables según NEC-HS-A",
+		category: "architectural",
+		subcategory: "areas",
+		profession: ["architect"],
+		difficulty: "basic",
+		estimatedTime: "5-10 min",
+		necReference: "NEC-HS-A, Art. 15",
+		verified: true,
+		rating: 4.6,
+		usageCount: 445,
+		isFavorite: true,
+		isNew: false,
+		icon: CalculatorIcon,
+		tags: ["áreas", "útil", "construida", "computable"],
+		lastUpdated: "2024-02-20",
+		requirements: ["Planta arquitectónica", "Espesores muros", "Voladizos"],
+		isPublic: true,
+		allowSuggestions: true,
+	},
+	{
+		id: "arch-02",
+		name: "Diseño de Escaleras",
+		description: "Cálculo geométrico y verificación normativa de escaleras",
+		category: "architectural",
+		subcategory: "circulation",
+		profession: ["architect"],
+		difficulty: "intermediate",
+		estimatedTime: "12-18 min",
+		necReference: "NEC-HS-A, Art. 45",
+		verified: true,
+		rating: 4.4,
+		usageCount: 189,
+		isFavorite: false,
+		isNew: false,
+		icon: HomeIcon,
+		tags: ["escaleras", "huella", "contrahuella", "normativa"],
+		lastUpdated: "2024-01-30",
+		requirements: ["Altura salvar", "Ancho escalera", "Tipo uso"],
+		isPublic: true,
+		allowSuggestions: true,
+	},
+	{
+		id: "arch-03",
+		name: "Ventilación Natural",
+		description: "Cálculo de ventilación cruzada y renovaciones por hora",
+		category: "architectural",
+		subcategory: "environmental",
+		profession: ["architect"],
+		difficulty: "intermediate",
+		estimatedTime: "15-20 min",
+		necReference: "NEC-HS-EE, Sección 3.2",
+		verified: true,
+		rating: 4.7,
+		usageCount: 156,
+		isFavorite: true,
+		isNew: false,
+		icon: ArrowPathIcon,
+		tags: ["ventilación", "natural", "renovaciones", "confort"],
+		lastUpdated: "2024-02-10",
+		requirements: ["Área local", "Aberturas", "Orientación vientos"],
+		isPublic: true,
+		allowSuggestions: true,
+	},
+	{
+		id: "arch-04",
+		name: "Accesibilidad Universal",
+		description: "Verificación de rampas y espacios según NEC-HS-A",
+		category: "architectural",
+		subcategory: "accessibility",
+		profession: ["architect"],
+		difficulty: "basic",
+		estimatedTime: "8-12 min",
+		necReference: "NEC-HS-A, Cap. 7",
+		verified: true,
+		rating: 4.3,
+		usageCount: 98,
+		isFavorite: false,
+		isNew: true,
+		icon: AcademicCapIcon,
+		tags: ["accesibilidad", "rampas", "universal", "discapacidad"],
 		lastUpdated: "2024-03-05",
-		requirements: ["Tipo local", "Equipos instalados", "Horarios operación"],
+		requirements: ["Desnivel", "Longitud disponible", "Ancho paso"],
+		isPublic: true,
+		allowSuggestions: true,
+	},
+
+	// HIDRÁULICO
+	{
+		id: "hydr-01",
+		name: "Dimensionamiento de Tuberías",
+		description: "Cálculo de diámetros por velocidad y pérdida de carga",
+		category: "hydraulic",
+		subcategory: "piping",
+		profession: ["mechanical_engineer", "plumber"],
+		difficulty: "intermediate",
+		estimatedTime: "15-25 min",
+		necReference: "NEC-HS-HI, Cap. 3",
+		verified: true,
+		rating: 4.5,
+		usageCount: 67,
+		isFavorite: false,
+		isNew: false,
+		icon: BeakerIcon,
+		tags: ["tuberías", "diámetro", "velocidad", "pérdidas"],
+		lastUpdated: "2024-02-05",
+		requirements: ["Caudal diseño", "Material tubería", "Longitud total"],
+		isPublic: true,
+		allowSuggestions: true,
+	},
+	{
+		id: "hydr-02",
+		name: "Cálculo de Bombas",
+		description: "Selección de bombas centrífugas por altura dinámica total",
+		category: "hydraulic",
+		subcategory: "pumps",
+		profession: ["mechanical_engineer"],
+		difficulty: "advanced",
+		estimatedTime: "20-30 min",
+		necReference: "NEC-HS-HI, Cap. 5",
+		verified: true,
+		rating: 4.8,
+		usageCount: 43,
+		isFavorite: true,
+		isNew: true,
+		icon: CogIcon,
+		tags: ["bombas", "altura dinámica", "potencia", "NPSH"],
+		lastUpdated: "2024-03-12",
+		requirements: ["Caudal bombeo", "Altura geométrica", "Pérdidas sistema"],
+		isPublic: true,
+		allowSuggestions: true,
 	},
 ];
 
@@ -212,7 +418,6 @@ const categories = [
 			{id: "conductors", name: "Conductores"},
 			{id: "grounding", name: "Puesta a Tierra"},
 			{id: "lighting", name: "Iluminación"},
-			{id: "commercial", name: "Instalaciones Comerciales"},
 		],
 	},
 	{
@@ -241,8 +446,10 @@ const categories = [
 	},
 ];
 
-const CalculationsCatalog: React.FC = () => {
-	const navigate = useNavigate();
+const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
+	onSelectTemplate,
+	onSuggestChange,
+}) => {
 	const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 	const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
 		null
@@ -250,63 +457,29 @@ const CalculationsCatalog: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [sortBy, setSortBy] = useState("popular");
 	const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-	const [showOnlyNEC, setShowOnlyNEC] = useState(false);
-	const [showOnlyCollaborative, setShowOnlyCollaborative] = useState(false);
-	const [templates, setTemplates] = useState<CalculationTemplate[]>([]);
-	const [activeTab, setActiveTab] = useState<"all" | "nec" | "collaborative">(
-		"all"
-	);
+	const [templates, setTemplates] = useState(allTemplates);
 
-	// Combinar todas las plantillas
-	useEffect(() => {
-		const allTemplates = [...publicTemplates, ...collaborativeTemplates];
-		setTemplates(allTemplates);
-	}, []);
-
-	// Filtrar templates según la pestaña activa
-	const getFilteredTemplates = () => {
-		let baseTemplates = templates;
-
-		// Filtrar por pestaña
-		switch (activeTab) {
-			case "nec":
-				baseTemplates = publicTemplates;
-				break;
-			case "collaborative":
-				baseTemplates = collaborativeTemplates;
-				break;
-			default:
-				baseTemplates = templates;
-		}
-
-		return baseTemplates.filter((template) => {
-			const matchesCategory =
-				!selectedCategory || template.category === selectedCategory;
-			const matchesSubcategory =
-				!selectedSubcategory || template.subcategory === selectedSubcategory;
-			const matchesSearch =
-				template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				template.tags.some((tag) =>
-					tag.toLowerCase().includes(searchTerm.toLowerCase())
-				);
-			const matchesFavorites = !showOnlyFavorites || template.isFavorite;
-			const matchesNEC = !showOnlyNEC || !template.isCollaborative;
-			const matchesCollaborative =
-				!showOnlyCollaborative || template.isCollaborative;
-
-			return (
-				matchesCategory &&
-				matchesSubcategory &&
-				matchesSearch &&
-				matchesFavorites &&
-				matchesNEC &&
-				matchesCollaborative
+	// Filtrar templates
+	const filteredTemplates = templates.filter((template) => {
+		const matchesCategory =
+			!selectedCategory || template.category === selectedCategory;
+		const matchesSubcategory =
+			!selectedSubcategory || template.subcategory === selectedSubcategory;
+		const matchesSearch =
+			template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+			template.tags.some((tag) =>
+				tag.toLowerCase().includes(searchTerm.toLowerCase())
 			);
-		});
-	};
+		const matchesFavorites = !showOnlyFavorites || template.isFavorite;
 
-	const sortedTemplates = [...getFilteredTemplates()].sort((a, b) => {
+		return (
+			matchesCategory && matchesSubcategory && matchesSearch && matchesFavorites
+		);
+	});
+
+	// Ordenar templates
+	const sortedTemplates = [...filteredTemplates].sort((a, b) => {
 		switch (sortBy) {
 			case "popular":
 				return b.usageCount - a.usageCount;
@@ -318,9 +491,10 @@ const CalculationsCatalog: React.FC = () => {
 				return (
 					new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
 				);
-			case "difficulty":
+			case "difficulty": {
 				const difficultyOrder = {basic: 1, intermediate: 2, advanced: 3};
 				return difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty];
+			}
 			default:
 				return 0;
 		}
@@ -334,16 +508,6 @@ const CalculationsCatalog: React.FC = () => {
 					: template
 			)
 		);
-	};
-
-	const handleUseTemplate = (template: CalculationTemplate) => {
-		navigate(`/calculations/template/${template.id}`, {state: {template}});
-	};
-
-	const handleSuggestChange = (template: CalculationTemplate) => {
-		navigate(`/calculations/suggest-change/${template.id}`, {
-			state: {template},
-		});
 	};
 
 	const getDifficultyColor = (difficulty: string) => {
@@ -376,16 +540,6 @@ const CalculationsCatalog: React.FC = () => {
 		return categories.find((cat) => cat.id === selectedCategory);
 	};
 
-	const getTabCounts = () => {
-		return {
-			all: templates.length,
-			nec: publicTemplates.length,
-			collaborative: collaborativeTemplates.length,
-		};
-	};
-
-	const tabCounts = getTabCounts();
-
 	return (
 		<div className="min-h-screen bg-gray-50">
 			{/* Header */}
@@ -394,7 +548,7 @@ const CalculationsCatalog: React.FC = () => {
 					<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 						<div>
 							<h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">
-								Catálogo de Cálculos Técnicos
+								Catálogo de Plantillas de Cálculo
 							</h1>
 							<p className="text-gray-600 flex items-center gap-2">
 								<span>
@@ -406,18 +560,15 @@ const CalculationsCatalog: React.FC = () => {
 
 						<div className="flex items-center gap-3">
 							<button
-								onClick={() => navigate("/calculations/my-templates")}
-								className="flex items-center gap-2 px-4 py-2 border border-primary-300 text-primary-700 rounded-xl hover:bg-primary-50 transition-all duration-200"
+								onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+								className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-200 ${
+									showOnlyFavorites
+										? "bg-secondary-50 border-secondary-300 text-secondary-700"
+										: "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+								}`}
 							>
 								<StarIcon className="h-4 w-4" />
-								Mis Plantillas
-							</button>
-							<button
-								onClick={() => navigate("/calculations/template-editor")}
-								className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-all duration-200"
-							>
-								<PlusIcon className="h-4 w-4" />
-								Nueva Plantilla
+								Favoritos
 							</button>
 						</div>
 					</div>
@@ -436,7 +587,7 @@ const CalculationsCatalog: React.FC = () => {
 							<div className="space-y-2">
 								{categories.map((category) => {
 									const isSelected = selectedCategory === category.id;
-									const templateCount = templates.filter(
+									const templateCount = allTemplates.filter(
 										(t) => t.category === category.id
 									).length;
 
@@ -477,7 +628,7 @@ const CalculationsCatalog: React.FC = () => {
 											{isSelected && (
 												<div className="ml-8 mt-2 space-y-1">
 													{category.subcategories.map((subcategory) => {
-														const subTemplateCount = templates.filter(
+														const subTemplateCount = allTemplates.filter(
 															(t) =>
 																t.category === category.id &&
 																t.subcategory === subcategory.id
@@ -519,42 +670,6 @@ const CalculationsCatalog: React.FC = () => {
 
 					{/* Contenido principal */}
 					<div className="flex-1">
-						{/* Pestañas de tipo de plantilla */}
-						<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-							<div className="flex border-b border-gray-200">
-								<button
-									onClick={() => setActiveTab("all")}
-									className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-										activeTab === "all"
-											? "border-primary-500 text-primary-600"
-											: "border-transparent text-gray-500 hover:text-gray-700"
-									}`}
-								>
-									Todas ({tabCounts.all})
-								</button>
-								<button
-									onClick={() => setActiveTab("nec")}
-									className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-										activeTab === "nec"
-											? "border-primary-500 text-primary-600"
-											: "border-transparent text-gray-500 hover:text-gray-700"
-									}`}
-								>
-									NEC Oficiales ({tabCounts.nec})
-								</button>
-								<button
-									onClick={() => setActiveTab("collaborative")}
-									className={`px-4 py-2 font-medium text-sm border-b-2 transition-colors ${
-										activeTab === "collaborative"
-											? "border-primary-500 text-primary-600"
-											: "border-transparent text-gray-500 hover:text-gray-700"
-									}`}
-								>
-									Colaborativas ({tabCounts.collaborative})
-								</button>
-							</div>
-						</div>
-
 						{/* Filtros y búsqueda */}
 						<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
 							<div className="flex flex-col lg:flex-row gap-4">
@@ -573,17 +688,6 @@ const CalculationsCatalog: React.FC = () => {
 
 								<div className="flex items-center gap-3">
 									<AdjustmentsHorizontalIcon className="h-5 w-5 text-gray-500" />
-									<button
-										onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
-										className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-200 ${
-											showOnlyFavorites
-												? "bg-secondary-50 border-secondary-300 text-secondary-700"
-												: "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-										}`}
-									>
-										<StarIcon className="h-4 w-4" />
-										Favoritos
-									</button>
 									<select
 										value={sortBy}
 										onChange={(e) => setSortBy(e.target.value)}
@@ -606,17 +710,7 @@ const CalculationsCatalog: React.FC = () => {
 									<div>
 										<h2 className="text-xl font-semibold text-gray-900">
 											{selectedCategory
-												? `${getSelectedCategoryData()?.name}${
-														selectedSubcategory
-															? ` - ${
-																	categories
-																		.find((c) => c.id === selectedCategory)
-																		?.subcategories.find(
-																			(s) => s.id === selectedSubcategory
-																		)?.name
-																}`
-															: ""
-													}`
+												? `${getSelectedCategoryData()?.name}${selectedSubcategory ? ` - ${categories.find((c) => c.id === selectedCategory)?.subcategories.find((s) => s.id === selectedSubcategory)?.name}` : ""}`
 												: "Resultados de búsqueda"}
 										</h2>
 										<p className="text-gray-600">
@@ -664,17 +758,10 @@ const CalculationsCatalog: React.FC = () => {
 																NUEVO
 															</span>
 														)}
-														{template.isCollaborative && (
-															<span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-																COLABORATIVA
-															</span>
-														)}
 													</div>
 													<div className="flex items-center gap-2">
 														<span
-															className={`px-2 py-1 rounded-lg text-xs font-medium border ${getDifficultyColor(
-																template.difficulty
-															)}`}
+															className={`px-2 py-1 rounded-lg text-xs font-medium border ${getDifficultyColor(template.difficulty)}`}
 														>
 															{getDifficultyText(template.difficulty)}
 														</span>
@@ -730,11 +817,6 @@ const CalculationsCatalog: React.FC = () => {
 													</span>
 												</div>
 											</div>
-											{template.isCollaborative && template.createdBy && (
-												<div className="text-xs text-purple-600">
-													<span>Por: {template.createdBy}</span>
-												</div>
-											)}
 										</div>
 
 										{/* Requerimientos */}
@@ -760,25 +842,27 @@ const CalculationsCatalog: React.FC = () => {
 										</div>
 
 										{/* Botones de acción */}
-										<div className="flex gap-2">
+										<div className="space-y-2">
+											{/* Botón principal - Usar Plantilla */}
 											<button
-												onClick={() => handleUseTemplate(template)}
-												className="flex-1 bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-2 font-medium"
+												onClick={() => onSelectTemplate(template)}
+												className="w-full bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-2 font-medium"
 											>
 												<CalculatorIcon className="h-4 w-4" />
 												<span>Usar Plantilla</span>
+												<ChevronRightIcon className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
 											</button>
 
-											{template.shareLevel === "public" &&
-												!template.isCollaborative && (
-													<button
-														onClick={() => handleSuggestChange(template)}
-														className="px-3 py-3 border border-orange-300 text-orange-700 rounded-xl hover:bg-orange-50 transition-all duration-200 flex items-center justify-center"
-														title="Sugerir mejora"
-													>
-														<LightBulbIcon className="h-4 w-4" />
-													</button>
-												)}
+											{/* Botón secundario - Sugerir Cambio */}
+											{template.allowSuggestions && onSuggestChange && (
+												<button
+													onClick={() => onSuggestChange(template)}
+													className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-sm"
+												>
+													<PencilSquareIcon className="h-4 w-4" />
+													<span>Sugerir Mejora</span>
+												</button>
+											)}
 										</div>
 									</div>
 								</div>
@@ -803,7 +887,6 @@ const CalculationsCatalog: React.FC = () => {
 										setSelectedCategory(null);
 										setSelectedSubcategory(null);
 										setShowOnlyFavorites(false);
-										setActiveTab("all");
 									}}
 									className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-colors duration-200"
 								>

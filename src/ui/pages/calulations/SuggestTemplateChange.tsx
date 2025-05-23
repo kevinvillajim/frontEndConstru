@@ -1,557 +1,560 @@
-import React, {useState} from "react";
-import {useNavigate, useLocation} from "react-router-dom";
+import React, { useState } from 'react';
 import {
-	ArrowLeftIcon,
-	LightBulbIcon,
-	ExclamationTriangleIcon,
-	CheckCircleIcon,
-	DocumentTextIcon,
-
-} from "@heroicons/react/24/outline";
+  ArrowLeftIcon,
+  CheckIcon,
+  ExclamationTriangleIcon,
+  LightBulbIcon,
+  PaperAirplaneIcon,
+  BookOpenIcon,
+  CalculatorIcon,
+  PencilSquareIcon,
+  CodeBracketIcon,
+  DocumentTextIcon,
+  SparklesIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 
 interface CalculationTemplate {
-	id: string;
-	name: string;
-	description: string;
-	category: string;
-	necReference: string;
-	verified: boolean;
-	rating: number;
-	usageCount: number;
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  necReference: string;
+  verified: boolean;
+  rating: number;
+  usageCount: number;
+  estimatedTime: string;
+  tags: string[];
+  profession: string[];
+  difficulty: "basic" | "intermediate" | "advanced";
+  requirements: string[];
 }
 
-interface SuggestionFormData {
-	suggestionType: "improvement" | "error" | "new_feature" | "optimization";
-	title: string;
-	description: string;
-	currentBehavior: string;
-	proposedBehavior: string;
-	justification: string;
-	references: string;
-	priority: "low" | "medium" | "high";
-	affectedParameters: string[];
-	testCases: string;
+interface SuggestionData {
+  suggestionType: 'formula' | 'parameters' | 'description' | 'requirements' | 'necReference' | 'other';
+  title: string;
+  description: string;
+  currentValue?: string;
+  proposedValue?: string;
+  justification: string;
+  priority: 'low' | 'medium' | 'high';
+  affectsAccuracy: boolean;
+  affectsCompliance: boolean;
+  references?: string[];
+  contactForFollowUp: boolean;
 }
 
-const SuggestTemplateChange: React.FC = () => {
-	const navigate = useNavigate();
-	const location = useLocation();
-	const template = location.state?.template as CalculationTemplate;
+interface SuggestTemplateChangeProps {
+  template: CalculationTemplate;
+  onSubmit: (suggestion: SuggestionData) => void;
+  onCancel: () => void;
+}
 
-	const [formData, setFormData] = useState<SuggestionFormData>({
-		suggestionType: "improvement",
-		title: "",
-		description: "",
-		currentBehavior: "",
-		proposedBehavior: "",
-		justification: "",
-		references: "",
-		priority: "medium",
-		affectedParameters: [],
-		testCases: "",
-	});
+const SuggestTemplateChange: React.FC<SuggestTemplateChangeProps> = ({
+  template,
+  onSubmit,
+  onCancel,
+}) => {
+  const [formData, setFormData] = useState<SuggestionData>({
+    suggestionType: 'formula',
+    title: '',
+    description: '',
+    currentValue: '',
+    proposedValue: '',
+    justification: '',
+    priority: 'medium',
+    affectsAccuracy: false,
+    affectsCompliance: false,
+    references: [],
+    contactForFollowUp: false,
+  });
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const suggestionTypes = [
+    {
+      id: 'formula',
+      name: 'Fórmula de Cálculo',
+      description: 'Mejorar o corregir la fórmula matemática utilizada',
+      icon: CalculatorIcon,
+      color: 'text-blue-600',
+    },
+    {
+      id: 'parameters',
+      name: 'Parámetros de Entrada',
+      description: 'Agregar, modificar o quitar parámetros de entrada',
+      icon: CodeBracketIcon,
+      color: 'text-green-600',
+    },
+    {
+      id: 'description',
+      name: 'Descripción',
+      description: 'Mejorar la descripción o explicación de la plantilla',
+      icon: DocumentTextIcon,
+      color: 'text-purple-600',
+    },
+    {
+      id: 'requirements',
+      name: 'Requisitos',
+      description: 'Actualizar los requisitos necesarios para el cálculo',
+      icon: ExclamationTriangleIcon,
+      color: 'text-orange-600',
+    },
+    {
+      id: 'necReference',
+      name: 'Referencia NEC',
+      description: 'Actualizar o corregir las referencias normativas',
+      icon: BookOpenIcon,
+      color: 'text-red-600',
+    },
+    {
+      id: 'other',
+      name: 'Otro',
+      description: 'Cualquier otra mejora o corrección',
+      icon: SparklesIcon,
+      color: 'text-gray-600',
+    },
+  ];
 
-	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [showSuccess, setShowSuccess] = useState(false);
-	const [errors, setErrors] = useState<Record<string, string>>({});
+  const priorityOptions = [
+    { id: 'low', name: 'Baja', description: 'Mejora menor o estética', color: 'text-green-600' },
+    { id: 'medium', name: 'Media', description: 'Mejora funcional importante', color: 'text-yellow-600' },
+    { id: 'high', name: 'Alta', description: 'Error crítico o problema de precisión', color: 'text-red-600' },
+  ];
 
-	// Si no hay template, redirigir
-	if (!template) {
-		navigate("/calculations/catalog");
-		return null;
-	}
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.title.trim()) {
+      newErrors.title = 'El título es requerido';
+    }
+    
+    if (!formData.description.trim()) {
+      newErrors.description = 'La descripción es requerida';
+    }
+    
+    if (!formData.justification.trim()) {
+      newErrors.justification = 'La justificación es requerida';
+    }
+    
+    if (formData.suggestionType !== 'other' && !formData.proposedValue?.trim()) {
+      newErrors.proposedValue = 'El valor propuesto es requerido';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-	const suggestionTypes = [
-		{
-			id: "improvement",
-			name: "Mejora General",
-			description: "Sugerir una mejora en la precisión o funcionalidad",
-			icon: "🔧",
-			color: "text-blue-600",
-		},
-		{
-			id: "error",
-			name: "Corrección de Error",
-			description: "Reportar un error en los cálculos o fórmulas",
-			icon: "🐛",
-			color: "text-red-600",
-		},
-		{
-			id: "new_feature",
-			name: "Nueva Funcionalidad",
-			description: "Proponer una nueva característica o parámetro",
-			icon: "✨",
-			color: "text-purple-600",
-		},
-		{
-			id: "optimization",
-			name: "Optimización",
-			description: "Mejorar rendimiento o eficiencia del cálculo",
-			icon: "⚡",
-			color: "text-yellow-600",
-		},
-	];
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Simular envío
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      onSubmit(formData);
+    } catch (error) {
+      console.error('Error submitting suggestion:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-	const priorities = [
-		{id: "low", name: "Baja", color: "text-green-600", bg: "bg-green-50"},
-		{id: "medium", name: "Media", color: "text-yellow-600", bg: "bg-yellow-50"},
-		{id: "high", name: "Alta", color: "text-red-600", bg: "bg-red-50"},
-	];
+  const handleInputChange = (field: keyof SuggestionData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Limpiar error del campo si existe
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
 
-	const handleInputChange = (
-		field: keyof SuggestionFormData,
-		value: string | string[]
-	) => {
-		setFormData((prev) => ({...prev, [field]: value}));
-		// Limpiar error si existe
-		if (errors[field]) {
-			setErrors((prev) => ({...prev, [field]: ""}));
-		}
-	};
+  const addReference = () => {
+    setFormData(prev => ({
+      ...prev,
+      references: [...(prev.references || []), '']
+    }));
+  };
 
-	const validateForm = (): boolean => {
-		const newErrors: Record<string, string> = {};
+  const updateReference = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      references: prev.references?.map((ref, i) => i === index ? value : ref) || []
+    }));
+  };
 
-		if (!formData.title.trim()) {
-			newErrors.title = "El título es requerido";
-		}
+  const removeReference = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      references: prev.references?.filter((_, i) => i !== index) || []
+    }));
+  };
 
-		if (!formData.description.trim()) {
-			newErrors.description = "La descripción es requerida";
-		}
+  const selectedType = suggestionTypes.find(type => type.id === formData.suggestionType);
 
-		if (!formData.justification.trim()) {
-			newErrors.justification = "La justificación es requerida";
-		}
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+          <div className="flex items-center gap-4 mb-6">
+            <button
+              onClick={onCancel}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+              <span>Volver</span>
+            </button>
+          </div>
 
-		if (
-			formData.suggestionType === "error" &&
-			!formData.currentBehavior.trim()
-		) {
-			newErrors.currentBehavior =
-				"Debe describir el comportamiento actual para reportar un error";
-		}
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-gradient-to-r from-orange-100 to-yellow-100 rounded-xl">
+              <PencilSquareIcon className="h-8 w-8 text-orange-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                Sugerir Mejora para Plantilla
+              </h1>
+              <p className="text-gray-600 mb-4">
+                Ayúdanos a mejorar la plantilla "{template.name}" con tus conocimientos y experiencia.
+              </p>
+              <div className="flex items-center gap-4 text-sm text-gray-500">
+                <div className="flex items-center gap-1">
+                  <BookOpenIcon className="h-4 w-4" />
+                  <span>{template.necReference}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>Categoría: {template.category}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span>{template.usageCount} usos</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-		if (!formData.proposedBehavior.trim()) {
-			newErrors.proposedBehavior = "Debe describir el comportamiento propuesto";
-		}
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Tipo de Sugerencia */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Tipo de Sugerencia
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {suggestionTypes.map((type) => (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() => handleInputChange('suggestionType', type.id)}
+                  className={`p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                    formData.suggestionType === type.id
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <type.icon className={`h-5 w-5 ${type.color}`} />
+                    <span className="font-medium text-gray-900">{type.name}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">{type.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
 
-		setErrors(newErrors);
-		return Object.keys(newErrors).length === 0;
-	};
+          {/* Detalles de la Sugerencia */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <selectedType?.icon className={`h-5 w-5 ${selectedType?.color}`} />
+              Detalles de la Sugerencia
+            </h2>
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+            <div className="space-y-6">
+              {/* Título */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Título de la sugerencia *
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                  placeholder="Ej: Corregir factor de seguridad en cálculo de vigas"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.title ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.title && (
+                  <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+                )}
+              </div>
 
-		if (!validateForm()) {
-			return;
-		}
+              {/* Descripción */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Descripción detallada *
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  rows={4}
+                  placeholder="Describe en detalle qué problema has identificado o qué mejora propones..."
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.description ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.description && (
+                  <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+                )}
+              </div>
 
-		setIsSubmitting(true);
+              {/* Valor Actual y Propuesto */}
+              {formData.suggestionType !== 'other' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Valor/Contenido Actual
+                    </label>
+                    <textarea
+                      value={formData.currentValue}
+                      onChange={(e) => handleInputChange('currentValue', e.target.value)}
+                      rows={3}
+                      placeholder="Copia aquí el contenido actual que quieres cambiar..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Valor/Contenido Propuesto *
+                    </label>
+                    <textarea
+                      value={formData.proposedValue}
+                      onChange={(e) => handleInputChange('proposedValue', e.target.value)}
+                      rows={3}
+                      placeholder="Escribe aquí tu propuesta de mejora..."
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                        errors.proposedValue ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.proposedValue && (
+                      <p className="mt-1 text-sm text-red-600">{errors.proposedValue}</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
-		try {
-			// Simular envío a la API
-			const suggestionData = {
-				templateId: template.id,
-				templateName: template.name,
-				...formData,
-				submittedAt: new Date().toISOString(),
-			};
+              {/* Justificación */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Justificación técnica *
+                </label>
+                <textarea
+                  value={formData.justification}
+                  onChange={(e) => handleInputChange('justification', e.target.value)}
+                  rows={4}
+                  placeholder="Explica por qué tu sugerencia es necesaria, incluye fundamentos técnicos, experiencia práctica, o referencias normativas..."
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                    errors.justification ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.justification && (
+                  <p className="mt-1 text-sm text-red-600">{errors.justification}</p>
+                )}
+              </div>
+            </div>
+          </div>
 
-			// TODO: Reemplazar con llamada real a la API
-			console.log("Enviando sugerencia:", suggestionData);
+          {/* Prioridad e Impacto */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Prioridad e Impacto
+            </h2>
 
-			// Simular delay de API
-			await new Promise((resolve) => setTimeout(resolve, 1500));
+            <div className="space-y-6">
+              {/* Prioridad */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Prioridad de la sugerencia
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {priorityOptions.map((priority) => (
+                    <button
+                      key={priority.id}
+                      type="button"
+                      onClick={() => handleInputChange('priority', priority.id)}
+                      className={`p-4 rounded-lg border-2 text-left transition-all duration-200 ${
+                        formData.priority === priority.id
+                          ? 'border-primary-500 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className={`font-medium ${priority.color} mb-1`}>
+                        {priority.name}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {priority.description}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-			setShowSuccess(true);
+              {/* Checkboxes de Impacto */}
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <input
+                    id="affectsAccuracy"
+                    type="checkbox"
+                    checked={formData.affectsAccuracy}
+                    onChange={(e) => handleInputChange('affectsAccuracy', e.target.checked)}
+                    className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="affectsAccuracy" className="text-sm text-gray-700">
+                    <span className="font-medium">Afecta la precisión del cálculo</span>
+                    <br />
+                    <span className="text-gray-500">Esta sugerencia corrige o mejora la precisión de los resultados</span>
+                  </label>
+                </div>
 
-			// Redirigir después de 3 segundos
-			setTimeout(() => {
-				navigate("/calculations/catalog");
-			}, 3000);
-		} catch (error) {
-			console.error("Error al enviar sugerencia:", error);
-			// TODO: Manejar error apropiadamente
-		} finally {
-			setIsSubmitting(false);
-		}
-	};
+                <div className="flex items-start gap-3">
+                  <input
+                    id="affectsCompliance"
+                    type="checkbox"
+                    checked={formData.affectsCompliance}
+                    onChange={(e) => handleInputChange('affectsCompliance', e.target.checked)}
+                    className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="affectsCompliance" className="text-sm text-gray-700">
+                    <span className="font-medium">Afecta el cumplimiento normativo</span>
+                    <br />
+                    <span className="text-gray-500">Esta sugerencia está relacionada con requisitos del NEC u otras normas</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
 
-	if (showSuccess) {
-		return (
-			<div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-				<div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-					<div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-						<CheckCircleIcon className="h-8 w-8 text-green-600" />
-					</div>
-					<h2 className="text-2xl font-bold text-gray-900 mb-2">
-						¡Sugerencia Enviada!
-					</h2>
-					<p className="text-gray-600 mb-6">
-						Tu sugerencia ha sido enviada correctamente y será revisada por
-						nuestro equipo técnico.
-					</p>
-					<div className="space-y-2 text-sm text-gray-500">
-						<p>• Recibirás una notificación cuando sea revisada</p>
-						<p>• El proceso de evaluación toma 3-5 días hábiles</p>
-						<p>• Si es aprobada, se incluirá en la próxima actualización</p>
-					</div>
-					<button
-						onClick={() => navigate("/calculations/catalog")}
-						className="mt-6 w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors"
-					>
-						Volver al Catálogo
-					</button>
-				</div>
-			</div>
-		);
-	}
+          {/* Referencias */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Referencias (Opcional)
+              </h2>
+              <button
+                type="button"
+                onClick={addReference}
+                className="px-3 py-1 text-sm bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
+              >
+                Agregar Referencia
+              </button>
+            </div>
 
-	return (
-		<div className="min-h-screen bg-gray-50">
-			{/* Header */}
-			<div className="bg-white border-b border-gray-200">
-				<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-					<div className="flex items-center gap-4">
-						<button
-							onClick={() => navigate("/calculations/catalog")}
-							className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-						>
-							<ArrowLeftIcon className="h-5 w-5 text-gray-600" />
-						</button>
-						<div>
-							<h1 className="text-2xl font-bold text-gray-900">
-								Sugerir Mejora
-							</h1>
-							<p className="text-gray-600">Plantilla: {template.name}</p>
-						</div>
-					</div>
-				</div>
-			</div>
+            {formData.references && formData.references.length > 0 && (
+              <div className="space-y-3">
+                {formData.references.map((reference, index) => (
+                  <div key={index} className="flex gap-3">
+                    <input
+                      type="text"
+                      value={reference}
+                      onChange={(e) => updateReference(index, e.target.value)}
+                      placeholder="Ej: NEC-SE-HM, Sección 9.3.2 o Paper técnico, URL, etc."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeReference(index)}
+                      className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
-			<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				<div className="max-w-4xl mx-auto">
-					{/* Información de la plantilla */}
-					<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
-						<h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-							<DocumentTextIcon className="h-5 w-5 text-primary-600" />
-							Información de la Plantilla
-						</h2>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-							<div>
-								<span className="font-medium text-gray-700">Nombre:</span>
-								<p className="text-gray-600">{template.name}</p>
-							</div>
-							<div>
-								<span className="font-medium text-gray-700">
-									Referencia NEC:
-								</span>
-								<p className="text-gray-600">{template.necReference}</p>
-							</div>
-							<div>
-								<span className="font-medium text-gray-700">Categoría:</span>
-								<p className="text-gray-600 capitalize">{template.category}</p>
-							</div>
-							<div>
-								<span className="font-medium text-gray-700">Usos:</span>
-								<p className="text-gray-600">{template.usageCount} veces</p>
-							</div>
-						</div>
-					</div>
+            <p className="text-sm text-gray-500 mt-3">
+              Incluye referencias a normas, papers técnicos, libros o fuentes que respalden tu sugerencia.
+            </p>
+          </div>
 
-					{/* Formulario de sugerencia */}
-					<form onSubmit={handleSubmit} className="space-y-8">
-						{/* Tipo de sugerencia */}
-						<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-							<h3 className="text-lg font-semibold text-gray-900 mb-4">
-								Tipo de Sugerencia
-							</h3>
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								{suggestionTypes.map((type) => (
-									<label
-										key={type.id}
-										className={`relative flex items-start p-4 border rounded-xl cursor-pointer transition-all ${
-											formData.suggestionType === type.id
-												? "border-primary-500 bg-primary-50"
-												: "border-gray-200 hover:border-gray-300"
-										}`}
-									>
-										<input
-											type="radio"
-											name="suggestionType"
-											value={type.id}
-											checked={formData.suggestionType === type.id}
-											onChange={(e) =>
-												handleInputChange("suggestionType", e.target.value)
-											}
-											className="sr-only"
-										/>
-										<div className="flex items-start gap-3">
-											<span className="text-2xl">{type.icon}</span>
-											<div>
-												<p className={`font-medium ${type.color}`}>
-													{type.name}
-												</p>
-												<p className="text-sm text-gray-600">
-													{type.description}
-												</p>
-											</div>
-										</div>
-									</label>
-								))}
-							</div>
-						</div>
+          {/* Contacto */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Seguimiento
+            </h2>
 
-						{/* Información básica */}
-						<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-							<h3 className="text-lg font-semibold text-gray-900 mb-4">
-								Información Básica
-							</h3>
-							<div className="space-y-4">
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Título de la Sugerencia *
-									</label>
-									<input
-										type="text"
-										value={formData.title}
-										onChange={(e) => handleInputChange("title", e.target.value)}
-										placeholder="Ej: Mejorar precisión en cálculo de cargas sísmicas"
-										className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-											errors.title ? "border-red-500" : "border-gray-300"
-										}`}
-									/>
-									{errors.title && (
-										<p className="text-red-600 text-xs mt-1">{errors.title}</p>
-									)}
-								</div>
+            <div className="flex items-start gap-3">
+              <input
+                id="contactForFollowUp"
+                type="checkbox"
+                checked={formData.contactForFollowUp}
+                onChange={(e) => handleInputChange('contactForFollowUp', e.target.checked)}
+                className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              <label htmlFor="contactForFollowUp" className="text-sm text-gray-700">
+                <span className="font-medium">Acepto ser contactado para seguimiento</span>
+                <br />
+                <span className="text-gray-500">
+                  Nuestro equipo técnico podrá contactarte para aclarar detalles o notificarte sobre el estado de tu sugerencia
+                </span>
+              </label>
+            </div>
+          </div>
 
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Descripción General *
-									</label>
-									<textarea
-										value={formData.description}
-										onChange={(e) =>
-											handleInputChange("description", e.target.value)
-										}
-										placeholder="Describe brevemente tu sugerencia..."
-										rows={4}
-										className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-											errors.description ? "border-red-500" : "border-gray-300"
-										}`}
-									/>
-									{errors.description && (
-										<p className="text-red-600 text-xs mt-1">
-											{errors.description}
-										</p>
-									)}
-								</div>
+          {/* Botones de Acción */}
+          <div className="flex justify-end gap-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-8 py-3 bg-gradient-to-r from-primary-600 to-secondary-500 text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <PaperAirplaneIcon className="h-4 w-4" />
+                  Enviar Sugerencia
+                </>
+              )}
+            </button>
+          </div>
+        </form>
 
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Prioridad
-									</label>
-									<div className="flex gap-2">
-										{priorities.map((priority) => (
-											<label
-												key={priority.id}
-												className={`flex-1 text-center py-2 px-4 border rounded-lg cursor-pointer transition-all ${
-													formData.priority === priority.id
-														? `${priority.bg} border-current ${priority.color}`
-														: "border-gray-200 hover:border-gray-300"
-												}`}
-											>
-												<input
-													type="radio"
-													name="priority"
-													value={priority.id}
-													checked={formData.priority === priority.id}
-													onChange={(e) =>
-														handleInputChange("priority", e.target.value)
-													}
-													className="sr-only"
-												/>
-												<span className="font-medium">{priority.name}</span>
-											</label>
-										))}
-									</div>
-								</div>
-							</div>
-						</div>
-
-						{/* Detalles técnicos */}
-						<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-							<h3 className="text-lg font-semibold text-gray-900 mb-4">
-								Detalles Técnicos
-							</h3>
-							<div className="space-y-4">
-								{formData.suggestionType === "error" && (
-									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-2">
-											Comportamiento Actual (Error) *
-										</label>
-										<textarea
-											value={formData.currentBehavior}
-											onChange={(e) =>
-												handleInputChange("currentBehavior", e.target.value)
-											}
-											placeholder="Describe el comportamiento incorrecto actual..."
-											rows={3}
-											className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-												errors.currentBehavior
-													? "border-red-500"
-													: "border-gray-300"
-											}`}
-										/>
-										{errors.currentBehavior && (
-											<p className="text-red-600 text-xs mt-1">
-												{errors.currentBehavior}
-											</p>
-										)}
-									</div>
-								)}
-
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Comportamiento Propuesto *
-									</label>
-									<textarea
-										value={formData.proposedBehavior}
-										onChange={(e) =>
-											handleInputChange("proposedBehavior", e.target.value)
-										}
-										placeholder="Describe cómo debería funcionar o qué cambios propones..."
-										rows={4}
-										className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-											errors.proposedBehavior
-												? "border-red-500"
-												: "border-gray-300"
-										}`}
-									/>
-									{errors.proposedBehavior && (
-										<p className="text-red-600 text-xs mt-1">
-											{errors.proposedBehavior}
-										</p>
-									)}
-								</div>
-
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Justificación Técnica *
-									</label>
-									<textarea
-										value={formData.justification}
-										onChange={(e) =>
-											handleInputChange("justification", e.target.value)
-										}
-										placeholder="Explica por qué esta mejora es necesaria y sus beneficios..."
-										rows={4}
-										className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-											errors.justification
-												? "border-red-500"
-												: "border-gray-300"
-										}`}
-									/>
-									{errors.justification && (
-										<p className="text-red-600 text-xs mt-1">
-											{errors.justification}
-										</p>
-									)}
-								</div>
-
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Referencias y Fuentes
-									</label>
-									<textarea
-										value={formData.references}
-										onChange={(e) =>
-											handleInputChange("references", e.target.value)
-										}
-										placeholder="Incluye referencias técnicas, normas, estudios, etc. que respalden tu sugerencia..."
-										rows={3}
-										className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-									/>
-								</div>
-
-								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Casos de Prueba
-									</label>
-									<textarea
-										value={formData.testCases}
-										onChange={(e) =>
-											handleInputChange("testCases", e.target.value)
-										}
-										placeholder="Describe casos específicos donde se puede probar la mejora..."
-										rows={3}
-										className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-									/>
-								</div>
-							</div>
-						</div>
-
-						{/* Aviso importante */}
-						<div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
-							<div className="flex items-start gap-3">
-								<ExclamationTriangleIcon className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
-								<div className="text-sm">
-									<p className="font-medium text-orange-800 mb-1">
-										Proceso de Revisión
-									</p>
-									<ul className="text-orange-700 space-y-1">
-										<li>
-											• Tu sugerencia será revisada por nuestro equipo de
-											ingenieros
-										</li>
-										<li>• El proceso puede tomar entre 3-5 días hábiles</li>
-										<li>
-											• Recibirás una notificación con la decisión y
-											retroalimentación
-										</li>
-										<li>
-											• Las mejoras aprobadas se implementarán en futuras
-											actualizaciones
-										</li>
-									</ul>
-								</div>
-							</div>
-						</div>
-
-						{/* Botones de acción */}
-						<div className="flex justify-between items-center">
-							<button
-								type="button"
-								onClick={() => navigate("/calculations/catalog")}
-								className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-							>
-								Cancelar
-							</button>
-							<button
-								type="submit"
-								disabled={isSubmitting}
-								className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-							>
-								{isSubmitting ? (
-									<>
-										<div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent" />
-										Enviando...
-									</>
-								) : (
-									<>
-										<LightBulbIcon className="h-4 w-4" />
-										Enviar Sugerencia
-									</>
-								)}
-							</button>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	);
+        {/* Nota informativa */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mt-8">
+          <div className="flex gap-3">
+            <LightBulbIcon className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <h3 className="text-sm font-medium text-blue-900 mb-1">
+                Proceso de Revisión
+              </h3>
+              <p className="text-sm text-blue-800">
+                Tu sugerencia será revisada por nuestro equipo técnico y expertos en normativa NEC. 
+                Te notificaremos sobre el estado de tu propuesta y su posible implementación en futuras versiones de la plantilla.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default SuggestTemplateChange;
