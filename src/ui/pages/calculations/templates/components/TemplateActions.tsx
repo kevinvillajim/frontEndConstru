@@ -323,6 +323,7 @@ export const useTemplateActions = ({
 		);
 	};
 
+	// CORREGIDO: Duplicación inmediata con notificación mejorada
 	const duplicateTemplate = (templateId: string) => {
 		const template = templates.find((t) => t.id === templateId);
 		if (template) {
@@ -339,6 +340,14 @@ export const useTemplateActions = ({
 				sharedWith: [],
 			};
 			setTemplates([duplicated, ...templates]);
+
+			// Mostrar notificación de éxito mejorada
+			// En una implementación real, podrías usar un toast/notification system
+			setTimeout(() => {
+				alert(
+					`✅ Plantilla duplicada exitosamente!\n\n"${template.name}" → "${duplicated.name}"\n\nPuedes encontrarla al inicio de tu lista de plantillas.`
+				);
+			}, 100);
 		}
 	};
 

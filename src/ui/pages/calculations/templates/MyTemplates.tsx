@@ -232,21 +232,16 @@ const MyTemplates: React.FC = () => {
 	const handleView = (templateId: string) => {
 		navigate(`/calculations/templates/edit/${templateId}`, {
 			state: {mode: "view"},
-		});	
+		});
 	};
-
 
 	const handleEdit = (templateId: string) => {
 		navigate(`/calculations/templates/edit/${templateId}`);
 	};
 
+	// CORREGIDO: Duplicación inmediata sin formulario
 	const handleDuplicate = (templateId: string) => {
-		const template = templates.find((t) => t.id === templateId);
-		if (template) {
-			navigate(`/calculations/templates/duplicate/${templateId}`, {
-				state: {template}, // Pasar el template completo para pre-llenar el formulario
-			});
-		}
+		templateActions.duplicateTemplate(templateId);
 	};
 
 	// AGREGAR handler para sugerir cambios:

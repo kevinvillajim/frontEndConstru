@@ -1,40 +1,60 @@
 import {lazy} from "react";
-import type { RouteObject } from "react-router";
-import type { CalculationTemplate } from "../pages/calculations/shared/types/template.types";
+import type {RouteObject} from "react-router";
+import type {CalculationTemplate} from "../pages/calculations/shared/types/template.types";
 
 const MainLayout = lazy(() => import("../pages/layouts/MainLayout"));
 const HomePage = lazy(() => import("../pages/HomePage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 const LoginPage = lazy(() => import("../pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("../pages/auth/RegisterPage"));
-const ForgotPasswordPage = lazy(() => import("../pages/auth/ForgotPasswordPage"));
+const ForgotPasswordPage = lazy(
+	() => import("../pages/auth/ForgotPasswordPage")
+);
 const ResetPasswordPage = lazy(() => import("../pages/auth/ResetPasswordPage"));
-const EmailVerificationPage = lazy(() => import("../pages/auth/EmailVerificationPage"));
-const ChangePasswordPage = lazy(() => import("../pages/auth/ChangePasswordPage"));
+const EmailVerificationPage = lazy(
+	() => import("../pages/auth/EmailVerificationPage")
+);
+const ChangePasswordPage = lazy(
+	() => import("../pages/auth/ChangePasswordPage")
+);
 const ProfilePage = lazy(() => import("../pages/profile/ProfilePage"));
-const PersonalInfoPage = lazy(() => import("../pages/profile/PersonalInfoPage"));
+const PersonalInfoPage = lazy(
+	() => import("../pages/profile/PersonalInfoPage")
+);
 const SecurityPage = lazy(() => import("../pages/profile/SecurityPage"));
-const SubscriptionPage = lazy(() => import("../pages/profile/SubscriptionPage"));
+const SubscriptionPage = lazy(
+	() => import("../pages/profile/SubscriptionPage")
+);
 const PreferencesPage = lazy(() => import("../pages/profile/PreferencesPage"));
-const NotificationsPage = lazy(() => import("../pages/profile/NotificationsPage"));
-const ProfessionalInfoPage = lazy(() => import("../pages/profile/ProfessionalInfoPage"));
+const NotificationsPage = lazy(
+	() => import("../pages/profile/NotificationsPage")
+);
+const ProfessionalInfoPage = lazy(
+	() => import("../pages/profile/ProfessionalInfoPage")
+);
 const RecommendationsPage = lazy(
 	() => import("../pages/profile/RecommendationsPage")
 );
-const MainNotificationsPage = lazy(
-	() => import("../pages/NotificationsPage")
-);
+const MainNotificationsPage = lazy(() => import("../pages/NotificationsPage"));
 const TwoFactorAuthPage = lazy(() => import("../pages/auth/TwoFactorAuthPage"));
-const CreateProjectPage = lazy(() => import("../pages/projects/CreateProjectPage"));
+const CreateProjectPage = lazy(
+	() => import("../pages/projects/CreateProjectPage")
+);
 const EditProjectPage = lazy(() => import("../pages/projects/EditProjectPage"));
-const ProjectDetailsPage = lazy(() => import("../pages/projects/ProjectDetailsPage"));
+const ProjectDetailsPage = lazy(
+	() => import("../pages/projects/ProjectDetailsPage")
+);
 const ProjectsPage = lazy(() => import("../pages/projects/ProjectsPage"));
 const ProjectDashboardPage = lazy(
 	() => import("../pages/projects/ProjectDashboardPage")
 );
 const Dashboard = lazy(() => import("../pages/Dashboard"));
-const SettingsOverviewPage = lazy(() => import("../pages/profile/SettingsOverviewPage"));
-const ProjectTemplatesPage = lazy(() => import("../pages/projects/templates/ProjectTemplatesPage"));
+const SettingsOverviewPage = lazy(
+	() => import("../pages/profile/SettingsOverviewPage")
+);
+const ProjectTemplatesPage = lazy(
+	() => import("../pages/projects/templates/ProjectTemplatesPage")
+);
 const MyTemplates = lazy(
 	() => import("../pages/calculations/templates/MyTemplates")
 );
@@ -42,9 +62,9 @@ const SuggestTemplateChange = lazy(
 	() => import("../pages/calculations/templates/SuggestTemplateChange")
 );
 
-const TemplateEditor = lazy(()=> import("../pages/calculations/templates/TemplateEditor"))
-
-
+const TemplateEditor = lazy(
+	() => import("../pages/calculations/templates/TemplateEditor")
+);
 
 const CalculationsHub = lazy(
 	() => import("../pages/calculations/core/CalculationsHub")
@@ -78,6 +98,10 @@ const TrendingCalculations = lazy(
 );
 const ProposedVoting = lazy(
 	() => import("../pages/calculations/collaboration/ProposedVoting")
+);
+
+const CalculationInterface2 = lazy(
+	() => import("../pages/calculations/core/CalculationInterface")
 );
 
 // Settings
@@ -259,37 +283,19 @@ const appRoutes: RouteObject[] = [
 									/>
 								),
 							},
+							{
+								path: "template2/:templateId",
+								element: (
+									<CalculationInterface2
+									/>
+								),
+							},
 						],
 					},
 
 					// ==============================================
 					// TEMPLATES SECTION - Personal templates
 					// ==============================================
-					// {
-					// 	path: "templates",
-					// 	children: [
-					// 		{
-					// 			index: true,
-					// 			element: <MyTemplates />,
-					// 		},
-					// 		{
-					// 			path: "my-templates", // Ruta alternativa
-					// 			element: <MyTemplates />,
-					// 		},
-					// 		{
-					// 			path: "create",
-					// 			element: <TemplateEditor />,
-					// 		},
-					// 		{
-					// 			path: "edit/:id",
-					// 			element: <TemplateEditor />,
-					// 		},
-					// 		{
-					// 			path: "suggest/:id",
-					// 			element: <SuggestTemplateChange />,
-					// 		},
-					// 	],
-					// },
 					{
 						path: "templates",
 						children: [
@@ -307,10 +313,6 @@ const appRoutes: RouteObject[] = [
 							},
 							{
 								path: "edit/:templateId", // Editar plantilla existente
-								element: <TemplateEditor />,
-							},
-							{
-								path: "duplicate/:templateId", // Duplicar plantilla
 								element: <TemplateEditor />,
 							},
 							{

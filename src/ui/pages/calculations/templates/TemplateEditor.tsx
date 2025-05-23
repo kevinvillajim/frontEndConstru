@@ -102,11 +102,10 @@ const TemplateEditor: React.FC = () => {
 	const location = useLocation();
 	const existingTemplate = location.state?.template;
 
-	// CORREGIDO: Detectar modo basado en la ruta actual
+	// CORREGIDO: Detectar modo basado en la ruta actual (sin duplicate)
 	const currentPath = location.pathname;
 	const mode = useMemo(() => {
 		if (currentPath.includes("/new")) return "create";
-		if (currentPath.includes("/duplicate/")) return "duplicate";
 		if (currentPath.includes("/edit/")) return "edit";
 		if (currentPath.includes("/editor/")) return templateId ? "edit" : "create"; // Legacy route
 		return "create";
@@ -148,22 +147,17 @@ const TemplateEditor: React.FC = () => {
 	const [newLimitation, setNewLimitation] = useState("");
 
 	const isEditing = mode === "edit";
-	const isDuplicating = mode === "duplicate";
 
 	// CORREGIDO: Efecto para cargar template si es necesario
 	useEffect(() => {
-		if (
-			(mode === "edit" || mode === "duplicate") &&
-			templateId &&
-			!existingTemplate
-		) {
+		if (mode === "edit" && templateId && !existingTemplate) {
 			// Aquí deberías cargar el template por ID
 			// loadTemplate(templateId);
 			console.log("Loading template:", templateId);
 		}
 	}, [mode, templateId, existingTemplate]);
 
-	// CORREGIDO: Inicializar con datos existentes, manejando duplicación
+	// CORREGIDO: Inicializar con datos existentes
 	useEffect(() => {
 		if (existingTemplate) {
 			const baseData = {
@@ -188,27 +182,16 @@ const TemplateEditor: React.FC = () => {
 				limitations: existingTemplate.limitations || [],
 			};
 
-			if (isDuplicating) {
-				// Para duplicar, cambiar el nombre y hacer privada
-				setFormData({
-					...baseData,
-					name: `${existingTemplate.name} (Copia)`,
-					isPublic: false,
-				});
-			} else {
-				// Para editar, usar datos tal como están
-				setFormData(baseData);
-			}
+			// Para editar, usar datos tal como están
+			setFormData(baseData);
 		}
-	}, [existingTemplate, isDuplicating]);
+	}, [existingTemplate]);
 
 	// AGREGADO: Funciones para obtener título y descripción dinámicos
 	const getTitle = () => {
 		switch (mode) {
 			case "create":
 				return "Nueva Plantilla";
-			case "duplicate":
-				return "Duplicar Plantilla";
 			case "edit":
 				return "Editar Plantilla";
 			default:
@@ -220,8 +203,6 @@ const TemplateEditor: React.FC = () => {
 		switch (mode) {
 			case "create":
 				return "Crea una nueva plantilla de cálculo personalizada";
-			case "duplicate":
-				return "Crea una copia de la plantilla existente";
 			case "edit":
 				return "Modifica tu plantilla existente";
 			default:
