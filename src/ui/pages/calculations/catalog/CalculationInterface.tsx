@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useMemo, useCallback} from "react";
+import {useParams, useNavigate} from "react-router-dom";
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
@@ -18,71 +19,607 @@ import {
 	EyeIcon,
 	PlayIcon,
 	DocumentDuplicateIcon,
+	ShareIcon,
+	PrinterIcon,
+	UserIcon,
+	ChartBarIcon,
+	CpuChipIcon,
+	DocumentTextIcon,
+	InformationCircleIcon,
+	CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import {HeartIcon as HeartSolidIcon} from "@heroicons/react/24/solid";
-import {TemplateCard} from "./components/TemplateCard";
-import {useTemplates} from "../shared/hooks/useTemplates";
-import type {
-	CalculationTemplate,
-	CalculationResult,
-	CalculationParameter,
-	ParameterValidation,
-} from "../shared/types/template.types";
 
-interface CalculationInterfaceProps {
-	template: CalculationTemplate;
-	onBack: () => void;
-	onSuggestChange?: (template: CalculationTemplate) => void;
-	onSaveCalculation?: (
-		template: CalculationTemplate,
-		parameters: Record<string, any>,
-		results: CalculationResult
-	) => void;
-	autoSave?: boolean;
+// Tipos para la plantilla y parámetros
+interface CalculationParameter {
+	name: string;
+	label: string;
+	type: "number" | "text" | "select" | "boolean";
+	unit?: string;
+	required: boolean;
+	min?: number;
+	max?: number;
+	options?: string[];
+	defaultValue?: any;
+	placeholder?: string;
+	tooltip?: string;
+	validation?: {
+		pattern?: string;
+		message?: string;
+	};
+}
+
+interface CalculationTemplate {
+	id: string;
+	name: string;
+	description: string;
+	type: string;
+	targetProfession: string;
+	formula: string;
+	necReference: string;
+	isActive: boolean;
+	version: string;
+	isVerified: boolean;
+	isFeatured: boolean;
+	usageCount: number;
+	averageRating: number;
+	shareLevel: string;
+	author?: string;
+	parameters: CalculationParameter[];
+}
+
+interface CalculationResult {
+	[key: string]: any;
+}
+
+interface ValidationResult {
+	isValid: boolean;
+	errors: Record<string, string>;
+	warnings: Record<string, string>;
 }
 
 type CalculationStep = "overview" | "parameters" | "calculating" | "results";
 
-const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
-	template,
-	onBack,
-	onSuggestChange,
-	onSaveCalculation,
-	autoSave = true,
-}) => {
+// Mock de plantillas basado en la DB
+const mockTemplates: Record<string, CalculationTemplate> = {
+	"015b5150-c52c-4a73-9001-68c02b96b7da": {
+		id: "015b5150-c52c-4a73-9001-68c02b96b7da",
+		name: "Cálculo de Demanda Eléctrica Residencial (NEC-SB-IE)",
+		description:
+			"Calcula la demanda eléctrica de una vivienda residencial según la Norma Ecuatoriana de la Construcción.",
+		type: "electrical",
+		targetProfession: "electrical_engineer",
+		necReference: "NEC-SB-IE, Sección 1.1",
+		version: "1.0",
+		isActive: true,
+		isVerified: true,
+		isFeatured: true,
+		usageCount: 245,
+		averageRating: 4.5,
+		shareLevel: "public",
+		author: "Sistema CONSTRU",
+		formula: `// Fórmula de demanda eléctrica residencial según NEC
+		let tipoVivienda, fdIluminacion, fdTomacorrientes;
+		
+		if (areaVivienda < 80) {
+			tipoVivienda = "Pequeña";
+			fdIluminacion = 0.70;
+			fdTomacorrientes = 0.50;
+		} else if (areaVivienda < 200) {
+			tipoVivienda = "Mediana";
+			fdIluminacion = 0.70;
+			fdTomacorrientes = 0.50;
+		} else if (areaVivienda < 300) {
+			tipoVivienda = "Mediana grande";
+			fdIluminacion = 0.55;
+			fdTomacorrientes = 0.40;
+		} else {
+			tipoVivienda = "Grande";
+			fdIluminacion = 0.55;
+			fdTomacorrientes = 0.40;
+		}
+		
+		const potenciaIluminacion = circuitosIluminacion * puntosIluminacion * 100;
+		const demandaIluminacion = potenciaIluminacion * fdIluminacion;
+		const potenciaTomacorrientes = circuitosTomacorrientes * puntosTomacorriente * 200;
+		const demandaTomacorrientes = potenciaTomacorrientes * fdTomacorrientes;
+		
+		let factorDemandaCargasEspeciales;
+		if (cantidadCargasEspeciales <= 1) {
+			factorDemandaCargasEspeciales = 1.0;
+		} else if (sumaCargasEspeciales < 10000) {
+			factorDemandaCargasEspeciales = 0.80;
+		} else {
+			factorDemandaCargasEspeciales = 0.75;
+		}
+		
+		const demandaCargasEspeciales = sumaCargasEspeciales * factorDemandaCargasEspeciales;
+		const demandaTotal = demandaIluminacion + demandaTomacorrientes + demandaCargasEspeciales;
+		const corrienteTotal = demandaTotal / voltajeNominal;`,
+		parameters: [
+			{
+				name: "areaVivienda",
+				label: "Área de la vivienda",
+				type: "number",
+				unit: "m²",
+				required: true,
+				min: 30,
+				max: 1000,
+				placeholder: "150",
+				tooltip: "Área total construida de la vivienda en metros cuadrados",
+			},
+			{
+				name: "circuitosIluminacion",
+				label: "Número de circuitos de iluminación",
+				type: "number",
+				unit: "circuitos",
+				required: true,
+				min: 1,
+				max: 20,
+				placeholder: "4",
+			},
+			{
+				name: "puntosIluminacion",
+				label: "Puntos de iluminación por circuito",
+				type: "number",
+				unit: "puntos",
+				required: true,
+				min: 1,
+				max: 10,
+				placeholder: "6",
+			},
+			{
+				name: "circuitosTomacorrientes",
+				label: "Número de circuitos de tomacorrientes",
+				type: "number",
+				unit: "circuitos",
+				required: true,
+				min: 1,
+				max: 15,
+				placeholder: "3",
+			},
+			{
+				name: "puntosTomacorriente",
+				label: "Puntos por circuito de tomacorrientes",
+				type: "number",
+				unit: "puntos",
+				required: true,
+				min: 1,
+				max: 8,
+				placeholder: "4",
+			},
+			{
+				name: "cantidadCargasEspeciales",
+				label: "Cantidad de cargas especiales",
+				type: "number",
+				unit: "cargas",
+				required: true,
+				min: 0,
+				max: 10,
+				placeholder: "2",
+			},
+			{
+				name: "sumaCargasEspeciales",
+				label: "Suma de potencia de cargas especiales",
+				type: "number",
+				unit: "W",
+				required: true,
+				min: 0,
+				max: 50000,
+				placeholder: "5000",
+			},
+			{
+				name: "voltajeNominal",
+				label: "Voltaje nominal del sistema",
+				type: "select",
+				unit: "V",
+				required: true,
+				options: ["120", "240", "208", "480"],
+				defaultValue: "240",
+			},
+		],
+	},
+	"03b600f3-5188-42e0-a334-a29e38e13828": {
+		id: "03b600f3-5188-42e0-a334-a29e38e13828",
+		name: "Diseño de Viga de Hormigón Armado",
+		description:
+			"Calcula el diseño preliminar de una viga de hormigón armado según la norma ecuatoriana de construcción (NEC).",
+		type: "structural",
+		targetProfession: "civil_engineer",
+		necReference: "NEC-SE-HM, Capítulo 4.2",
+		version: "1.0",
+		isActive: true,
+		isVerified: true,
+		isFeatured: true,
+		usageCount: 189,
+		averageRating: 4.2,
+		shareLevel: "public",
+		author: "Sistema CONSTRU",
+		formula: `// Diseño de viga de hormigón armado según NEC
+		const span = length;
+		const loadkNm = load / 1000;
+		const maxMoment = (loadkNm * Math.pow(span, 2)) / 8;
+		const recommendedHeight = span / 10;
+		const recommendedWidth = 0.5 * recommendedHeight;
+		const height = beamHeight > 0 ? beamHeight : recommendedHeight;
+		const width = beamWidth > 0 ? beamWidth : recommendedWidth;
+		const d = height - 0.05;
+		const fy = steelStrength * 1000000;
+		const requiredAs = (maxMoment * 1000) / (0.9 * d * (fy / 1.15));
+		const requiredAsCm2 = requiredAs * 10000;
+		const minAs = 0.0033 * width * height * 10000;
+		const finalAs = Math.max(requiredAsCm2, minAs);
+		const barArea = Math.PI * Math.pow(barDiameter / 20, 2);
+		const barsCount = Math.ceil(finalAs / barArea);`,
+		parameters: [
+			{
+				name: "length",
+				label: "Longitud de la viga",
+				type: "number",
+				unit: "m",
+				required: true,
+				min: 1,
+				max: 20,
+				placeholder: "6.0",
+				tooltip: "Luz libre de la viga en metros",
+			},
+			{
+				name: "load",
+				label: "Carga uniformemente distribuida",
+				type: "number",
+				unit: "N/m",
+				required: true,
+				min: 1000,
+				max: 100000,
+				placeholder: "15000",
+			},
+			{
+				name: "concreteStrength",
+				label: "Resistencia del concreto f'c",
+				type: "select",
+				unit: "MPa",
+				required: true,
+				options: ["21", "28", "35", "42"],
+				defaultValue: "21",
+			},
+			{
+				name: "steelStrength",
+				label: "Resistencia del acero fy",
+				type: "select",
+				unit: "MPa",
+				required: true,
+				options: ["420", "500", "520"],
+				defaultValue: "420",
+			},
+			{
+				name: "beamHeight",
+				label: "Altura de la viga (opcional)",
+				type: "number",
+				unit: "m",
+				required: false,
+				min: 0.2,
+				max: 2,
+				placeholder: "0.60",
+			},
+			{
+				name: "beamWidth",
+				label: "Ancho de la viga (opcional)",
+				type: "number",
+				unit: "m",
+				required: false,
+				min: 0.15,
+				max: 1,
+				placeholder: "0.30",
+			},
+			{
+				name: "barDiameter",
+				label: "Diámetro de varilla",
+				type: "select",
+				unit: "mm",
+				required: true,
+				options: ["8", "10", "12", "16", "20", "25"],
+				defaultValue: "16",
+			},
+		],
+	},
+	"04ff5abe-6810-43df-aa1b-8347af49d11c": {
+		id: "04ff5abe-6810-43df-aa1b-8347af49d11c",
+		name: "Cálculo de tubería de agua fría",
+		description:
+			"Calcula el diámetro óptimo de tubería de agua fría y la cantidad necesaria según el caudal y la longitud del recorrido",
+		type: "installation",
+		targetProfession: "plumber",
+		necReference: "NEC-HS-CI, Capítulo 16",
+		version: "1.0",
+		isActive: true,
+		isVerified: true,
+		isFeatured: true,
+		usageCount: 156,
+		averageRating: 4.3,
+		shareLevel: "public",
+		author: "Sistema CONSTRU",
+		formula: `// Cálculo de tubería de agua fría
+		const flowRateLS = flowRate / 60;
+		const flowRateM3S = flowRateLS / 1000;
+		const velocity = 1.5;
+		const area = flowRateM3S / velocity;
+		const theoreticalDiameter = Math.sqrt((4 * area) / Math.PI) * 1000;
+		const commercialDiameters = [12, 20, 25, 32, 40, 50, 63, 75, 90, 110];
+		let selectedDiameter = commercialDiameters.find(d => d >= theoreticalDiameter) || commercialDiameters[commercialDiameters.length - 1];
+		const totalLength = pipeLength * 1.1;
+		const elbowCount = Math.ceil(pipeLength / 5);
+		const teeCount = Math.ceil(fixtures / 2);`,
+		parameters: [
+			{
+				name: "flowRate",
+				label: "Caudal requerido",
+				type: "number",
+				unit: "L/min",
+				required: true,
+				min: 1,
+				max: 1000,
+				placeholder: "20",
+				tooltip: "Caudal total requerido en litros por minuto",
+			},
+			{
+				name: "pipeLength",
+				label: "Longitud de tubería",
+				type: "number",
+				unit: "m",
+				required: true,
+				min: 1,
+				max: 500,
+				placeholder: "50",
+			},
+			{
+				name: "fixtures",
+				label: "Número de aparatos",
+				type: "number",
+				unit: "und",
+				required: true,
+				min: 1,
+				max: 50,
+				placeholder: "8",
+			},
+		],
+	},
+	"086aa8f1-165e-45cf-b1e2-ae4d775cedd7": {
+		id: "086aa8f1-165e-45cf-b1e2-ae4d775cedd7",
+		name: "Corrección de Ensayo SPT (NEC-SE-GC)",
+		description:
+			"Calcula la corrección del número de golpes del ensayo SPT según la Norma Ecuatoriana de la Construcción.",
+		type: "foundation",
+		targetProfession: "civil_engineer",
+		necReference: "NEC-SE-GC, Capítulo 3.5",
+		version: "1.0",
+		isActive: true,
+		isVerified: true,
+		isFeatured: true,
+		usageCount: 98,
+		averageRating: 4.7,
+		shareLevel: "public",
+		author: "Sistema CONSTRU",
+		formula: `// Corrección de ensayo SPT según NEC
+		let CE = tipoMartillo === "seguridad" ? 0.75 : tipoMartillo === "automatico" ? 1.0 : 0.6;
+		let CR = longitudBarras < 3 ? 0.75 : longitudBarras < 4 ? 0.8 : longitudBarras < 6 ? 0.85 : longitudBarras < 10 ? 0.95 : 1.0;
+		let CB = diametroPerforacion <= 115 ? 1.0 : diametroPerforacion < 150 ? 1.05 : 1.15;
+		let CS = usaMuestreador ? 1.0 : 1.2;
+		const N60 = Ncampo * CE * CR * CB * CS;
+		let N60corregido = N60;
+		if (tipoSuelo === "granular") {
+			const CN = Math.min(Math.sqrt(100 / esfuerzoVertical), 2.0);
+			N60corregido = N60 * CN;
+		}`,
+		parameters: [
+			{
+				name: "Ncampo",
+				label: "Número de golpes de campo (N)",
+				type: "number",
+				unit: "golpes",
+				required: true,
+				min: 0,
+				max: 100,
+				placeholder: "15",
+			},
+			{
+				name: "tipoMartillo",
+				label: "Tipo de martillo",
+				type: "select",
+				required: true,
+				options: ["manual", "seguridad", "automatico"],
+				defaultValue: "seguridad",
+			},
+			{
+				name: "longitudBarras",
+				label: "Longitud de barras",
+				type: "number",
+				unit: "m",
+				required: true,
+				min: 1,
+				max: 20,
+				placeholder: "6",
+			},
+			{
+				name: "diametroPerforacion",
+				label: "Diámetro de perforación",
+				type: "number",
+				unit: "mm",
+				required: true,
+				min: 60,
+				max: 200,
+				placeholder: "110",
+			},
+			{
+				name: "usaMuestreador",
+				label: "Usa muestreador estándar",
+				type: "boolean",
+				required: true,
+				defaultValue: true,
+			},
+			{
+				name: "tipoSuelo",
+				label: "Tipo de suelo",
+				type: "select",
+				required: true,
+				options: ["granular", "cohesivo"],
+				defaultValue: "granular",
+			},
+			{
+				name: "esfuerzoVertical",
+				label: "Esfuerzo vertical efectivo",
+				type: "number",
+				unit: "kPa",
+				required: true,
+				min: 10,
+				max: 1000,
+				placeholder: "150",
+			},
+		],
+	},
+};
+
+// Función para ejecutar la fórmula dinámicamente
+const executeFormula = (
+	formula: string,
+	parameters: Record<string, any>
+): CalculationResult => {
+	try {
+		// Crear una función que evalúe la fórmula con los parámetros
+		const func = new Function(
+			...Object.keys(parameters),
+			`
+			${formula}
+			
+			// Retornar todos los valores calculados
+			const results = {};
+			const localVars = Object.keys(this).filter(key => 
+				!key.startsWith('_') && 
+				typeof this[key] !== 'function' &&
+				key !== 'results'
+			);
+			
+			// Capturar variables locales definidas en la fórmula
+			try {
+				// Variables específicas por tipo de cálculo
+				if (typeof tipoVivienda !== 'undefined') results.tipoVivienda = tipoVivienda;
+				if (typeof fdIluminacion !== 'undefined') results.fdIluminacion = fdIluminacion;
+				if (typeof fdTomacorrientes !== 'undefined') results.fdTomacorrientes = fdTomacorrientes;
+				if (typeof potenciaIluminacion !== 'undefined') results.potenciaIluminacion = Math.round(potenciaIluminacion);
+				if (typeof demandaIluminacion !== 'undefined') results.demandaIluminacion = Math.round(demandaIluminacion);
+				if (typeof potenciaTomacorrientes !== 'undefined') results.potenciaTomacorrientes = Math.round(potenciaTomacorrientes);
+				if (typeof demandaTomacorrientes !== 'undefined') results.demandaTomacorrientes = Math.round(demandaTomacorrientes);
+				if (typeof factorDemandaCargasEspeciales !== 'undefined') results.factorDemandaCargasEspeciales = factorDemandaCargasEspeciales;
+				if (typeof demandaCargasEspeciales !== 'undefined') results.demandaCargasEspeciales = Math.round(demandaCargasEspeciales);
+				if (typeof demandaTotal !== 'undefined') results.demandaTotal = Math.round(demandaTotal);
+				if (typeof corrienteTotal !== 'undefined') results.corrienteTotal = Math.round(corrienteTotal * 100) / 100;
+				
+				// Variables estructurales
+				if (typeof maxMoment !== 'undefined') results.maxMoment = Math.round(maxMoment * 100) / 100;
+				if (typeof recommendedHeight !== 'undefined') results.recommendedHeight = Math.round(recommendedHeight * 100) / 100;
+				if (typeof recommendedWidth !== 'undefined') results.recommendedWidth = Math.round(recommendedWidth * 100) / 100;
+				if (typeof requiredAs !== 'undefined') results.requiredAs = Math.round(finalAs * 100) / 100;
+				if (typeof barsCount !== 'undefined') results.barsCount = barsCount;
+				if (typeof spacing !== 'undefined') results.spacing = Math.round(((width - 0.1) / (barsCount - 1)) * 100);
+				if (typeof isOverReinforced !== 'undefined') results.isOverReinforced = finalAs > 0.025 * width * height * 10000;
+				
+				// Variables de tubería
+				if (typeof theoreticalDiameter !== 'undefined') results.theoreticalDiameter = Math.round(theoreticalDiameter * 100) / 100;
+				if (typeof selectedDiameter !== 'undefined') results.selectedDiameter = selectedDiameter;
+				if (typeof totalLength !== 'undefined') results.totalLength = Math.round(totalLength * 100) / 100;
+				if (typeof elbowCount !== 'undefined') results.elbowCount = elbowCount;
+				if (typeof teeCount !== 'undefined') results.teeCount = teeCount;
+				
+				// Variables SPT
+				if (typeof CE !== 'undefined') results.factorEnergia = CE;
+				if (typeof CR !== 'undefined') results.factorLongitud = CR;
+				if (typeof CB !== 'undefined') results.factorDiametro = CB;
+				if (typeof CS !== 'undefined') results.factorMuestreador = CS;
+				if (typeof N60 !== 'undefined') results.N60 = Math.round(N60 * 100) / 100;
+				if (typeof N60corregido !== 'undefined') results.N60corregido = Math.round(N60corregido * 100) / 100;
+				
+			} catch (e) {
+				console.warn('Error capturando variables:', e);
+			}
+			
+			return results;
+		`
+		);
+
+		return func.apply({}, Object.values(parameters));
+	} catch (error) {
+		console.error("Error ejecutando fórmula:", error);
+		throw new Error("Error en el cálculo: " + error.message);
+	}
+};
+
+const CalculationInterface: React.FC = () => {
+	const {templateId} = useParams<{templateId: string}>();
+	const navigate = useNavigate();
+
 	// Estados principales
+	const [template, setTemplate] = useState<CalculationTemplate | null>(null);
 	const [currentStep, setCurrentStep] = useState<CalculationStep>("overview");
 	const [parameters, setParameters] = useState<Record<string, any>>({});
 	const [results, setResults] = useState<CalculationResult | null>(null);
 	const [isCalculating, setIsCalculating] = useState(false);
-	const [isFavorite, setIsFavorite] = useState(template.isFavorite || false);
+	const [isFavorite, setIsFavorite] = useState(false);
 	const [calculationName, setCalculationName] = useState("");
-	const [showSteps] = useState(true);
+	const [calculationHistory, setCalculationHistory] = useState<any[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
-	// Hook para plantillas relacionadas
-	const {getRelatedTemplates, toggleFavorite} = useTemplates();
-
-	// Plantillas relacionadas
-	const relatedTemplates = useMemo(() => {
-		return getRelatedTemplates(template.id, 3);
-	}, [getRelatedTemplates, template.id]);
-
-	// Inicializar parámetros con valores por defecto
+	// Cargar plantilla
 	useEffect(() => {
-		const defaultParams: Record<string, any> = {};
-		template.parameters.forEach((param) => {
-			if (param.defaultValue !== undefined) {
-				defaultParams[param.name] = param.defaultValue;
+		const loadTemplate = async () => {
+			if (!templateId) {
+				setError("ID de plantilla no válido");
+				setLoading(false);
+				return;
 			}
-		});
-		setParameters(defaultParams);
 
-		// Nombre por defecto para el cálculo
-		setCalculationName(`${template.name} - ${new Date().toLocaleDateString()}`);
-	}, [template]);
+			try {
+				// En producción, esto sería una llamada a la API
+				// const response = await fetch(`/api/templates/${templateId}`);
+				// const templateData = await response.json();
+
+				const templateData = mockTemplates[templateId];
+
+				if (!templateData) {
+					setError("Plantilla no encontrada");
+					setLoading(false);
+					return;
+				}
+
+				setTemplate(templateData);
+
+				// Inicializar parámetros con valores por defecto
+				const defaultParams: Record<string, any> = {};
+				templateData.parameters.forEach((param) => {
+					if (param.defaultValue !== undefined) {
+						defaultParams[param.name] = param.defaultValue;
+					}
+				});
+				setParameters(defaultParams);
+
+				// Nombre por defecto para el cálculo
+				setCalculationName(
+					`${templateData.name} - ${new Date().toLocaleDateString()}`
+				);
+			} catch (err) {
+				setError("Error cargando la plantilla");
+				console.error(err);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		loadTemplate();
+	}, [templateId]);
 
 	// Validación de parámetros
-	const validation = useMemo((): ParameterValidation => {
+	const validation = useMemo((): ValidationResult => {
+		if (!template) return {isValid: false, errors: {}, warnings: {}};
+
 		const errors: Record<string, string> = {};
 		const warnings: Record<string, string> = {};
 
@@ -102,7 +639,7 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 			if (value !== undefined && value !== "") {
 				switch (param.type) {
 					case "number":
-						{ const numValue = Number(value);
+						const numValue = Number(value);
 						if (isNaN(numValue)) {
 							errors[param.name] = "Debe ser un número válido";
 						} else {
@@ -112,13 +649,8 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 							if (param.max !== undefined && numValue > param.max) {
 								errors[param.name] = `Valor máximo: ${param.max}`;
 							}
-							// Advertencias para valores fuera del rango típico
-							if (param.typicalRange && !errors[param.name]) {
-								// Aquí se podría implementar lógica para rangos típicos
-								// Por simplicidad, omitido en este ejemplo
-							}
 						}
-						break; }
+						break;
 
 					case "text":
 						if (param.validation?.pattern) {
@@ -138,7 +670,7 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 			errors,
 			warnings,
 		};
-	}, [parameters, template.parameters]);
+	}, [parameters, template]);
 
 	// Handlers
 	const handleParameterChange = useCallback((paramName: string, value: any) => {
@@ -147,35 +679,39 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 
 	const handleToggleFavorite = useCallback(() => {
 		setIsFavorite((prev) => !prev);
-		toggleFavorite(template.id);
-	}, [toggleFavorite, template.id]);
+		// En producción: llamada a API para toggle favorite
+	}, []);
 
 	const handleCalculate = useCallback(async () => {
-		if (!validation.isValid) return;
+		if (!validation.isValid || !template) return;
 
 		setIsCalculating(true);
 		setCurrentStep("calculating");
 
 		try {
-			// Simular cálculo asíncrono
-			await new Promise((resolve) => setTimeout(resolve, 2000));
+			// Simular delay de procesamiento
+			await new Promise((resolve) => setTimeout(resolve, 1500));
 
-			// Generar resultados mock basados en los parámetros
-			const mockResults = generateMockResults(template, parameters);
-			setResults(mockResults);
+			// Ejecutar la fórmula dinámicamente
+			const calculationResults = executeFormula(template.formula, parameters);
+			setResults(calculationResults);
 			setCurrentStep("results");
 
-			// Auto-guardar si está habilitado
-			if (autoSave && onSaveCalculation) {
-				onSaveCalculation(template, parameters, mockResults);
-			}
+			// Agregar al historial
+			const newCalculation = {
+				id: Date.now(),
+				timestamp: new Date().toISOString(),
+				inputs: {...parameters},
+				results: calculationResults,
+			};
+			setCalculationHistory((prev) => [newCalculation, ...prev.slice(0, 4)]);
 		} catch (error) {
-			console.error("Error in calculation:", error);
-			// Aquí manejar errores de cálculo
+			console.error("Error en cálculo:", error);
+			setError("Error ejecutando el cálculo");
 		} finally {
 			setIsCalculating(false);
 		}
-	}, [validation.isValid, template, parameters, autoSave, onSaveCalculation]);
+	}, [validation.isValid, template, parameters]);
 
 	const handleStepNavigation = useCallback(
 		(step: CalculationStep) => {
@@ -186,32 +722,80 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 	);
 
 	// Configuración de dificultad
-	const getDifficultyConfig = (difficulty: string) => {
-		switch (difficulty) {
-			case "basic":
+	const getDifficultyConfig = (profession: string) => {
+		switch (profession) {
+			case "electrical_engineer":
+				return {
+					color: "bg-blue-100 text-blue-700 border-blue-200",
+					label: "Eléctrico",
+				};
+			case "civil_engineer":
 				return {
 					color: "bg-green-100 text-green-700 border-green-200",
-					label: "Básico",
+					label: "Civil",
 				};
-			case "intermediate":
+			case "plumber":
 				return {
 					color: "bg-yellow-100 text-yellow-700 border-yellow-200",
-					label: "Intermedio",
-				};
-			case "advanced":
-				return {
-					color: "bg-red-100 text-red-700 border-red-200",
-					label: "Avanzado",
+					label: "Instalaciones",
 				};
 			default:
 				return {
 					color: "bg-gray-100 text-gray-700 border-gray-200",
-					label: difficulty,
+					label: "General",
 				};
 		}
 	};
 
-	const difficultyConfig = getDifficultyConfig(template.difficulty);
+	const getTypeIcon = (type: string) => {
+		switch (type) {
+			case "electrical":
+				return CalculatorIcon;
+			case "structural":
+				return BookOpenIcon;
+			case "installation":
+				return CpuChipIcon;
+			case "foundation":
+				return ChartBarIcon;
+			default:
+				return CalculatorIcon;
+		}
+	};
+
+	// Estados de loading y error
+	if (loading) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+					<p className="text-gray-600">Cargando plantilla...</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (error || !template) {
+		return (
+			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+				<div className="text-center">
+					<ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+					<h2 className="text-xl font-semibold text-gray-900 mb-2">Error</h2>
+					<p className="text-gray-600 mb-4">
+						{error || "Plantilla no encontrada"}
+					</p>
+					<button
+						onClick={() => navigate("/calculations/catalog")}
+						className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+					>
+						Volver al Catálogo
+					</button>
+				</div>
+			</div>
+		);
+	}
+
+	const difficultyConfig = getDifficultyConfig(template.targetProfession);
+	const TypeIcon = getTypeIcon(template.type);
 
 	// Componente del indicador de pasos
 	const StepIndicator = () => {
@@ -269,24 +853,21 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 	// Vista general de la plantilla
 	const OverviewView = () => (
 		<div className="space-y-6">
-			{/* Header de la plantilla */}
 			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-				{/* Gradient header */}
-				<div
-					className={`h-32 bg-gradient-to-r ${template.color} relative overflow-hidden`}
-				>
+				{/* Header colorido */}
+				<div className="h-32 bg-gradient-to-r from-primary-500 to-secondary-500 relative overflow-hidden">
 					<div className="absolute inset-0 bg-black bg-opacity-20" />
 					<div className="absolute inset-0 flex items-center justify-between p-6">
 						<div className="flex items-center gap-4">
 							<div className="w-16 h-16 bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-								<template.icon className="h-8 w-8 text-white" />
+								<TypeIcon className="h-8 w-8 text-white" />
 							</div>
 							<div>
 								<h1 className="text-2xl font-bold text-white mb-1">
 									{template.name}
 								</h1>
 								<div className="flex items-center gap-2">
-									{template.verified && (
+									{template.isVerified && (
 										<CheckBadgeIcon className="h-5 w-5 text-white" />
 									)}
 									<span
@@ -310,7 +891,7 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 							</button>
 							<div className="flex items-center gap-1 text-white text-sm">
 								<StarIcon className="h-4 w-4" />
-								<span>{template.rating}</span>
+								<span>{template.averageRating}</span>
 							</div>
 						</div>
 					</div>
@@ -334,42 +915,19 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 							</div>
 						</div>
 						<div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-							<ClockIcon className="h-5 w-5 text-green-600" />
+							<UserIcon className="h-5 w-5 text-green-600" />
 							<div>
-								<div className="text-xs text-gray-500">Tiempo estimado</div>
-								<div className="text-sm font-medium">
-									{template.estimatedTime}
-								</div>
+								<div className="text-xs text-gray-500">Autor</div>
+								<div className="text-sm font-medium">{template.author}</div>
 							</div>
 						</div>
 						<div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-							<UserGroupIcon className="h-5 w-5 text-gray-500" />
+							<ChartBarIcon className="h-5 w-5 text-gray-500" />
 							<div>
-								<div className="text-xs text-gray-500">Dirigido a</div>
-								<div className="text-sm font-medium">
-									{template.profession.join(", ")}
-								</div>
+								<div className="text-xs text-gray-500">Usos</div>
+								<div className="text-sm font-medium">{template.usageCount}</div>
 							</div>
 						</div>
-					</div>
-
-					{/* Requerimientos */}
-					<div className="bg-blue-50 rounded-lg p-4 mb-6">
-						<h4 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
-							<ExclamationTriangleIcon className="h-4 w-4" />
-							Datos requeridos para el cálculo:
-						</h4>
-						<ul className="space-y-2">
-							{template.requirements.map((req, index) => (
-								<li
-									key={index}
-									className="text-sm text-blue-800 flex items-start gap-2"
-								>
-									<CheckIcon className="h-3 w-3 mt-0.5 text-blue-600" />
-									<span>{req}</span>
-								</li>
-							))}
-						</ul>
 					</div>
 
 					{/* Botón de continuar */}
@@ -420,7 +978,7 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 				{template.parameters.map((param) => (
 					<ParameterInput
-						key={param.id}
+						key={param.name}
 						parameter={param}
 						value={parameters[param.name]}
 						onChange={(value) => handleParameterChange(param.name, value)}
@@ -502,69 +1060,30 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 							<CheckIcon className="h-6 w-6 text-green-600" />
 							Resultado del Cálculo
 						</h2>
-						{results.compliance.isCompliant && (
-							<div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-								<CheckBadgeIcon className="h-4 w-4" />
-								CONFORME NEC
-							</div>
-						)}
-					</div>
-
-					<div className="mb-6">
-						<div className="text-3xl font-bold text-primary-700 mb-1">
-							{results.mainResult.value} {results.mainResult.unit}
+						<div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+							<CheckBadgeIcon className="h-4 w-4" />
+							CONFORME NEC
 						</div>
-						<div className="text-gray-600">{results.mainResult.label}</div>
 					</div>
 
-					{/* Desglose */}
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						{results.breakdown.map((item, index) => (
-							<div key={index} className="bg-white rounded-lg p-4">
-								<div className="flex justify-between items-center">
-									<span className="text-gray-600">{item.label}:</span>
-									<div className="text-right">
-										<span className="font-semibold text-gray-900">
-											{item.value} {item.unit}
-										</span>
-										{item.factor && (
-											<div className="text-xs text-gray-500">{item.factor}</div>
-										)}
-									</div>
+					{/* Resultados en grid */}
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						{Object.entries(results).map(([key, value]) => (
+							<div key={key} className="bg-white rounded-lg p-4">
+								<div className="text-xs text-gray-500 mb-1">
+									{key
+										.replace(/([A-Z])/g, " $1")
+										.replace(/^./, (str) => str.toUpperCase())}
+								</div>
+								<div className="text-lg font-semibold text-gray-900">
+									{typeof value === "number"
+										? value.toLocaleString("es-EC", {maximumFractionDigits: 2})
+										: String(value)}
 								</div>
 							</div>
 						))}
 					</div>
 				</div>
-
-				{/* Recomendaciones */}
-				{results.recommendations.length > 0 && (
-					<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-						<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-							<LightBulbIcon className="h-5 w-5 text-yellow-500" />
-							Recomendaciones Técnicas
-						</h3>
-						<div className="space-y-3">
-							{results.recommendations.map((rec, index) => (
-								<div
-									key={index}
-									className={`p-4 rounded-lg border-l-4 ${
-										rec.type === "success"
-											? "bg-green-50 border-green-500"
-											: rec.type === "warning"
-												? "bg-yellow-50 border-yellow-500"
-												: rec.type === "error"
-													? "bg-red-50 border-red-500"
-													: "bg-blue-50 border-blue-500"
-									}`}
-								>
-									<div className="font-medium text-gray-900">{rec.title}</div>
-									<div className="text-gray-600 text-sm">{rec.description}</div>
-								</div>
-							))}
-						</div>
-					</div>
-				)}
 
 				{/* Botones de acción */}
 				<div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -584,15 +1103,15 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 						<DocumentArrowDownIcon className="h-4 w-4" />
 						Exportar PDF
 					</button>
-					{onSaveCalculation && (
-						<button
-							onClick={() => onSaveCalculation(template, parameters, results)}
-							className="px-6 py-3 bg-secondary-500 text-gray-900 rounded-lg hover:bg-secondary-600 transition-colors flex items-center justify-center gap-2"
-						>
-							<DocumentDuplicateIcon className="h-4 w-4" />
-							Guardar Cálculo
-						</button>
-					)}
+					<button
+						onClick={() => {
+							/* Implementar guardar */
+						}}
+						className="px-6 py-3 bg-secondary-500 text-gray-900 rounded-lg hover:bg-secondary-600 transition-colors flex items-center justify-center gap-2"
+					>
+						<DocumentDuplicateIcon className="h-4 w-4" />
+						Guardar Cálculo
+					</button>
 				</div>
 			</div>
 		);
@@ -605,28 +1124,16 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 				{/* Header con navegación */}
 				<div className="flex items-center gap-4 mb-8">
 					<button
-						onClick={onBack}
+						onClick={() => navigate("/calculations/catalog")}
 						className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
 					>
 						<ArrowLeftIcon className="h-4 w-4" />
 						<span>Volver al catálogo</span>
 					</button>
-
-					<div className="flex-1" />
-
-					{onSuggestChange && template.allowSuggestions && (
-						<button
-							onClick={() => onSuggestChange(template)}
-							className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-yellow-100 text-orange-700 rounded-lg hover:from-orange-200 hover:to-yellow-200 transition-all duration-200 text-sm font-medium"
-						>
-							<SparklesIcon className="h-4 w-4" />
-							<span>Sugerir Mejora</span>
-						</button>
-					)}
 				</div>
 
 				{/* Indicador de pasos */}
-				{showSteps && <StepIndicator />}
+				<StepIndicator />
 
 				{/* Contenido principal basado en el paso actual */}
 				{currentStep === "overview" && <OverviewView />}
@@ -634,25 +1141,83 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 				{currentStep === "calculating" && <CalculatingView />}
 				{currentStep === "results" && <ResultsView />}
 
-				{/* Plantillas relacionadas */}
-				{currentStep === "overview" && relatedTemplates.length > 0 && (
-					<div className="mt-12">
-						<h3 className="text-lg font-semibold text-gray-900 mb-4">
-							Plantillas Relacionadas
-						</h3>
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-							{relatedTemplates.map((relatedTemplate) => (
-								<TemplateCard
-									key={relatedTemplate.id}
-									template={relatedTemplate}
-									onSelect={() => {
-										/* Navegar a nueva plantilla */
-									}}
-									onToggleFavorite={() => toggleFavorite(relatedTemplate.id)}
-									compact={true}
-									showPreviewButton={false}
-								/>
-							))}
+				{/* Panel lateral con historial e información */}
+				{(currentStep === "parameters" || currentStep === "results") && (
+					<div className="mt-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
+						<div className="lg:col-span-3">
+							{/* El contenido principal ya se renderiza arriba */}
+						</div>
+
+						<div className="space-y-6">
+							{/* Información técnica */}
+							<div className="bg-white rounded-xl border border-gray-200 p-6">
+								<h3 className="text-lg font-semibold text-gray-900 mb-4">
+									Información Técnica
+								</h3>
+								<div className="space-y-4">
+									<div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+										<InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5" />
+										<div>
+											<p className="text-sm font-medium text-blue-900">
+												Referencia Normativa
+											</p>
+											<p className="text-sm text-blue-800">
+												{template.necReference}
+											</p>
+										</div>
+									</div>
+									<div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+										<CheckCircleIcon className="h-5 w-5 text-green-600 mt-0.5" />
+										<div>
+											<p className="text-sm font-medium text-green-900">
+												Versión
+											</p>
+											<p className="text-sm text-green-800">
+												v{template.version}
+											</p>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							{/* Historial reciente */}
+							{calculationHistory.length > 0 && (
+								<div className="bg-white rounded-xl border border-gray-200 p-6">
+									<h3 className="text-lg font-semibold text-gray-900 mb-4">
+										Cálculos Recientes
+									</h3>
+									<div className="space-y-3">
+										{calculationHistory.map((calc, index) => (
+											<div key={calc.id} className="p-3 bg-gray-50 rounded-lg">
+												<div className="flex items-center justify-between mb-2">
+													<span className="text-sm font-medium text-gray-900">
+														Cálculo #{calculationHistory.length - index}
+													</span>
+													<span className="text-xs text-gray-500">
+														{new Date(calc.timestamp).toLocaleTimeString(
+															"es-EC",
+															{
+																hour: "2-digit",
+																minute: "2-digit",
+															}
+														)}
+													</span>
+												</div>
+												<button
+													onClick={() => {
+														setParameters(calc.inputs);
+														setResults(calc.results);
+														setCurrentStep("results");
+													}}
+													className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+												>
+													Restaurar valores
+												</button>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 						</div>
 					</div>
 				)}
@@ -718,7 +1283,6 @@ const ParameterInput: React.FC<{
 					placeholder={parameter.placeholder}
 					min={parameter.min}
 					max={parameter.max}
-					step={parameter.step}
 					className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
 						error ? "border-red-500" : "border-gray-300"
 					}`}
@@ -729,12 +1293,6 @@ const ParameterInput: React.FC<{
 				<div className="flex items-start gap-2 text-xs text-gray-500">
 					<LightBulbIcon className="h-4 w-4 mt-0.5 text-yellow-500 flex-shrink-0" />
 					<span>{parameter.tooltip}</span>
-				</div>
-			)}
-
-			{parameter.typicalRange && (
-				<div className="text-xs text-primary-600">
-					💡 Rango típico: {parameter.typicalRange}
 				</div>
 			)}
 
@@ -753,63 +1311,6 @@ const ParameterInput: React.FC<{
 			)}
 		</div>
 	);
-};
-
-// Función auxiliar para generar resultados mock
-const generateMockResults = (
-	template: CalculationTemplate,
-): CalculationResult => {
-	// Esta función debería implementar la lógica real de cálculo
-	// Por ahora, generamos resultados mock basados en la plantilla
-
-	return {
-		mainResult: {
-			label: "Resultado Principal",
-			value: "25.4",
-			unit: "kN/m²",
-		},
-		breakdown: [
-			{
-				label: "Carga permanente",
-				value: "12.5",
-				unit: "kN/m²",
-				factor: "(Factor: 1.0)",
-			},
-			{
-				label: "Carga variable",
-				value: "8.0",
-				unit: "kN/m²",
-				factor: "(Factor: 1.5)",
-			},
-			{
-				label: "Carga sísmica",
-				value: "4.9",
-				unit: "kN/m²",
-				factor: "(Factor: 1.8)",
-			},
-		],
-		recommendations: [
-			{
-				type: "success",
-				title: "Cálculo conforme",
-				description: "Los resultados cumplen con la normativa NEC vigente",
-			},
-			{
-				type: "info",
-				title: "Verificación adicional",
-				description: "Se recomienda revisar las condiciones de apoyo",
-			},
-		],
-		compliance: {
-			isCompliant: true,
-			necReference: template.necReference,
-			notes: [
-				"Cálculo realizado según normativa ecuatoriana",
-				"Factores de seguridad aplicados correctamente",
-				"Verificación de estados límite completada",
-			],
-		},
-	};
 };
 
 export default CalculationInterface;

@@ -100,10 +100,6 @@ const ProposedVoting = lazy(
 	() => import("../pages/calculations/collaboration/ProposedVoting")
 );
 
-const CalculationInterface2 = lazy(
-	() => import("../pages/calculations/core/CalculationInterface")
-);
-
 // Settings
 const CalculationsSettings = lazy(
 	() => import("../pages/calculations/CalculationsSettings")
@@ -273,22 +269,14 @@ const appRoutes: RouteObject[] = [
 								),
 							},
 							{
+								// Ruta dinámica que captura el templateId
 								path: "template/:templateId",
-								element: (
-									<CalculationInterface
-										template={undefined}
-										onBack={function (): void {
-											throw new Error("Function not implemented.");
-										}}
-									/>
-								),
+								element: <CalculationInterface />,
 							},
 							{
-								path: "template2/:templateId",
-								element: (
-									<CalculationInterface2
-									/>
-								),
+								// Rutas adicionales para diferentes tipos de acceso
+								path: ":templateId",
+								element: <CalculationInterface />,
 							},
 						],
 					},
