@@ -1,7 +1,16 @@
 import type {ComponentType, SVGProps} from "react";
 
-// Tipos básicos
+// ==================== TIPOS BÁSICOS ====================
 export type DifficultyLevel = "basic" | "intermediate" | "advanced";
+export type TemplateDifficulty = "basic" | "intermediate" | "advanced"; // Alias para compatibilidad
+export type TemplateCategory =
+	| "structural"
+	| "electrical"
+	| "architectural"
+	| "hydraulic"
+	| "custom";
+export type TemplateStatus = "draft" | "active" | "archived" | "under_review";
+export type ParameterType = "number" | "select" | "text" | "boolean" | "date";
 export type SortOption =
 	| "popular"
 	| "rating"
@@ -11,15 +20,8 @@ export type SortOption =
 	| "date"
 	| "usage"
 	| "category";
-export type ParameterType = "number" | "select" | "text" | "boolean" | "date";
-export type TemplateStatus = "draft" | "active" | "archived" | "under_review";
-export type TemplateDifficulty = "basic" | "intermediate" | "advanced";
-export type TemplateCategory =
-	| "structural"
-	| "electrical"
-	| "architectural"
-	| "hydraulic"
-	| "custom";
+
+// Tipos para sugerencias
 export type SuggestionType =
 	| "formula"
 	| "parameters"
@@ -35,7 +37,26 @@ export type SuggestionStatus =
 	| "reviewed";
 export type SuggestionPriority = "low" | "medium" | "high" | "critical";
 
-// Parámetro de cálculo
+// Tipos para valores de parámetros
+export type ParameterValue = string | number | boolean | Date | null;
+export type ParameterValues = Record<string, ParameterValue>;
+
+// Tipo para condiciones de parámetros
+export type ParameterCondition = {
+	operator:
+		| "eq"
+		| "neq"
+		| "gt"
+		| "lt"
+		| "gte"
+		| "lte"
+		| "contains"
+		| "startsWith"
+		| "endsWith";
+	value: string | number | boolean | null;
+};
+
+// ==================== PARÁMETROS ====================
 export interface TemplateParameter {
 	id: string;
 	name: string;
@@ -57,7 +78,7 @@ export interface TemplateParameter {
 	};
 	dependencies?: {
 		dependsOn: string;
-		condition: any;
+		condition: ParameterCondition; // Reemplazado "any" con tipo específico
 		action: "show" | "hide" | "require" | "disable";
 	}[];
 }
@@ -65,7 +86,7 @@ export interface TemplateParameter {
 // Alias para compatibilidad
 export type CalculationParameter = TemplateParameter;
 
-// Fórmula de cálculo
+// ==================== FÓRMULAS Y VALIDACIÓN ====================
 export interface CalculationFormula {
 	expression: string;
 	variables: Record<string, string>;
@@ -73,32 +94,14 @@ export interface CalculationFormula {
 	units?: string;
 }
 
-// Regla de validación
 export interface ValidationRule {
 	field: string;
 	type: "required" | "min" | "max" | "pattern" | "custom";
-	value?: any;
+	value?: string | number | boolean | RegExp | null; // Reemplazado "any" con tipos específicos
 	message: string;
 	condition?: string;
 }
 
-// Referencia normativa
-export interface NormReference {
-	code: string;
-	section: string;
-	description: string;
-	url?: string;
-}
-
-// Ejemplo de plantilla
-export interface TemplateExample {
-	name: string;
-	description: string;
-	inputs: Record<string, any>;
-	expectedOutput: any;
-}
-
-// Validación de plantilla
 export interface TemplateValidation {
 	parameterValidations: Record<
 		string,
@@ -117,7 +120,59 @@ export interface TemplateValidation {
 	}>;
 }
 
-// Resultado de cálculo
+// ==================== REFERENCIAS Y EJEMPLOS ====================
+export interface NormReference {
+	code: string;
+	section: string;
+	description: string;
+	url?: string;
+}
+
+// Tipo para resultados de cálculos
+export type CalculationOutput = {
+	mainResult: number | string;
+	additionalData?: Record<string, ParameterValue>;
+	isValid: boolean;
+};
+
+export interface TemplateExample {
+	name: string;
+	description: string;
+	inputs: ParameterValues; // Reemplazado "Record<string, any>" con tipo específico
+	expectedOutput: CalculationOutput; // Reemplazado "any" con tipo específico
+}
+
+// ==================== RESULTADOS DE CÁLCULO ====================
+// Tipos para gráficos
+export type ChartDataPoint = {
+	x: number | string;
+	y: number;
+	label?: string;
+	color?: string;
+	[key: string]: unknown; // Para propiedades adicionales específicas
+};
+
+export type ChartConfig = {
+	xAxis?: {
+		title?: string;
+		min?: number;
+		max?: number;
+		tickInterval?: number;
+	};
+	yAxis?: {
+		title?: string;
+		min?: number;
+		max?: number;
+		tickInterval?: number;
+	};
+	legend?: {
+		show: boolean;
+		position?: "top" | "bottom" | "left" | "right";
+	};
+	colors?: string[];
+	[key: string]: unknown; // Para configuraciones adicionales
+};
+
 export interface CalculationResult {
 	mainResult: {
 		label: string;
@@ -151,12 +206,96 @@ export interface CalculationResult {
 	charts?: Array<{
 		type: "line" | "bar" | "pie" | "scatter";
 		title: string;
-		data: any[];
-		config?: any;
+		data: ChartDataPoint[]; // Reemplazado "any[]" con tipo específico
+		config?: ChartConfig; // Reemplazado "any" con tipo específico
 	}>;
 }
 
-// Plantilla de cálculo principal
+// ==================== PLANTILLA BASE ====================
+interface BaseTemplate {
+	id: string;
+	name: string;
+	description: string;
+	longDescription?: string;
+	category: TemplateCategory;
+	subcategory: string;
+	targetProfessions: string[];
+	difficulty: TemplateDifficulty;
+	tags: string[];
+	estimatedTime?: string;
+	necReference?: string;
+	parameters: TemplateParameter[];
+	formula?: string;
+	requirements?: string[];
+	applicationCases?: string[];
+	limitations?: string[];
+	version: string;
+	usageCount: number;
+	createdAt: string;
+	lastModified: string;
+	isFavorite?: boolean;
+}
+
+// ==================== PLANTILLA PERSONAL ====================
+export interface MyCalculationTemplate extends BaseTemplate {
+	isPublic: boolean;
+	isActive: boolean;
+	status: TemplateStatus;
+	sharedWith: string[];
+	rating?: {
+		min: number;
+		max: number;
+	};
+	totalRatings?: number;
+	publishedAt?: string;
+	author?: {
+		id: string;
+		name: string;
+		profession?: string;
+	};
+	contributors?: Array<{
+		id: string;
+		name: string;
+		contribution: string;
+		date: string;
+	}>;
+	changeLog?: Array<{
+		version: string;
+		changes: string[];
+		date: string;
+		author: string;
+	}>;
+}
+
+// ==================== PLANTILLA PÚBLICA ====================
+export interface PublicCalculationTemplate extends BaseTemplate {
+	verified: boolean;
+	verifiedBy?: {
+		id: string;
+		name: string;
+		credentials: string;
+		date: string;
+	};
+	downloadCount: number;
+	communityRating: {
+		average: number;
+		count: number;
+		distribution: Record<number, number>;
+	};
+	lastReviewed?: string;
+	reviewComments?: string;
+	author: {
+		id: string;
+		name: string;
+		profession?: string;
+	};
+	isPublic: true; // Siempre true para plantillas públicas
+	isActive: boolean;
+	status: string;
+	sharedWith: string[];
+}
+
+// ==================== PLANTILLA LEGACY (Para compatibilidad) ====================
 export interface CalculationTemplate {
 	// Identificación
 	id: string;
@@ -208,119 +347,7 @@ export interface CalculationTemplate {
 	};
 }
 
-// Alias para compatibilidad
-export type Template = CalculationTemplate;
-
-// Plantilla personal del usuario
-export interface MyCalculationTemplate {
-	// Identificación
-	id: string;
-	name: string;
-	description: string;
-	longDescription?: string;
-
-	// Categorización
-	category: TemplateCategory;
-	subcategory: string;
-	targetProfessions: string[];
-	difficulty: TemplateDifficulty;
-	tags: string[];
-
-	// Metadatos técnicos
-	estimatedTime?: string;
-	necReference?: string;
-	version: string;
-	requirements?: string[];
-	applicationCases?: string[];
-	limitations?: string[];
-
-	// Configuración
-	parameters: TemplateParameter[];
-	formula?: string | CalculationFormula;
-	validation?: TemplateValidation;
-
-	// Estado y permisos
-	isPublic: boolean;
-	isActive: boolean;
-	isFavorite: boolean;
-	status: TemplateStatus;
-	sharedWith: string[];
-
-	// Estadísticas
-	usageCount: number;
-	rating?: {min: number; max: number};
-	totalRatings?: number;
-
-	// Fechas
-	createdAt: string;
-	lastModified: string;
-	publishedAt?: string;
-
-	// Colaboración
-	author?: {
-		id: string;
-		name: string;
-		profession?: string;
-	};
-	contributors?: Array<{
-		id: string;
-		name: string;
-		contribution: string;
-		date: string;
-	}>;
-	changeLog?: Array<{
-		version: string;
-		changes: string[];
-		date: string;
-		author: string;
-	}>;
-}
-
-// Plantilla pública del catálogo
-export interface PublicCalculationTemplate
-	extends Omit<MyCalculationTemplate, "isFavorite" | "sharedWith"> {
-	verified: boolean;
-	verifiedBy?: {
-		id: string;
-		name: string;
-		credentials: string;
-		date: string;
-	};
-	downloadCount: number;
-	communityRating: {
-		average: number;
-		count: number;
-		distribution: Record<number, number>;
-	};
-	lastReviewed?: string;
-	reviewComments?: string;
-}
-
-// Alias para compatibilidad
-export type PublicTemplate = PublicCalculationTemplate;
-
-// Subcategoría de plantillas
-export interface TemplateSubcategory {
-	id: string;
-	name: string;
-	description?: string;
-	count: number;
-	icon?: ComponentType<SVGProps<SVGSVGElement>>;
-}
-
-// Categoría de plantillas
-export interface TemplateCategoryType {
-	id: string;
-	name: string;
-	description?: string;
-	icon: ComponentType<SVGProps<SVGSVGElement>>;
-	color: string;
-	count: number;
-	subcategories?: TemplateSubcategory[];
-	featured?: boolean;
-}
-
-// Datos para crear plantilla
+// ==================== DATOS PARA OPERACIONES ====================
 export interface TemplateCreateData {
 	name: string;
 	description: string;
@@ -340,13 +367,11 @@ export interface TemplateCreateData {
 	limitations?: string[];
 }
 
-// Datos para actualizar plantilla
 export interface TemplateUpdateData extends Partial<TemplateCreateData> {
 	version?: string;
 	status?: TemplateStatus;
 }
 
-// Datos para formulario de plantilla
 export interface TemplateFormData {
 	name: string;
 	description: string;
@@ -366,12 +391,12 @@ export interface TemplateFormData {
 	limitations: string[];
 }
 
-// Filtros para búsqueda de plantillas
+// ==================== FILTROS Y BÚSQUEDA ====================
 export interface TemplateFilters {
 	search?: string;
-	category?: string | null;
+	category?: TemplateCategory | string | null;
 	subcategory?: string | null;
-	difficulty?: DifficultyLevel | null;
+	difficulty?: TemplateDifficulty | DifficultyLevel | null;
 	profession?: string[];
 	verified?: boolean;
 	rating?: {min: number; max: number};
@@ -395,7 +420,6 @@ export interface TemplateFilters {
 	showOnlyVerified?: boolean;
 }
 
-// Opciones de búsqueda de plantillas
 export interface TemplateSearchOptions {
 	query?: string;
 	filters?: TemplateFilters;
@@ -409,7 +433,7 @@ export interface TemplateSearchOptions {
 	};
 }
 
-// Respuesta de API para lista de plantillas
+// ==================== RESPUESTAS DE API ====================
 export interface TemplateListResponse {
 	templates: MyCalculationTemplate[] | PublicCalculationTemplate[];
 	pagination: {
@@ -426,23 +450,38 @@ export interface TemplateListResponse {
 	};
 }
 
-// Respuesta de validación de plantilla
 export interface TemplateValidationResponse {
 	isValid: boolean;
-	errors: Record<string, string>;
-	warnings: Record<string, string>;
+	errors: Array<{
+		type: string;
+		message: string;
+		field?: string;
+	}>;
+	warnings: Array<{
+		type: string;
+		message: string;
+		field?: string;
+	}>;
 	suggestions?: string[];
 }
 
-// Resultado de operación de plantilla
+// Tipo para valores de campos de formulario
+export type FormFieldValue =
+	| string
+	| number
+	| boolean
+	| string[]
+	| TemplateParameter[]
+	| null;
+
 export interface TemplateOperationResult {
 	success: boolean;
-	data?: any;
+	data?: unknown; // Reemplazado "any" con "unknown" para mayor seguridad
 	error?: string;
 	message?: string;
 }
 
-// Sugerencia de cambio para plantilla
+// ==================== SUGERENCIAS ====================
 export interface TemplateSuggestion {
 	id: string;
 	templateId: string;
@@ -476,11 +515,11 @@ export interface TemplateSuggestion {
 	implementedInVersion?: string;
 }
 
-// Ejecución de cálculo
+// ==================== EJECUCIÓN Y HISTORIAL ====================
 export interface CalculationExecution {
 	id: string;
 	templateId: string;
-	parameters: Record<string, any>;
+	parameters: ParameterValues; // Reemplazado "Record<string, any>" con tipo específico
 	result?: CalculationResult;
 	status: "pending" | "calculating" | "completed" | "error";
 	error?: string;
@@ -489,7 +528,6 @@ export interface CalculationExecution {
 	duration?: number;
 }
 
-// Historial de cálculo
 export interface CalculationHistory {
 	id: string;
 	templateId: string;
@@ -497,7 +535,7 @@ export interface CalculationHistory {
 	templateVersion: string;
 
 	// Datos de entrada
-	inputParameters: Record<string, any>;
+	inputParameters: ParameterValues; // Reemplazado "Record<string, any>" con tipo específico
 
 	// Resultados
 	results: CalculationResult;
@@ -517,7 +555,14 @@ export interface CalculationHistory {
 	warnings?: string[];
 }
 
-// Estadísticas de plantilla
+// ==================== VALIDACIÓN DE PARÁMETROS ====================
+export interface ParameterValidation {
+	isValid: boolean;
+	errors: Record<string, string>;
+	warnings: Record<string, string>;
+}
+
+// ==================== ESTADÍSTICAS ====================
 export interface TemplateStats {
 	total: number;
 	verifiedCount: number;
@@ -542,19 +587,32 @@ export interface TemplateStats {
 	averageRating?: number;
 	totalRatings?: number;
 	usageByMonth?: Record<string, number>;
-	mostCommonInputs?: Record<string, any>;
+	mostCommonInputs?: ParameterValues; // Reemplazado "Record<string, any>" con tipo específico
 	errorRate?: number;
 	averageCalculationTime?: number;
 }
 
-// Validación de parámetros
-export interface ParameterValidation {
-	isValid: boolean;
-	errors: Record<string, string>;
-	warnings: Record<string, string>;
+// ==================== CATEGORÍAS Y SUBCATEGORÍAS ====================
+export interface TemplateSubcategory {
+	id: string;
+	name: string;
+	description?: string;
+	count: number;
+	icon?: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
-// Opciones para hook useTemplates
+export interface TemplateCategoryType {
+	id: TemplateCategory;
+	name: string;
+	description?: string;
+	icon?: ComponentType<SVGProps<SVGSVGElement>>;
+	color: string;
+	count: number;
+	subcategories?: TemplateSubcategory[];
+	featured?: boolean;
+}
+
+// ==================== OPCIONES DE HOOKS ====================
 export interface UseTemplateOptions {
 	autoLoad?: boolean;
 	defaultFilters?: TemplateFilters;
@@ -562,7 +620,7 @@ export interface UseTemplateOptions {
 	includePersonal?: boolean;
 }
 
-// Estado del formulario de plantilla
+// ==================== ESTADOS DE FORMULARIO ====================
 export interface TemplateFormState {
 	data: TemplateFormData;
 	errors: Record<string, string>;
@@ -572,12 +630,11 @@ export interface TemplateFormState {
 	totalSteps: number;
 }
 
-// Errores del formulario
 export interface TemplateFormErrors {
 	[key: string]: string;
 }
 
-// Contexto de uso de plantillas
+// ==================== CONTEXTOS Y CONFIGURACIÓN ====================
 export interface TemplateUsageContext {
 	projectId?: string;
 	projectName?: string;
@@ -587,7 +644,6 @@ export interface TemplateUsageContext {
 	autoSave?: boolean;
 }
 
-// Configuración de exportación
 export interface ExportConfig {
 	format: "pdf" | "excel" | "word" | "json";
 	includeParameters: boolean;
@@ -602,18 +658,17 @@ export interface ExportConfig {
 	};
 }
 
-// Estado del wizard de plantillas
 export interface TemplateWizardState {
 	currentStep: "select" | "configure" | "calculate" | "results";
 	selectedTemplate: CalculationTemplate | null;
-	parameters: Record<string, any>;
+	parameters: ParameterValues;
 	results: CalculationResult | null;
 	validation: ParameterValidation;
 	isCalculating: boolean;
 	history: CalculationHistory[];
 }
 
-// Props comunes para componentes
+// ==================== PROPS DE COMPONENTES ====================
 export interface BaseTemplateProps {
 	template: CalculationTemplate;
 	onSelect?: (template: CalculationTemplate) => void;
@@ -622,7 +677,6 @@ export interface BaseTemplateProps {
 	className?: string;
 }
 
-// Configuración de visualización
 export interface DisplayConfig {
 	compact?: boolean;
 	showPreview?: boolean;
@@ -631,7 +685,6 @@ export interface DisplayConfig {
 	animationDelay?: number;
 }
 
-// Contexto de React para plantillas
 export interface TemplateContextValue {
 	templates: CalculationTemplate[];
 	categories: TemplateCategoryType[];
@@ -647,7 +700,7 @@ export interface TemplateContextValue {
 	refreshTemplates: () => Promise<void>;
 }
 
-// Constantes
+// ==================== CONSTANTES ====================
 export const TEMPLATE_CATEGORIES: Record<
 	TemplateCategory,
 	TemplateCategoryType
@@ -656,7 +709,6 @@ export const TEMPLATE_CATEGORIES: Record<
 		id: "structural",
 		name: "Estructural",
 		description: "Análisis y diseño estructural",
-		icon: null as any, // Se asignará en el componente
 		color: "bg-blue-50 border-blue-200 text-blue-700",
 		count: 0,
 	},
@@ -664,7 +716,6 @@ export const TEMPLATE_CATEGORIES: Record<
 		id: "electrical",
 		name: "Eléctrico",
 		description: "Instalaciones eléctricas",
-		icon: null as any,
 		color: "bg-yellow-50 border-yellow-200 text-yellow-700",
 		count: 0,
 	},
@@ -672,7 +723,6 @@ export const TEMPLATE_CATEGORIES: Record<
 		id: "architectural",
 		name: "Arquitectónico",
 		description: "Diseño arquitectónico",
-		icon: null as any,
 		color: "bg-green-50 border-green-200 text-green-700",
 		count: 0,
 	},
@@ -680,7 +730,6 @@ export const TEMPLATE_CATEGORIES: Record<
 		id: "hydraulic",
 		name: "Hidráulico",
 		description: "Sistemas hidráulicos",
-		icon: null as any,
 		color: "bg-cyan-50 border-cyan-200 text-cyan-700",
 		count: 0,
 	},
@@ -688,13 +737,12 @@ export const TEMPLATE_CATEGORIES: Record<
 		id: "custom",
 		name: "Personalizada",
 		description: "Plantillas personalizadas",
-		icon: null as any,
 		color: "bg-purple-50 border-purple-200 text-purple-700",
 		count: 0,
 	},
 };
 
-export const DEFAULT_PARAMETER_VALUES: Record<ParameterType, any> = {
+export const DEFAULT_PARAMETER_VALUES: Record<ParameterType, ParameterValue> = {
 	number: 0,
 	text: "",
 	select: "",
@@ -702,10 +750,10 @@ export const DEFAULT_PARAMETER_VALUES: Record<ParameterType, any> = {
 	date: new Date().toISOString().split("T")[0],
 };
 
-// Exports para compatibilidad
-export type {
-	TemplateCategoryType as Category,
-	TemplateFilters as Filters,
-	CalculationResult as Result,
-	TemplateParameter as Parameter,
-};
+// ==================== ALIASES PARA COMPATIBILIDAD ====================
+export type Template = MyCalculationTemplate;
+export type PublicTemplate = PublicCalculationTemplate;
+export type Category = TemplateCategoryType;
+export type Filters = TemplateFilters;
+export type Result = CalculationResult;
+export type Parameter = TemplateParameter;

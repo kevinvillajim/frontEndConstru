@@ -77,7 +77,6 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
 	// Hook de plantillas
 	const {
-		templates,
 		categories,
 		isLoading,
 		toggleFavorite,

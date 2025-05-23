@@ -6,8 +6,8 @@ import {
 	StarIcon,
 	CalculatorIcon,
 	FireIcon,
-	TrendingUpIcon,
 	ClockIcon,
+	ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
 import {TemplateCard} from "./components/TemplateCard";
 import {CategoryFilter} from "./components/CategoryFilter";
@@ -31,7 +31,7 @@ const SORT_OPTIONS: {
 }[] = [
 	{value: "popular", label: "Más Populares", icon: FireIcon},
 	{value: "rating", label: "Mejor Calificados", icon: StarIcon},
-	{value: "trending", label: "Tendencia", icon: TrendingUpIcon},
+	{value: "trending", label: "Tendencia", icon: ArrowTrendingUpIcon},
 	{value: "recent", label: "Recientes", icon: ClockIcon},
 	{value: "name", label: "Alfabético", icon: CalculatorIcon},
 ];
@@ -55,7 +55,6 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 
 	// Hook personalizado para gestionar plantillas
 	const {
-		templates,
 		categories,
 		isLoading,
 		toggleFavorite,
@@ -357,7 +356,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 			)}
 
 			{/* Estilos adicionales */}
-			<style jsx>{`
+			<style>{`
 				@keyframes fadeIn {
 					from {
 						opacity: 0;

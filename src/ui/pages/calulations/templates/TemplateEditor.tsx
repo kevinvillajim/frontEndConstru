@@ -6,7 +6,6 @@ import {
 	CheckIcon,
 	DocumentTextIcon,
 	CpuChipIcon,
-	EyeIcon,
 	ExclamationTriangleIcon,
 	BookOpenIcon,
 	TagIcon,
@@ -18,12 +17,12 @@ import {
 import ParameterEditor from "./components/ParameterEditor";
 
 // Types y hooks
-import {
+import type {
 	TemplateFormData,
 	TemplateParameter,
 	MyCalculationTemplate,
-} from "../../shared/types/template.types";
-import {useTemplates} from "../../shared/hooks/useTemplates";
+} from "../shared/types/template.types";
+import {useTemplates} from "../shared/hooks/useTemplates";
 
 // Configuración de opciones
 const categories = [
@@ -104,7 +103,7 @@ const TemplateEditor: React.FC = () => {
 	const existingTemplate = location.state?.template;
 
 	// Hooks
-	const {createTemplate, updateTemplate, loading} = useTemplates({
+	const {createTemplate, updateTemplate} = useTemplates({
 		autoLoad: false,
 	});
 
@@ -130,7 +129,6 @@ const TemplateEditor: React.FC = () => {
 
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [showPreview, setShowPreview] = useState(false);
 	const [currentStep, setCurrentStep] = useState(0);
 
 	// Estados para inputs dinámicos

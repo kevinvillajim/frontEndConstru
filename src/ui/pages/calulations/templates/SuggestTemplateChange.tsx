@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import React, { useState} from 'react';
+import { useNavigate, useParams} from 'react-router-dom';
 import {
-  ArrowLeftIcon,
-  CheckIcon,
-  ExclamationTriangleIcon,
-  LightBulbIcon,
-  PaperAirplaneIcon,
-  BookOpenIcon,
-  CalculatorIcon,
-  PencilSquareIcon,
-  CodeBracketIcon,
-  DocumentTextIcon,
-  SparklesIcon,
   XMarkIcon,
-  InformationCircleIcon,
-  UserIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline';
+  ArrowLeftIcon, // Equivalente a ArrowLeft
+	ExclamationCircleIcon, // Equivalente a AlertCircle
+	InformationCircleIcon, // Equivalente a Info
+	CalculatorIcon, // Equivalente a Calculator
+	DocumentTextIcon, // Equivalente a FileText
+  BookOpenIcon, // Equivalente a BookOpen
+  CodeBracketIcon, // Equivalente a CodeBracket
+  SparklesIcon, // Equivalente a Sparkles
+  CheckIcon, // Equivalente a CheckIcon
+  PencilSquareIcon, // Equivalente a PencilSquare
+  UserIcon, // Equivalente a User
+  ClockIcon, // Equivalente a Clock
+  PaperAirplaneIcon, // Equivalente a PaperAirplane
+  LightBulbIcon, // Equivalente a LightBulb
+} from "@heroicons/react/24/outline";
 
 // Types y hooks
 import type { 
@@ -79,7 +79,7 @@ const suggestionTypes = [
     id: 'requirements' as SuggestionType,
     name: 'Requisitos',
     description: 'Actualizar los requisitos necesarios para el cálculo',
-    icon: ExclamationTriangleIcon,
+    icon: ExclamationCircleIcon,
     color: 'text-orange-600',
     bgColor: 'bg-orange-50',
     borderColor: 'border-orange-200',
@@ -160,6 +160,11 @@ const mockTemplate: PublicCalculationTemplate = {
     count: 23,
     distribution: { 1: 0, 2: 1, 3: 2, 4: 8, 5: 12 }
   },
+  author: {
+    id: '',
+    name: '',
+    profession: undefined
+  }
 };
 
 const SuggestTemplateChange: React.FC<SuggestTemplateChangeProps> = ({
@@ -168,8 +173,7 @@ const SuggestTemplateChange: React.FC<SuggestTemplateChangeProps> = ({
   onCancel,
 }) => {
   const navigate = useNavigate();
-  const { templateId } = useParams();
-  const location = useLocation();
+  useParams();
   
   // Hook para envío de sugerencias
   const { submitSuggestion } = useTemplates({ autoLoad: false });
@@ -227,7 +231,7 @@ const SuggestTemplateChange: React.FC<SuggestTemplateChangeProps> = ({
   };
 
   // Manejo de cambios en el formulario
-  const handleInputChange = (field: keyof SuggestionFormData, value: any) => {
+  const handleInputChange = (field: keyof SuggestionFormData, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Limpiar error del campo si existe
@@ -303,7 +307,7 @@ const SuggestTemplateChange: React.FC<SuggestTemplateChangeProps> = ({
   const steps = [
     { id: 0, name: 'Tipo de Sugerencia', icon: SparklesIcon },
     { id: 1, name: 'Detalles', icon: DocumentTextIcon },
-    { id: 2, name: 'Prioridad e Impacto', icon: ExclamationTriangleIcon },
+    { id: 2, name: 'Prioridad e Impacto', icon: ExclamationCircleIcon },
     { id: 3, name: 'Referencias', icon: BookOpenIcon },
     { id: 4, name: 'Revisar y Enviar', icon: CheckIcon },
   ];
@@ -458,7 +462,7 @@ const SuggestTemplateChange: React.FC<SuggestTemplateChangeProps> = ({
           {currentStep === 1 && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                <selectedType?.icon className={`h-5 w-5 ${selectedType?.color}`} />
+                {selectedType?.icon && React.createElement(selectedType.icon, { className: `h-5 w-5 ${selectedType.color}` })}
                 Detalles de la Sugerencia - {selectedType?.name}
               </h2>
 
@@ -796,7 +800,7 @@ const SuggestTemplateChange: React.FC<SuggestTemplateChangeProps> = ({
                 {(formData.affectsAccuracy || formData.affectsCompliance) && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <div className="flex gap-3">
-                      <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 mt-0.5" />
+                      <ExclamationCircleIcon className="h-5 w-5 text-yellow-600 mt-0.5" />
                       <div>
                         <h3 className="text-sm font-medium text-yellow-900 mb-1">
                           Sugerencia de Alto Impacto

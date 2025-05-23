@@ -47,10 +47,10 @@ const CalculationInterface = lazy(
 	() => import("../pages/calulations/catalog/CalculationInterface")
 );
 const SavedCalculations = lazy(
-	() => import("../pages/calulations/SavedCalculations")
+	() => import("../pages/calulations/comparison/SavedCalculations")
 );
 const CalculationComparison = lazy(
-	() => import("../pages/calulations/CalculationComparison")
+	() => import("../pages/calulations/comparison/CalculationComparison")
 );
 const Collaboration = lazy(
 	() => import("../pages/calulations/Collaboration")

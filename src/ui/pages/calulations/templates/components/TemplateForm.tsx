@@ -46,11 +46,6 @@ import {useTemplateForm} from "../../shared/hooks/useTemplates";
 import type {
 	Template,
 	TemplateCategory,
-	TemplateParameter,
-	CalculationFormula,
-	ValidationRule,
-	NormReference,
-	TemplateExample,
 	TEMPLATE_CATEGORIES,
 	DEFAULT_PARAMETER_VALUES,
 } from "../../shared/types/template.types";

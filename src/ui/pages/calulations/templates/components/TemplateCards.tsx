@@ -6,9 +6,7 @@ import {
 	DocumentDuplicateIcon,
 	ShareIcon,
 	BookOpenIcon,
-	CheckBadgeIcon,
 	ClockIcon,
-	StarIcon as StarOutlineIcon,
 } from "@heroicons/react/24/outline";
 import {StarIcon as StarSolidIcon} from "@heroicons/react/24/solid";
 import type {MyCalculationTemplate} from "../../shared/types/template.types";

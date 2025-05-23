@@ -3,7 +3,6 @@ import {useNavigate} from "react-router-dom";
 import {
 	PlusIcon,
 	MagnifyingGlassIcon,
-	AdjustmentsHorizontalIcon,
 	FolderIcon,
 	CheckBadgeIcon,
 	ClockIcon,
@@ -24,9 +23,6 @@ import type {
 	MyCalculationTemplate,
 	TemplateFilters,
 } from "../shared/types/template.types";
-
-// Hook personalizado para plantillas
-import {useTemplates} from "../shared/hooks/useTemplates";
 
 // Mock data mejorado
 const mockMyTemplates: MyCalculationTemplate[] = [
@@ -159,7 +155,7 @@ const MyTemplates: React.FC = () => {
 
 	// Filtrar y ordenar plantillas
 	const filteredTemplates = useMemo(() => {
-		let filtered = templates.filter((template) => {
+		const filtered = templates.filter((template) => {
 			const matchesSearch =
 				!filters.search ||
 				template.name.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -167,7 +163,7 @@ const MyTemplates: React.FC = () => {
 					.toLowerCase()
 					.includes(filters.search.toLowerCase()) ||
 				template.tags.some((tag) =>
-					tag.toLowerCase().includes(filters.search.toLowerCase())
+					tag.toLowerCase().includes(filters.search?.toLowerCase() ?? "")
 				);
 
 			const matchesCategory =
@@ -225,7 +221,7 @@ const MyTemplates: React.FC = () => {
 	);
 
 	// Handlers
-	const handleFilterChange = (key: keyof TemplateFilters, value: any) => {
+	const handleFilterChange = (key: keyof TemplateFilters, value: unknown) => {
 		setFilters((prev) => ({...prev, [key]: value}));
 	};
 

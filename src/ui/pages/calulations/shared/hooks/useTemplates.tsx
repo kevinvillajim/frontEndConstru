@@ -1,10 +1,9 @@
-// src/ui/pages/calculations/shared/hooks/useTemplates.tsx
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { 
-  Template, 
-  PublicTemplate, 
-  TemplateCreateData, 
+  MyCalculationTemplate,
+  PublicCalculationTemplate,
+  CalculationTemplate, // Tipo legacy para compatibilidad
+  TemplateCreateData,
   TemplateUpdateData,
   TemplateFilters,
   TemplateSearchOptions,
@@ -15,15 +14,38 @@ import type {
   CalculationExecution,
   UseTemplateOptions,
   TemplateFormState,
-  TemplateFormErrors
+  TemplateFormErrors,
+  TemplateStats,
+  TemplateCategoryType,
+  ParameterValidation,
+  ParameterType,
+  DEFAULT_PARAMETER_VALUES,
+  FormFieldValue,
+  ParameterValues
 } from '../types/template.types';
+
+// Definir nuestro propio tipo para las opciones de la API
+type ApiRequestOptions = {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string | FormData;
+  credentials?: 'include' | 'omit' | 'same-origin';
+  mode?: 'cors' | 'no-cors' | 'same-origin';
+  cache?: 'default' | 'no-cache' | 'reload' | 'force-cache' | 'only-if-cached';
+  redirect?: 'follow' | 'error' | 'manual';
+  referrer?: string;
+  referrerPolicy?: ReferrerPolicy;
+  integrity?: string;
+  keepalive?: boolean;
+  signal?: AbortSignal;
+};
 
 // ==================== INTERFACES DEL HOOK ====================
 export interface UseTemplatesReturn {
   // Estados principales
-  templates: Template[];
-  publicTemplates: PublicTemplate[];
-  currentTemplate: Template | null;
+  templates: MyCalculationTemplate[];
+  publicTemplates: PublicCalculationTemplate[];
+  currentTemplate: MyCalculationTemplate | null;
   loading: boolean;
   error: string | null;
   
@@ -34,67 +56,163 @@ export interface UseTemplatesReturn {
   isValid: boolean;
   
   // Operaciones CRUD
-  createTemplate: (data: TemplateCreateData) => Promise<TemplateOperationResult<Template>>;
-  updateTemplate: (id: string, data: TemplateUpdateData) => Promise<TemplateOperationResult<Template>>;
-  deleteTemplate: (id: string) => Promise<TemplateOperationResult<void>>;
-  duplicateTemplate: (id: string, newName?: string) => Promise<TemplateOperationResult<Template>>;
+  createTemplate: (data: TemplateCreateData) => Promise<TemplateOperationResult>;
+  updateTemplate: (id: string, data: TemplateUpdateData) => Promise<TemplateOperationResult>;
+  deleteTemplate: (id: string) => Promise<TemplateOperationResult>;
+  duplicateTemplate: (id: string, newName?: string) => Promise<TemplateOperationResult>;
   
   // Búsqueda y filtrado
   searchTemplates: (options: TemplateSearchOptions) => Promise<TemplateListResponse>;
-  getTemplate: (id: string) => Promise<Template | null>;
+  getTemplate: (id: string) => Promise<MyCalculationTemplate | null>;
   getPublicTemplates: (options?: TemplateSearchOptions) => Promise<TemplateListResponse>;
   getMyTemplates: (options?: TemplateSearchOptions) => Promise<TemplateListResponse>;
   
   // Validación
-  validateTemplate: (template: Partial<Template>) => Promise<TemplateValidationResponse>;
-  validateParameters: (parameters: any) => TemplateValidationResponse;
+  validateTemplate: (template: Partial<MyCalculationTemplate>) => Promise<TemplateValidationResponse>;
+  validateParameters: (parameters: ParameterValues) => ParameterValidation;
   
   // Formularios
-  initializeForm: (template?: Template) => void;
-  updateFormField: (field: string, value: any) => void;
+  initializeForm: (template?: MyCalculationTemplate) => void;
+  updateFormField: (field: string, value: FormFieldValue) => void;
   resetForm: () => void;
-  saveForm: () => Promise<TemplateOperationResult<Template>>;
+  saveForm: () => Promise<TemplateOperationResult>;
   
   // Sugerencias
   getSuggestions: (templateId: string) => Promise<TemplateSuggestion[]>;
-  createSuggestion: (suggestion: Omit<TemplateSuggestion, 'id' | 'suggestedAt'>) => Promise<TemplateOperationResult<TemplateSuggestion>>;
-  voteSuggestion: (suggestionId: string, vote: 'up' | 'down') => Promise<TemplateOperationResult<void>>;
+  submitSuggestion: (suggestion: Partial<TemplateSuggestion>) => Promise<TemplateSuggestion>;
+  createSuggestion: (suggestion: Omit<TemplateSuggestion, 'id' | 'createdAt'>) => Promise<TemplateOperationResult>;
+  voteSuggestion: (suggestionId: string, vote: 'up' | 'down') => Promise<TemplateOperationResult>;
   
   // Ejecución
-  executeTemplate: (templateId: string, parameters: Record<string, any>) => Promise<TemplateOperationResult<CalculationExecution>>;
+  executeTemplate: (templateId: string, parameters: ParameterValues) => Promise<TemplateOperationResult>;
   getExecutionHistory: (templateId?: string) => Promise<CalculationExecution[]>;
+  
+  // Utilidades para compatibilidad con CalculationTemplate (legacy)
+  getFilteredTemplates: (filters?: TemplateFilters) => CalculationTemplate[];
+  getTemplateStats: (templates: CalculationTemplate[]) => TemplateStats;
+  getRelatedTemplates: (templateId: string, limit?: number) => CalculationTemplate[];
+  toggleFavorite: (templateId: string) => void;
+  categories: TemplateCategoryType[];
+  isLoading: boolean;
   
   // Utilidades
   refreshTemplates: () => Promise<void>;
   clearError: () => void;
-  setCurrentTemplate: (template: Template | null) => void;
+  setCurrentTemplate: (template: MyCalculationTemplate | null) => void;
 }
 
 // ==================== CONFIGURACIÓN DEL HOOK ====================
 const DEFAULT_OPTIONS: UseTemplateOptions = {
-  autoSave: false,
-  validateOnChange: true,
-  loadExamples: false
+  autoLoad: true,
+  defaultFilters: {},
+  includePublic: true,
+  includePersonal: true
 };
 
 // ==================== ESTADO INICIAL ====================
 const INITIAL_FORM_STATE: TemplateFormState = {
-  basic: {
+  data: {
     name: '',
     description: '',
-    category: 'general',
+    longDescription: '',
+    category: '',
+    subcategory: '',
+    targetProfessions: [],
+    difficulty: 'basic',
+    estimatedTime: '',
+    necReference: '',
     tags: [],
-    isPublic: false
+    isPublic: false,
+    parameters: [],
+    formula: '',
+    requirements: [],
+    applicationCases: [],
+    limitations: []
   },
-  parameters: [],
-  formulas: [],
-  validation: [],
-  ui: {
-    layout: 'single-column',
-    sections: []
+  errors: {},
+  isSubmitting: false,
+  isDirty: false,
+  currentStep: 0,
+  totalSteps: 5
+};
+
+// ==================== MOCK DATA ====================
+const MOCK_CATEGORIES: TemplateCategoryType[] = [
+  {
+    id: 'structural',
+    name: 'Estructural',
+    description: 'Análisis y diseño estructural',
+    color: 'bg-blue-50 border-blue-200 text-blue-700',
+    count: 15
   },
-  norms: [],
-  examples: []
+  {
+    id: 'electrical',
+    name: 'Eléctrico',
+    description: 'Instalaciones eléctricas',
+    color: 'bg-yellow-50 border-yellow-200 text-yellow-700',
+    count: 12
+  },
+  {
+    id: 'architectural',
+    name: 'Arquitectónico',
+    description: 'Diseño arquitectónico',
+    color: 'bg-green-50 border-green-200 text-green-700',
+    count: 8
+  },
+  {
+    id: 'hydraulic',
+    name: 'Hidráulico',
+    description: 'Sistemas hidráulicos',
+    color: 'bg-cyan-50 border-cyan-200 text-cyan-700',
+    count: 6
+  },
+  {
+    id: 'custom',
+    name: 'Personalizada',
+    description: 'Plantillas personalizadas',
+    color: 'bg-purple-50 border-purple-200 text-purple-700',
+    count: 3
+  }
+];
+
+// ==================== CONVERSIÓN DE TIPOS ====================
+const convertToLegacyTemplate = (template: MyCalculationTemplate | PublicCalculationTemplate): CalculationTemplate => {
+  const isPublic = 'verified' in template;
+  
+  return {
+    id: template.id,
+    name: template.name,
+    description: template.description,
+    version: template.version,
+    category: template.category,
+    subcategory: template.subcategory,
+    profession: template.targetProfessions,
+    tags: template.tags,
+    difficulty: template.difficulty,
+    estimatedTime: template.estimatedTime || '10-15 min',
+    necReference: template.necReference || '',
+    requirements: template.requirements || [],
+    parameters: template.parameters,
+    verified: isPublic ? (template as PublicCalculationTemplate).verified : false,
+    isPublic: isPublic,
+    isNew: false,
+    trending: false,
+    popular: template.usageCount > 100,
+    rating: isPublic 
+      ? (template as PublicCalculationTemplate).communityRating.average 
+      : template.totalRatings ? (template.totalRatings / 5) : 4.0,
+    usageCount: template.usageCount,
+    lastUpdated: template.lastModified,
+    isFavorite: template.isFavorite,
+    color: 'from-primary-600 to-secondary-500',
+    icon: null as any, // Se asignará en el componente
+    allowSuggestions: true,
+    createdBy: template.author?.id,
+    // Corregir el acceso a contributors para asegurar que existe en ambos tipos
+    contributors: isPublic 
+      ? [] // PublicCalculationTemplate no tiene contributors
+      : (template as MyCalculationTemplate).contributors?.map(c => c.id) || []
+  };
 };
 
 // ==================== HOOK PRINCIPAL ====================
@@ -102,9 +220,9 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
   const config = { ...DEFAULT_OPTIONS, ...options };
   
   // ==================== ESTADOS ====================
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [publicTemplates, setPublicTemplates] = useState<PublicTemplate[]>([]);
-  const [currentTemplate, setCurrentTemplate] = useState<Template | null>(null);
+  const [templates, setTemplates] = useState<MyCalculationTemplate[]>([]);
+  const [publicTemplates, setPublicTemplates] = useState<PublicCalculationTemplate[]>([]);
+  const [currentTemplate, setCurrentTemplate] = useState<MyCalculationTemplate | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -118,14 +236,16 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
   const isValid = useMemo(() => {
     if (!formState) return false;
     return Object.keys(formErrors).length === 0 && 
-           formState.basic.name.trim() !== '' &&
-           formState.parameters.length > 0;
+           formState.data.name.trim() !== '' &&
+           formState.data.description.trim() !== '' &&
+           formState.data.category !== '';
   }, [formState, formErrors]);
   
   // ==================== UTILIDADES ====================
-  const handleError = useCallback((error: any, context: string) => {
+  const handleError = useCallback((error: unknown, context: string) => {
     console.error(`Error in ${context}:`, error);
-    const message = error?.message || error?.toString() || 'Error desconocido';
+    const message = error instanceof Error ? error.message : 
+                    typeof error === 'string' ? error : 'Error desconocido';
     setError(`${context}: ${message}`);
   }, []);
   
@@ -133,10 +253,10 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
     setError(null);
   }, []);
   
-  // ==================== API CALLS (Simuladas - Reemplazar con implementación real) ====================
+  // ==================== API CALLS (Simuladas) ====================
   const apiCall = useCallback(async <T>(
     endpoint: string, 
-    options: RequestInit = {}
+    options: ApiRequestOptions = {} as ApiRequestOptions
   ): Promise<T> => {
     try {
       setLoading(true);
@@ -159,50 +279,55 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
   }, [handleError]);
   
   // ==================== OPERACIONES CRUD ====================
-  const createTemplate = useCallback(async (data: TemplateCreateData): Promise<TemplateOperationResult<Template>> => {
+  const createTemplate = useCallback(async (data: TemplateCreateData): Promise<TemplateOperationResult> => {
     try {
-      const template = await apiCall<Template>('/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+      const newTemplate: MyCalculationTemplate = {
+        id: `template_${Date.now()}`,
+        ...data,
+        version: '1.0.0',
+        usageCount: 0,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        isActive: true,
+        status: 'draft',
+        sharedWith: [],
+        isFavorite: false
+      };
       
-      setTemplates(prev => [...prev, template]);
-      return { success: true, data: template };
+      setTemplates(prev => [...prev, newTemplate]);
+      return { success: true, data: newTemplate };
     } catch (error) {
       return { 
         success: false, 
-        errors: [error instanceof Error ? error.message : 'Error al crear plantilla'] 
+        error: error instanceof Error ? error.message : 'Error al crear plantilla'
       };
     }
-  }, [apiCall]);
+  }, []);
   
-  const updateTemplate = useCallback(async (id: string, data: TemplateUpdateData): Promise<TemplateOperationResult<Template>> => {
+  const updateTemplate = useCallback(async (id: string, data: TemplateUpdateData): Promise<TemplateOperationResult> => {
     try {
-      const template = await apiCall<Template>(`/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+      setTemplates(prev => prev.map(t => {
+        if (t.id === id) {
+          const updated = { ...t, ...data, lastModified: new Date().toISOString() };
+          if (currentTemplate?.id === id) {
+            setCurrentTemplate(updated);
+          }
+          return updated;
+        }
+        return t;
+      }));
       
-      setTemplates(prev => prev.map(t => t.id === id ? template : t));
-      if (currentTemplate?.id === id) {
-        setCurrentTemplate(template);
-      }
-      
-      return { success: true, data: template };
+      return { success: true };
     } catch (error) {
       return { 
         success: false, 
-        errors: [error instanceof Error ? error.message : 'Error al actualizar plantilla'] 
+        error: error instanceof Error ? error.message : 'Error al actualizar plantilla'
       };
     }
-  }, [apiCall, currentTemplate]);
+  }, [currentTemplate]);
   
-  const deleteTemplate = useCallback(async (id: string): Promise<TemplateOperationResult<void>> => {
+  const deleteTemplate = useCallback(async (id: string): Promise<TemplateOperationResult> => {
     try {
-      await apiCall<void>(`/${id}`, { method: 'DELETE' });
-      
       setTemplates(prev => prev.filter(t => t.id !== id));
       if (currentTemplate?.id === id) {
         setCurrentTemplate(null);
@@ -212,29 +337,42 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
     } catch (error) {
       return { 
         success: false, 
-        errors: [error instanceof Error ? error.message : 'Error al eliminar plantilla'] 
+        error: error instanceof Error ? error.message : 'Error al eliminar plantilla'
       };
     }
-  }, [apiCall, currentTemplate]);
+  }, [currentTemplate]);
   
-  const duplicateTemplate = useCallback(async (id: string, newName?: string): Promise<TemplateOperationResult<Template>> => {
+  const duplicateTemplate = useCallback(async (id: string, newName?: string): Promise<TemplateOperationResult> => {
     try {
       const original = templates.find(t => t.id === id);
       if (!original) {
-        return { success: false, errors: ['Plantilla no encontrada'] };
+        return { success: false, error: 'Plantilla no encontrada' };
       }
       
       const duplicateData: TemplateCreateData = {
-        ...original,
         name: newName || `${original.name} (Copia)`,
-        isPublic: false // Las copias no son públicas por defecto
+        description: original.description,
+        longDescription: original.longDescription,
+        category: original.category,
+        subcategory: original.subcategory,
+        targetProfessions: original.targetProfessions,
+        difficulty: original.difficulty,
+        estimatedTime: original.estimatedTime,
+        necReference: original.necReference,
+        tags: original.tags,
+        isPublic: false, // Las copias no son públicas por defecto
+        parameters: original.parameters,
+        formula: original.formula,
+        requirements: original.requirements,
+        applicationCases: original.applicationCases,
+        limitations: original.limitations
       };
       
       return await createTemplate(duplicateData);
     } catch (error) {
       return { 
         success: false, 
-        errors: [error instanceof Error ? error.message : 'Error al duplicar plantilla'] 
+        error: error instanceof Error ? error.message : 'Error al duplicar plantilla'
       };
     }
   }, [templates, createTemplate]);
@@ -242,66 +380,112 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
   // ==================== BÚSQUEDA Y FILTRADO ====================
   const searchTemplates = useCallback(async (options: TemplateSearchOptions): Promise<TemplateListResponse> => {
     try {
-      return await apiCall<TemplateListResponse>('/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options)
+      // Simular búsqueda - en realidad haría una llamada a la API
+      const allTemplates = [...templates, ...publicTemplates];
+      const filtered = allTemplates.filter(template => {
+        if (options.query) {
+          return template.name.toLowerCase().includes(options.query.toLowerCase()) ||
+                 template.description.toLowerCase().includes(options.query.toLowerCase());
+        }
+        return true;
       });
+      
+      return { 
+        templates: filtered,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: filtered.length,
+          pages: Math.ceil(filtered.length / 10)
+        },
+        filters: options.filters || {}
+      };
     } catch (error) {
       handleError(error, 'Búsqueda de plantillas');
-      return { templates: [], total: 0, hasMore: false };
+      return { 
+        templates: [], 
+        pagination: { page: 1, limit: 10, total: 0, pages: 0 },
+        filters: {}
+      };
     }
-  }, [apiCall, handleError]);
+  }, [templates, publicTemplates, handleError]);
   
-  const getTemplate = useCallback(async (id: string): Promise<Template | null> => {
+  const getTemplate = useCallback(async (id: string): Promise<MyCalculationTemplate | null> => {
     try {
-      return await apiCall<Template>(`/${id}`);
+      return templates.find(t => t.id === id) || null;
     } catch (error) {
       handleError(error, 'Obtener plantilla');
       return null;
     }
-  }, [apiCall, handleError]);
+  }, [templates, handleError]);
   
   const getPublicTemplates = useCallback(async (options?: TemplateSearchOptions): Promise<TemplateListResponse> => {
     try {
-      const result = await apiCall<TemplateListResponse>('/public', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...options, filters: { ...options?.filters, isPublic: true } })
-      });
-      
-      setPublicTemplates(result.templates as PublicTemplate[]);
-      return result;
+      return { 
+        templates: publicTemplates,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: publicTemplates.length,
+          pages: Math.ceil(publicTemplates.length / 10)
+        },
+        filters: options?.filters || {}
+      };
     } catch (error) {
       handleError(error, 'Obtener plantillas públicas');
-      return { templates: [], total: 0, hasMore: false };
+      return { 
+        templates: [], 
+        pagination: { page: 1, limit: 10, total: 0, pages: 0 },
+        filters: {}
+      };
     }
-  }, [apiCall, handleError]);
+  }, [publicTemplates, handleError]);
   
   const getMyTemplates = useCallback(async (options?: TemplateSearchOptions): Promise<TemplateListResponse> => {
     try {
-      const result = await apiCall<TemplateListResponse>('/my-templates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(options)
-      });
-      
-      setTemplates(result.templates);
-      return result;
+      return { 
+        templates: templates,
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: templates.length,
+          pages: Math.ceil(templates.length / 10)
+        },
+        filters: options?.filters || {}
+      };
     } catch (error) {
       handleError(error, 'Obtener mis plantillas');
-      return { templates: [], total: 0, hasMore: false };
+      return { 
+        templates: [], 
+        pagination: { page: 1, limit: 10, total: 0, pages: 0 },
+        filters: {}
+      };
     }
-  }, [apiCall, handleError]);
+  }, [templates, handleError]);
   
   // ==================== VALIDACIÓN ====================
-  const validateTemplate = useCallback(async (template: Partial<Template>): Promise<TemplateValidationResponse> => {
+  const validateTemplate = useCallback(async (template: Partial<MyCalculationTemplate>): Promise<TemplateValidationResponse> => {
     try {
-      return await apiCall<TemplateValidationResponse>('/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(template)
-      });
+      const errors: Array<{type: string; message: string; field?: string}> = [];
+      const warnings: Array<{type: string; message: string; field?: string}> = [];
+      
+      if (!template.name?.trim()) {
+        errors.push({ type: 'required', message: 'El nombre es requerido', field: 'name' });
+      }
+      
+      if (!template.description?.trim()) {
+        errors.push({ type: 'required', message: 'La descripción es requerida', field: 'description' });
+      }
+      
+      if (!template.category) {
+        errors.push({ type: 'required', message: 'La categoría es requerida', field: 'category' });
+      }
+      
+      return { 
+        isValid: errors.length === 0, 
+        errors, 
+        warnings 
+      };
     } catch (error) {
       handleError(error, 'Validar plantilla');
       return { 
@@ -310,42 +494,50 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
         warnings: [] 
       };
     }
-  }, [apiCall, handleError]);
+  }, [handleError]);
   
-  const validateParameters = useCallback((parameters: any): TemplateValidationResponse => {
-    const errors: any[] = [];
-    const warnings: any[] = [];
+  const validateParameters = useCallback((parameters: ParameterValues): ParameterValidation => {
+    const errors: Record<string, string> = {};
+    const warnings: Record<string, string> = {};
     
     // Validaciones básicas
     if (!parameters || typeof parameters !== 'object') {
-      errors.push({ type: 'format', message: 'Parámetros inválidos' });
+      errors.general = 'Parámetros inválidos';
     }
     
-    // Aquí irían más validaciones específicas...
-    
     return {
-      isValid: errors.length === 0,
+      isValid: Object.keys(errors).length === 0,
       errors,
       warnings
     };
   }, []);
   
   // ==================== FORMULARIOS ====================
-  const initializeForm = useCallback((template?: Template) => {
+  const initializeForm = useCallback((template?: MyCalculationTemplate) => {
     const initialState: TemplateFormState = template ? {
-      basic: {
+      data: {
         name: template.name,
         description: template.description,
+        longDescription: template.longDescription || '',
         category: template.category,
+        subcategory: template.subcategory,
+        targetProfessions: template.targetProfessions,
+        difficulty: template.difficulty,
+        estimatedTime: template.estimatedTime || '',
+        necReference: template.necReference || '',
         tags: template.tags,
-        isPublic: template.isPublic
+        isPublic: template.isPublic,
+        parameters: template.parameters,
+        formula: template.formula || '',
+        requirements: template.requirements || [],
+        applicationCases: template.applicationCases || [],
+        limitations: template.limitations || []
       },
-      parameters: template.parameters,
-      formulas: template.formulas,
-      validation: template.validation?.rules || [],
-      ui: template.ui || { layout: 'single-column', sections: [] },
-      norms: template.norms?.references || [],
-      examples: template.examples || []
+      errors: {},
+      isSubmitting: false,
+      isDirty: false,
+      currentStep: 0,
+      totalSteps: 5
     } : INITIAL_FORM_STATE;
     
     setFormState(initialState);
@@ -354,7 +546,7 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
     setIsDirty(false);
   }, []);
   
-  const updateFormField = useCallback((field: string, value: any) => {
+  const updateFormField = useCallback((field: string, value: FormFieldValue) => {
     if (!formState) return;
     
     setFormState(prev => {
@@ -374,12 +566,7 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
     
     // Marcar como modificado
     setIsDirty(true);
-    
-    // Validar si está habilitado
-    if (config.validateOnChange) {
-      // Aquí iría la validación en tiempo real
-    }
-  }, [formState, config.validateOnChange]);
+  }, [formState]);
   
   const resetForm = useCallback(() => {
     if (originalFormState) {
@@ -389,29 +576,12 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
     }
   }, [originalFormState]);
   
-  const saveForm = useCallback(async (): Promise<TemplateOperationResult<Template>> => {
+  const saveForm = useCallback(async (): Promise<TemplateOperationResult> => {
     if (!formState) {
-      return { success: false, errors: ['No hay datos para guardar'] };
+      return { success: false, error: 'No hay datos para guardar' };
     }
     
-    // Construir template desde formState
-    const templateData: TemplateCreateData = {
-      name: formState.basic.name,
-      description: formState.basic.description,
-      category: formState.basic.category,
-      tags: formState.basic.tags,
-      isPublic: formState.basic.isPublic,
-      authorId: 'current-user', // Esto vendría del contexto de usuario
-      authorName: 'Usuario Actual',
-      parameters: formState.parameters,
-      formulas: formState.formulas,
-      validation: formState.validation.length > 0 ? { rules: formState.validation } : undefined,
-      ui: formState.ui,
-      norms: formState.norms.length > 0 ? { references: formState.norms, compliance: [] } : undefined,
-      examples: formState.examples,
-      version: '1.0.0'
-    };
-    
+    const templateData: TemplateCreateData = formState.data;
     const result = await createTemplate(templateData);
     
     if (result.success) {
@@ -425,100 +595,184 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
   // ==================== SUGERENCIAS ====================
   const getSuggestions = useCallback(async (templateId: string): Promise<TemplateSuggestion[]> => {
     try {
-      return await apiCall<TemplateSuggestion[]>(`/${templateId}/suggestions`);
+      // Simular obtención de sugerencias
+      return [];
     } catch (error) {
       handleError(error, 'Obtener sugerencias');
       return [];
     }
-  }, [apiCall, handleError]);
-  
-  const createSuggestion = useCallback(async (suggestion: Omit<TemplateSuggestion, 'id' | 'suggestedAt'>): Promise<TemplateOperationResult<TemplateSuggestion>> => {
+  }, [handleError]);
+
+  const submitSuggestion = useCallback(async (suggestion: Partial<TemplateSuggestion>): Promise<TemplateSuggestion> => {
     try {
-      const result = await apiCall<TemplateSuggestion>('/suggestions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(suggestion)
-      });
+      // Simular envío de sugerencia
+      const newSuggestion: TemplateSuggestion = {
+        id: `suggestion_${Date.now()}`,
+        templateId: suggestion.templateId || '',
+        templateName: suggestion.templateName || '',
+        suggestionType: suggestion.suggestionType || 'other',
+        title: suggestion.title || '',
+        description: suggestion.description || '',
+        currentValue: suggestion.currentValue,
+        proposedValue: suggestion.proposedValue,
+        justification: suggestion.justification || '',
+        priority: suggestion.priority || 'medium',
+        affectsAccuracy: suggestion.affectsAccuracy || false,
+        affectsCompliance: suggestion.affectsCompliance || false,
+        references: suggestion.references || [],
+        contactForFollowUp: suggestion.contactForFollowUp || false,
+        status: 'pending',
+        authorId: 'current-user',
+        authorName: 'Usuario Actual',
+        createdAt: new Date().toISOString()
+      };
       
+      return newSuggestion;
+    } catch (error) {
+      handleError(error, 'Enviar sugerencia');
+      throw error;
+    }
+  }, [handleError]);
+  
+  const createSuggestion = useCallback(async (suggestion: Omit<TemplateSuggestion, 'id' | 'createdAt'>): Promise<TemplateOperationResult> => {
+    try {
+      const result = await submitSuggestion(suggestion);
       return { success: true, data: result };
     } catch (error) {
       return { 
         success: false, 
-        errors: [error instanceof Error ? error.message : 'Error al crear sugerencia'] 
+        error: error instanceof Error ? error.message : 'Error al crear sugerencia'
       };
     }
-  }, [apiCall]);
+  }, [submitSuggestion]);
   
-  const voteSuggestion = useCallback(async (suggestionId: string, vote: 'up' | 'down'): Promise<TemplateOperationResult<void>> => {
+  const voteSuggestion = useCallback(async (suggestionId: string, vote: 'up' | 'down'): Promise<TemplateOperationResult> => {
     try {
-      await apiCall<void>(`/suggestions/${suggestionId}/vote`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vote })
-      });
-      
+      // Simular votación
       return { success: true };
     } catch (error) {
       return { 
         success: false, 
-        errors: [error instanceof Error ? error.message : 'Error al votar sugerencia'] 
+        error: error instanceof Error ? error.message : 'Error al votar sugerencia'
       };
     }
-  }, [apiCall]);
+  }, []);
   
   // ==================== EJECUCIÓN ====================
-  const executeTemplate = useCallback(async (templateId: string, parameters: Record<string, any>): Promise<TemplateOperationResult<CalculationExecution>> => {
+  const executeTemplate = useCallback(async (templateId: string, parameters: ParameterValues): Promise<TemplateOperationResult> => {
     try {
-      const result = await apiCall<CalculationExecution>('/execute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ templateId, parameters })
-      });
+      // Simular ejecución
+      const execution: CalculationExecution = {
+        id: `execution_${Date.now()}`,
+        templateId,
+        parameters,
+        status: 'completed',
+        startedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        duration: 1000
+      };
       
-      return { success: true, data: result };
+      return { success: true, data: execution };
     } catch (error) {
       return { 
         success: false, 
-        errors: [error instanceof Error ? error.message : 'Error al ejecutar plantilla'] 
+        error: error instanceof Error ? error.message : 'Error al ejecutar plantilla'
       };
     }
-  }, [apiCall]);
+  }, []);
   
   const getExecutionHistory = useCallback(async (templateId?: string): Promise<CalculationExecution[]> => {
     try {
-      const endpoint = templateId ? `/executions?templateId=${templateId}` : '/executions';
-      return await apiCall<CalculationExecution[]>(endpoint);
+      // Simular historial
+      return [];
     } catch (error) {
       handleError(error, 'Obtener historial de ejecuciones');
       return [];
     }
-  }, [apiCall, handleError]);
+  }, [handleError]);
+  
+  // ==================== UTILIDADES PARA COMPATIBILIDAD ====================
+  const getFilteredTemplates = useCallback((filters?: TemplateFilters): CalculationTemplate[] => {
+    const allTemplates = [...templates, ...publicTemplates];
+    let filtered = allTemplates;
+    
+    if (filters?.searchTerm) {
+      filtered = filtered.filter(template => 
+        template.name.toLowerCase().includes(filters.searchTerm!.toLowerCase()) ||
+        template.description.toLowerCase().includes(filters.searchTerm!.toLowerCase())
+      );
+    }
+    
+    if (filters?.category) {
+      filtered = filtered.filter(template => template.category === filters.category);
+    }
+    
+    if (filters?.difficulty) {
+      filtered = filtered.filter(template => template.difficulty === filters.difficulty);
+    }
+    
+    if (filters?.showOnlyFavorites) {
+      filtered = filtered.filter(template => template.isFavorite);
+    }
+    
+    if (filters?.showOnlyVerified) {
+      filtered = filtered.filter(template => 'verified' in template ? template.verified : false);
+    }
+    
+    return filtered.map(convertToLegacyTemplate);
+  }, [templates, publicTemplates]);
+  
+  const getTemplateStats = useCallback((templates: CalculationTemplate[]): TemplateStats => {
+    return {
+      total: templates.length,
+      verifiedCount: templates.filter(t => t.verified).length,
+      avgRating: templates.reduce((sum, t) => sum + t.rating, 0) / templates.length || 0,
+      totalUsage: templates.reduce((sum, t) => sum + t.usageCount, 0),
+      trendingCount: templates.filter(t => t.trending).length,
+      popularCount: templates.filter(t => t.popular).length
+    };
+  }, []);
+  
+  const getRelatedTemplates = useCallback((templateId: string, limit: number = 5): CalculationTemplate[] => {
+    const template = [...templates, ...publicTemplates].find(t => t.id === templateId);
+    if (!template) return [];
+    
+    const related = [...templates, ...publicTemplates]
+      .filter(t => t.id !== templateId && t.category === template.category)
+      .slice(0, limit);
+    
+    return related.map(convertToLegacyTemplate);
+  }, [templates, publicTemplates]);
+  
+  const toggleFavorite = useCallback((templateId: string) => {
+    setTemplates(prev => prev.map(t => 
+      t.id === templateId ? { ...t, isFavorite: !t.isFavorite } : t
+    ));
+    
+    setPublicTemplates(prev => prev.map(t => 
+      t.id === templateId ? { ...t, isFavorite: !t.isFavorite } : t
+    ));
+  }, []);
   
   // ==================== UTILIDADES ADICIONALES ====================
   const refreshTemplates = useCallback(async () => {
     try {
-      await getMyTemplates();
+      // Simular refresco de datos
+      setLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       handleError(error, 'Refrescar plantillas');
+    } finally {
+      setLoading(false);
     }
-  }, [getMyTemplates, handleError]);
+  }, [handleError]);
   
   // ==================== EFECTOS ====================
   useEffect(() => {
-    // Cargar plantillas iniciales
-    refreshTemplates();
-  }, []);
-  
-  // Auto-save si está habilitado
-  useEffect(() => {
-    if (config.autoSave && isDirty && isValid && formState) {
-      const timeoutId = setTimeout(() => {
-        saveForm();
-      }, 2000); // Auto-save después de 2 segundos de inactividad
-      
-      return () => clearTimeout(timeoutId);
+    if (config.autoLoad) {
+      refreshTemplates();
     }
-  }, [config.autoSave, isDirty, isValid, formState, saveForm]);
+  }, [config.autoLoad, refreshTemplates]);
   
   // ==================== RETORNO ====================
   return {
@@ -559,12 +813,21 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
     
     // Sugerencias
     getSuggestions,
+    submitSuggestion,
     createSuggestion,
     voteSuggestion,
     
     // Ejecución
     executeTemplate,
     getExecutionHistory,
+    
+    // Utilidades para compatibilidad
+    getFilteredTemplates,
+    getTemplateStats,
+    getRelatedTemplates,
+    toggleFavorite,
+    categories: MOCK_CATEGORIES,
+    isLoading: loading,
     
     // Utilidades
     refreshTemplates,
@@ -574,7 +837,7 @@ export const useTemplates = (options: UseTemplateOptions = {}): UseTemplatesRetu
 };
 
 // ==================== HOOK ESPECÍFICO PARA FORMULARIOS ====================
-export const useTemplateForm = (template?: Template) => {
+export const useTemplateForm = (template?: MyCalculationTemplate) => {
   const { 
     formState, 
     formErrors, 

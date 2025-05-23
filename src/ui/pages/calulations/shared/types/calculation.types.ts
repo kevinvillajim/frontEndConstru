@@ -21,6 +21,7 @@ export interface CalculationTemplate {
 	version: string;
 	requirements?: string[];
 	isPublic?: boolean;
+	isActive: boolean;
 	createdBy?: string;
 }
 

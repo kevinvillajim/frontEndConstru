@@ -10,7 +10,7 @@ interface ParameterEditorProps {
 	parameter: TemplateParameter;
 	index: number;
 	errors: Record<string, string>;
-	onUpdate: (index: number, field: keyof TemplateParameter, value: any) => void;
+	onUpdate: (index: number, field: keyof TemplateParameter, value: unknown) => void;
 	onRemove: (index: number) => void;
 }
 

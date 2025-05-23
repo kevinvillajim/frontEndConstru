@@ -9,17 +9,14 @@ import {
 	CalculatorIcon,
 	DocumentArrowDownIcon,
 	HeartIcon,
-	ShareIcon,
 	ExclamationTriangleIcon,
 	LightBulbIcon,
 	CheckIcon,
 	PencilSquareIcon,
 	UserGroupIcon,
-	TagIcon,
 	SparklesIcon,
 	EyeIcon,
 	PlayIcon,
-	PauseIcon,
 	DocumentDuplicateIcon,
 } from "@heroicons/react/24/outline";
 import {HeartIcon as HeartSolidIcon} from "@heroicons/react/24/solid";
@@ -60,7 +57,7 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 	const [isCalculating, setIsCalculating] = useState(false);
 	const [isFavorite, setIsFavorite] = useState(template.isFavorite || false);
 	const [calculationName, setCalculationName] = useState("");
-	const [showSteps, setShowSteps] = useState(true);
+	const [showSteps] = useState(true);
 
 	// Hook para plantillas relacionadas
 	const {getRelatedTemplates, toggleFavorite} = useTemplates();
@@ -105,7 +102,7 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 			if (value !== undefined && value !== "") {
 				switch (param.type) {
 					case "number":
-						const numValue = Number(value);
+						{ const numValue = Number(value);
 						if (isNaN(numValue)) {
 							errors[param.name] = "Debe ser un número válido";
 						} else {
@@ -121,7 +118,7 @@ const CalculationInterface: React.FC<CalculationInterfaceProps> = ({
 								// Por simplicidad, omitido en este ejemplo
 							}
 						}
-						break;
+						break; }
 
 					case "text":
 						if (param.validation?.pattern) {
@@ -761,7 +758,6 @@ const ParameterInput: React.FC<{
 // Función auxiliar para generar resultados mock
 const generateMockResults = (
 	template: CalculationTemplate,
-	parameters: Record<string, any>
 ): CalculationResult => {
 	// Esta función debería implementar la lógica real de cálculo
 	// Por ahora, generamos resultados mock basados en la plantilla
