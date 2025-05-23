@@ -5,8 +5,8 @@ import {
 	CalendarIcon,
 	ExclamationTriangleIcon,
 	CheckCircleIcon,
-	TrendingUpIcon,
-	TrendingDownIcon,
+	ArrowTrendingUpIcon,
+	ArrowTrendingDownIcon,
 } from "@heroicons/react/24/outline";
 
 interface ProgressData {
@@ -79,7 +79,7 @@ const ProjectProgressWidget: React.FC<ProjectProgressWidgetProps> = ({
 					text: "Adelantado",
 					color: "text-blue-600",
 					bgColor: "bg-blue-100",
-					icon: TrendingUpIcon,
+					icon: ArrowTrendingUpIcon,
 				};
 			case "behind":
 				return {

@@ -52,8 +52,8 @@ const SavedCalculations = lazy(
 const CalculationComparison = lazy(
 	() => import("../pages/calulations/CalculationComparison")
 );
-const CollaborationWorkspace = lazy(
-	() => import("../pages/calulations/CollaborationWorkspace")
+const Collaboration = lazy(
+	() => import("../pages/calulations/Collaboration")
 );
 const TemplateEditor = lazy(
 	() => import("../pages/calulations/TemplateEditor")
@@ -223,7 +223,7 @@ const appRoutes: RouteObject[] = [
 					},
 					{
 						path: "collaboration",
-						element: <CollaborationWorkspace />,
+						element: <Collaboration />,
 					},
 					{
 						path: "templates",
