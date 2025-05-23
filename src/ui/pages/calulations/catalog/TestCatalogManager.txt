@@ -1,0 +1,324 @@
+// catalog/CatalogManager.tsx - Componente principal que integra todo
+import React, { useState, useCallback } from "react";
+import { CalculationsLayout } from "../core/CalculationsLayout";
+import CalculationsCatalog from "./CalculationsCatalog";
+import CalculationInterface from "./CalculationInterface";
+import { TemplateSelector } from "./TemplateSelector";
+import type { CalculationTemplate, CalculationResult } from "../shared/types/template.types";
+
+type CatalogView = "catalog" | "interface" | "selector";
+
+interface CatalogManagerProps {
+	// Props para integración con el sistema principal
+	currentSection: "catalog" | "templates" | "comparison" | "collaboration";
+	onSectionChange: (section: "catalog" | "templates" | "comparison" | "collaboration") => void;
+	onSaveCalculation?: (template: CalculationTemplate, parameters: Record<string, any>, results: CalculationResult) => void;
+	onSuggestChange?: (template: CalculationTemplate) => void;
+	
+	// Configuración específica del catálogo
+	preSelectedCategory?: string;
+	showQuickSelector?: boolean;
+	autoSave?: boolean;
+}
+
+const CatalogManager: React.FC<CatalogManagerProps> = ({
+	currentSection,
+	onSectionChange,
+	onSaveCalculation,
+	onSuggestChange,
+	preSelectedCategory,
+	showQuickSelector = false,
+	autoSave = true,
+}) => {
+	// Estados locales
+	const [currentView, setCurrentView] = useState<CatalogView>(
+		showQuickSelector ? "selector" : "catalog"
+	);
+	const [selectedTemplate, setSelectedTemplate] = useState<CalculationTemplate | null>(null);
+
+	// Handlers principales
+	const handleTemplateSelect = useCallback((template: CalculationTemplate) => {
+		setSelectedTemplate(template);
+		setCurrentView("interface");
+	}, []);
+
+	const handleBackToCatalog = useCallback(() => {
+		setSelectedTemplate(null);
+		setCurrentView(showQuickSelector ? "selector" : "catalog");
+	}, [showQuickSelector]);
+
+	const handleTemplatePreview = useCallback((template: CalculationTemplate) => {
+		// Mostrar modal de preview (implementado en CalculationsCatalog)
+		console.log("Preview template:", template.id);
+	}, []);
+
+	const handleSaveCalculation = useCallback((
+		template: CalculationTemplate, 
+		parameters: Record<string, any>, 
+		results: CalculationResult
+	) => {
+		// Guardar en el sistema principal
+		onSaveCalculation?.(template, parameters, results);
+		
+		// Mostrar notificación de éxito
+		console.log("Calculation saved:", { template: template.id, parameters, results });
+	}, [onSaveCalculation]);
+
+	const handleSuggestChange = useCallback((template: CalculationTemplate) => {
+		onSuggestChange?.(template);
+	}, [onSuggestChange]);
+
+	// Renderizado condicional basado en la vista actual
+	const renderCurrentView = () => {
+		switch (currentView) {
+			case "catalog":
+				return (
+					<CalculationsCatalog
+						onTemplateSelect={handleTemplateSelect}
+						onPreviewTemplate={handleTemplatePreview}
+					/>
+				);
+
+			case "selector":
+				return (
+					<div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+						<TemplateSelector
+							onTemplateSelect={handleTemplateSelect}
+							preSelectedCategory={preSelectedCategory}
+							title="Catálogo de Plantillas NEC"
+							subtitle="Selecciona una plantilla verificada para tu cálculo técnico"
+							maxResults={12}
+							showSearch={true}
+							showFilters={true}
+						/>
+					</div>
+				);
+
+			case "interface":
+				return selectedTemplate ? (
+					<CalculationInterface
+						template={selectedTemplate}
+						onBack={handleBackToCatalog}
+						onSuggestChange={handleSuggestChange}
+						onSaveCalculation={handleSaveCalculation}
+						autoSave={autoSave}
+					/>
+				) : null;
+
+			default:
+				return null;
+		}
+	};
+
+	return (
+		<CalculationsLayout
+			currentSection={currentSection}
+			onSectionChange={onSectionChange}
+			showSidebar={currentView === "catalog"} // Solo mostrar sidebar en vista de catálogo
+			title={
+				currentView === "interface" && selectedTemplate
+					? selectedTemplate.name
+					: "Catálogo de Plantillas"
+			}
+			subtitle={
+				currentView === "interface" && selectedTemplate
+					? `${selectedTemplate.necReference} • ${selectedTemplate.difficulty}`
+					: "Plantillas técnicas verificadas NEC Ecuador"
+			}
+		>
+			{renderCurrentView()}
+		</CalculationsLayout>
+	);
+};
+
+export default CatalogManager;
+
+// ====================================================================
+// Ejemplo de uso en la aplicación principal
+// ====================================================================
+
+// App.tsx - Ejemplo de integración en la aplicación principal
+/*
+import React, { useState } from 'react';
+import CatalogManager from './catalog/CatalogManager';
+import type { CalculationTemplate, CalculationResult } from './shared/types/template.types';
+
+const App: React.FC = () => {
+	const [currentSection, setCurrentSection] = useState<"catalog" | "templates" | "comparison" | "collaboration">("catalog");
+
+	const handleSaveCalculation = (
+		template: CalculationTemplate, 
+		parameters: Record<string, any>, 
+		results: CalculationResult
+	) => {
+		// Integrar con tu sistema de persistencia
+		console.log('Saving to database:', { template, parameters, results });
+		
+		// Ejemplo: enviar a API
+		fetch('/api/calculations', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				templateId: template.id,
+				templateName: template.name,
+				parameters,
+				results,
+				createdAt: new Date().toISOString(),
+			}),
+		});
+	};
+
+	const handleSuggestChange = (template: CalculationTemplate) => {
+		// Integrar con sistema de sugerencias
+		console.log('Opening suggestion form for:', template.id);
+		
+		// Ejemplo: abrir modal de sugerencias
+		// setSuggestionModalOpen(true);
+		// setSelectedTemplateForSuggestion(template);
+	};
+
+	const handleSectionChange = (section: "catalog" | "templates" | "comparison" | "collaboration") => {
+		setCurrentSection(section);
+		
+		// Ejemplo: tracking de navegación
+		console.log('Section changed to:', section);
+	};
+
+	return (
+		<div className="App">
+			{currentSection === "catalog" && (
+				<CatalogManager
+					currentSection={currentSection}
+					onSectionChange={handleSectionChange}
+					onSaveCalculation={handleSaveCalculation}
+					onSuggestChange={handleSuggestChange}
+					autoSave={true}
+					showQuickSelector={false}
+				/>
+			)}
+			
+			// Aquí irían los otros componentes para las demás secciones
+			// {currentSection === "templates" && <MyTemplatesManager ... />}
+			// {currentSection === "comparison" && <ComparisonManager ... />}
+			// {currentSection === "collaboration" && <CollaborationHub ... />}
+		</div>
+	);
+};
+
+export default App;
+*/
+
+// ====================================================================
+// Configuración y personalización
+// ====================================================================
+
+// config/catalog.config.ts - Configuración del catálogo
+export const CATALOG_CONFIG = {
+	// Configuración de visualización
+	display: {
+		itemsPerPage: 12,
+		showPreviewByDefault: true,
+		enableAnimations: true,
+		compactMode: false,
+	},
+	
+	// Configuración de filtros
+	filters: {
+		showOnlyVerified: true, // Solo plantillas verificadas por defecto
+		enableQuickFilters: true,
+		defaultSort: "popular" as const,
+		showCategoryIcons: true,
+	},
+	
+	// Configuración de funcionalidades
+	features: {
+		enableFavorites: true,
+		enableSuggestions: true,
+		enablePreview: true,
+		enableExport: true,
+		autoSave: true,
+	},
+	
+	// Configuración de métricas
+	metrics: {
+		trackUsage: true,
+		trackRatings: true,
+		trackSearchTerms: true,
+		enableAnalytics: true,
+	},
+	
+	// Configuración de la interfaz de cálculo
+	calculation: {
+		showStepIndicator: true,
+		enableRealTimeValidation: true,
+		showTypicalRanges: true,
+		enableParameterTooltips: true,
+		autoAdvanceSteps: false,
+	},
+};
+
+// hooks/useCatalogConfig.ts - Hook para configuración
+export const useCatalogConfig = () => {
+	return {
+		...CATALOG_CONFIG,
+		// Métodos para actualizar configuración
+		updateDisplayConfig: (config: Partial<typeof CATALOG_CONFIG.display>) => {
+			// Implementar actualización de configuración
+		},
+		updateFiltersConfig: (config: Partial<typeof CATALOG_CONFIG.filters>) => {
+			// Implementar actualización de configuración
+		},
+	};
+};
+
+// ====================================================================
+// Componentes auxiliares de ejemplo
+// ====================================================================
+
+// components/TemplateMetrics.tsx - Componente para mostrar métricas
+export const TemplateMetrics: React.FC<{ template: CalculationTemplate }> = ({ template }) => {
+	return (
+		<div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+			<div className="text-center">
+				<div className="text-2xl font-bold text-blue-600">{template.usageCount}</div>
+				<div className="text-xs text-gray-600">Usos</div>
+			</div>
+			<div className="text-center">
+				<div className="text-2xl font-bold text-yellow-600">{template.rating}</div>
+				<div className="text-xs text-gray-600">Rating</div>
+			</div>
+			<div className="text-center">
+				<div className="text-2xl font-bold text-green-600">
+					{template.verified ? "✓" : "○"}
+				</div>
+				<div className="text-xs text-gray-600">Verificada</div>
+			</div>
+			<div className="text-center">
+				<div className="text-2xl font-bold text-purple-600">
+					{template.trending ? "📈" : "📊"}
+				</div>
+				<div className="text-xs text-gray-600">Estado</div>
+			</div>
+		</div>
+	);
+};
+
+// components/QuickActions.tsx - Acciones rápidas del catálogo
+export const QuickActions: React.FC = () => {
+	return (
+		<div className="flex items-center gap-2 p-4 bg-white rounded-lg border border-gray-200">
+			<button className="flex items-center gap-2 px-3 py-2 bg-primary-100 text-primary-700 rounded-lg text-sm font-medium hover:bg-primary-200 transition-colors">
+				🔍 Buscar Plantilla
+			</button>
+			<button className="flex items-center gap-2 px-3 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium hover:bg-yellow-200 transition-colors">
+				⭐ Ver Favoritas
+			</button>
+			<button className="flex items-center gap-2 px-3 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors">
+				📈 Tendencias
+			</button>
+			<button className="flex items-center gap-2 px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition-colors">
+				✨ Sugerir Nueva
+			</button>
+		</div>
+	);
+};

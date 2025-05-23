@@ -35,16 +35,16 @@ const Dashboard = lazy(() => import("../pages/Dashboard"));
 const SettingsOverviewPage = lazy(() => import("../pages/profile/SettingsOverviewPage"));
 const ProjectTemplatesPage = lazy(() => import("../pages/projects/templates/ProjectTemplatesPage"));
 const CalculationsHub = lazy(
-	() => import("../pages/calulations/CalculationsHub")
+	() => import("../pages/calulations/core/CalculationsHub")
 );
 const CalculationsCatalog = lazy(
 	() => import("../pages/calulations/CalculationsCatalog")
 );
 const CalculationsDashboard = lazy(
-	() => import("../pages/calulations/CalculationsDashboard")
+	() => import("../pages/admin/CalculationsDashboard")
 );
 const CalculationInterface = lazy(
-	() => import("../pages/calulations/CalculationInterface")
+	() => import("../pages/calulations/catalog/CalculationInterface")
 );
 const SavedCalculations = lazy(
 	() => import("../pages/calulations/SavedCalculations")
@@ -56,10 +56,13 @@ const Collaboration = lazy(
 	() => import("../pages/calulations/Collaboration")
 );
 const TemplateEditor = lazy(
-	() => import("../pages/calulations/TemplateEditor")
+	() => import("../pages/calulations/templates/TemplateEditor")
 );
 const CalculationsSettings = lazy(
 	() => import("../pages/calulations/CalculationsSettings")
+);
+const CalculationsRouter = lazy(
+	() => import("../pages/calulations/CalculationsRouter")
 );
 
 const appRoutes: RouteObject[] = [
@@ -202,17 +205,25 @@ const appRoutes: RouteObject[] = [
 						element: <CalculationsHub />, // Página principal del módulo
 					},
 					{
-						path: "catalog",
-						element: <CalculationsCatalog />,
+						path: "test",
+						element: <CalculationsRouter />,
 					},
+					// {
+					// 	path: "catalog",
+					// 	element: <CalculationsCatalog onSelectTemplate={function (template: CalculationTemplate): void {
+					// 		throw new Error("Function not implemented.");
+					// 	} } />,
+					// },
 					{
 						path: "dashboard",
 						element: <CalculationsDashboard />,
 					},
-					{
-						path: "interface/:templateId?",
-						element: <CalculationInterface />,
-					},
+					// {
+					// 	path: "interface/:templateId?",
+					// 	element: <CalculationInterface template={undefined} onBack={function (): void {
+					// 		throw new Error("Function not implemented.");
+					// 	} } />,
+					// },
 					{
 						path: "saved",
 						element: <SavedCalculations />,
@@ -228,10 +239,10 @@ const appRoutes: RouteObject[] = [
 					{
 						path: "templates",
 						children: [
-							{
-								index: true,
-								element: <CalculationsCatalog />,
-							},
+							// {
+							// 	index: true,
+							// 	element: <CalculationsCatalog />,
+							// },
 							{
 								path: "editor/:id?",
 								element: <TemplateEditor />,

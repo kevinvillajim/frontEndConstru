@@ -6,10 +6,10 @@ import {
 	SparklesIcon,
 } from "@heroicons/react/24/outline";
 import CalculationsCatalog from "./CalculationsCatalog";
-import MyTemplates from "./MyTemplates";
+import MyTemplates from "./templates/MyTemplates";
 import SavedCalculations from "./SavedCalculations";
-import CalculationInterface from "./CalculationInterface";
-import TemplateEditor from "./TemplateEditor";
+import CalculationInterface from "./catalog/CalculationInterface";
+import TemplateEditor from "./templates/TemplateEditor";
 import SuggestTemplateChange from "./SuggestTemplateChange";
 
 // Tipos para navegación
