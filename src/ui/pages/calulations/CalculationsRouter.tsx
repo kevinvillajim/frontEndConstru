@@ -10,7 +10,7 @@ import MyTemplates from "./templates/MyTemplates";
 import SavedCalculations from "./SavedCalculations";
 import CalculationInterface from "./catalog/CalculationInterface";
 import TemplateEditor from "./templates/TemplateEditor";
-import SuggestTemplateChange from "./SuggestTemplateChange";
+import SuggestTemplateChange from "./templates/SuggestTemplateChange";
 
 // Tipos para navegación
 interface CalculationTemplate {

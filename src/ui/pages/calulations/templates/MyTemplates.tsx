@@ -20,13 +20,13 @@ import {
 } from "./components/TemplateActions";
 
 // Types
-import {
+import type {
 	MyCalculationTemplate,
 	TemplateFilters,
-} from "../../shared/types/template.types";
+} from "../shared/types/template.types";
 
 // Hook personalizado para plantillas
-import {useTemplates} from "../../shared/hooks/useTemplates";
+import {useTemplates} from "../shared/hooks/useTemplates";
 
 // Mock data mejorado
 const mockMyTemplates: MyCalculationTemplate[] = [

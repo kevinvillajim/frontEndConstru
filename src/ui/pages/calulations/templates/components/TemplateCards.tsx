@@ -11,7 +11,7 @@ import {
 	StarIcon as StarOutlineIcon,
 } from "@heroicons/react/24/outline";
 import {StarIcon as StarSolidIcon} from "@heroicons/react/24/solid";
-import {MyCalculationTemplate} from "../../../shared/types/template.types";
+import type {MyCalculationTemplate} from "../../shared/types/template.types";
 
 interface TemplateCardProps {
 	template: MyCalculationTemplate;

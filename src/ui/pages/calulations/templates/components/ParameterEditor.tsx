@@ -4,7 +4,7 @@ import {
 	QuestionMarkCircleIcon,
 	CpuChipIcon,
 } from "@heroicons/react/24/outline";
-import {TemplateParameter} from "../../../shared/types/template.types";
+import type {TemplateParameter} from "../../shared/types/template.types";
 
 interface ParameterEditorProps {
 	parameter: TemplateParameter;

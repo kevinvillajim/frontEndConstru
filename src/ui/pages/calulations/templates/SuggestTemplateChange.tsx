@@ -19,13 +19,13 @@ import {
 } from '@heroicons/react/24/outline';
 
 // Types y hooks
-import { 
+import type { 
   PublicCalculationTemplate, 
   TemplateSuggestion, 
   SuggestionType, 
   SuggestionPriority 
-} from '../../shared/types/template.types';
-import { useTemplates } from '../../shared/hooks/useTemplates';
+} from '../shared/types/template.types';
+import { useTemplates } from '../shared/hooks/useTemplates';
 
 interface SuggestionFormData {
   suggestionType: SuggestionType;

@@ -4,11 +4,10 @@ import {
 	ShareIcon,
 	LinkIcon,
 	EnvelopeIcon,
-	DocumentDuplicateIcon,
 	CheckIcon,
 	XMarkIcon,
 } from "@heroicons/react/24/outline";
-import {MyCalculationTemplate} from "../../../shared/types/template.types";
+import type {MyCalculationTemplate} from "../../shared/types/template.types";
 
 interface DeleteModalProps {
 	template: MyCalculationTemplate | null;
