@@ -73,8 +73,8 @@ const CalculationsRouter = lazy(
 	() => import("../pages/calculations/core/CalculationsRouter")
 );
 // Catalog Components
-const CalculationsCatalog = lazy(
-	() => import("../pages/calculations/catalog/CalculationsCatalog")
+const CatalogMain = lazy(
+	() => import("../pages/calculations/catalog/CatalogMain")
 );
 const CalculationInterface = lazy(
 	() => import("../pages/calculations/catalog/CalculationInterface")
@@ -261,11 +261,7 @@ const appRoutes: RouteObject[] = [
 							{
 								index: true,
 								element: (
-									<CalculationsCatalog
-										onTemplateSelect={function (): void {
-											throw new Error("Function not implemented.");
-										}}
-									/>
+									<CatalogMain/>
 								),
 							},
 							{

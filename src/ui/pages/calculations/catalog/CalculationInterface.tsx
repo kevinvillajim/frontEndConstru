@@ -29,6 +29,7 @@ import {
 	CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import {HeartIcon as HeartSolidIcon} from "@heroicons/react/24/solid";
+import ParameterInput from "./components/ParameterInput"
 
 // Tipos para la plantilla y parámetros
 interface CalculationParameter {
@@ -828,7 +829,7 @@ const CalculationInterface: React.FC = () => {
 										isActive
 											? "bg-primary-600 text-white shadow-lg scale-105"
 											: isCompleted
-												? "bg-green-500 text-white"
+												? "bg-green-700 text-white"
 												: "bg-gray-200 text-gray-600 hover:bg-gray-300"
 									} ${isClickable ? "cursor-pointer" : "cursor-not-allowed"}`}
 								>
@@ -838,7 +839,7 @@ const CalculationInterface: React.FC = () => {
 								{index < steps.length - 1 && (
 									<div
 										className={`w-8 h-1 transition-all duration-300 ${
-											isCompleted ? "bg-green-500" : "bg-gray-200"
+											isCompleted ? "bg-green-800" : "bg-gray-200"
 										}`}
 									/>
 								)}
@@ -856,11 +857,11 @@ const CalculationInterface: React.FC = () => {
 			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 				{/* Header colorido */}
 				<div className="h-32 bg-gradient-to-r from-primary-500 to-secondary-500 relative overflow-hidden">
-					<div className="absolute inset-0 bg-black bg-opacity-20" />
+					<div className="absolute inset-0 bg-primary-600 bg-opacity-20" />
 					<div className="absolute inset-0 flex items-center justify-between p-6">
 						<div className="flex items-center gap-4">
 							<div className="w-16 h-16 bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-								<TypeIcon className="h-8 w-8 text-white" />
+								<TypeIcon className="h-8 w-8 text-secondary-700" />
 							</div>
 							<div>
 								<h1 className="text-2xl font-bold text-white mb-1">
@@ -886,7 +887,7 @@ const CalculationInterface: React.FC = () => {
 								{isFavorite ? (
 									<HeartSolidIcon className="h-5 w-5 text-red-400" />
 								) : (
-									<HeartIcon className="h-5 w-5 text-white" />
+									<HeartIcon className="h-5 w-5 text-secondary-700" />
 								)}
 							</button>
 							<div className="flex items-center gap-1 text-white text-sm">
@@ -1222,93 +1223,6 @@ const CalculationInterface: React.FC = () => {
 					</div>
 				)}
 			</div>
-		</div>
-	);
-};
-
-// Componente auxiliar para inputs de parámetros
-const ParameterInput: React.FC<{
-	parameter: CalculationParameter;
-	value: any;
-	onChange: (value: any) => void;
-	error?: string;
-	warning?: string;
-}> = ({parameter, value, onChange, error, warning}) => {
-	return (
-		<div className="space-y-2">
-			<label className="block text-sm font-medium text-gray-700">
-				{parameter.label}
-				{parameter.required && <span className="text-red-500 ml-1">*</span>}
-				{parameter.unit && (
-					<span className="text-gray-500 font-normal"> ({parameter.unit})</span>
-				)}
-			</label>
-
-			{parameter.type === "select" ? (
-				<select
-					value={value || ""}
-					onChange={(e) => onChange(e.target.value)}
-					className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-						error ? "border-red-500" : "border-gray-300"
-					}`}
-				>
-					<option value="">Seleccionar...</option>
-					{parameter.options?.map((option) => (
-						<option key={option} value={option}>
-							{option} {parameter.unit && `${parameter.unit}`}
-						</option>
-					))}
-				</select>
-			) : parameter.type === "boolean" ? (
-				<div className="flex items-center">
-					<input
-						type="checkbox"
-						checked={Boolean(value)}
-						onChange={(e) => onChange(e.target.checked)}
-						className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-					/>
-					<span className="ml-2 text-sm text-gray-700">
-						{parameter.tooltip}
-					</span>
-				</div>
-			) : (
-				<input
-					type={parameter.type}
-					value={value || ""}
-					onChange={(e) =>
-						parameter.type === "number"
-							? onChange(Number(e.target.value))
-							: onChange(e.target.value)
-					}
-					placeholder={parameter.placeholder}
-					min={parameter.min}
-					max={parameter.max}
-					className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-						error ? "border-red-500" : "border-gray-300"
-					}`}
-				/>
-			)}
-
-			{parameter.tooltip && (
-				<div className="flex items-start gap-2 text-xs text-gray-500">
-					<LightBulbIcon className="h-4 w-4 mt-0.5 text-yellow-500 flex-shrink-0" />
-					<span>{parameter.tooltip}</span>
-				</div>
-			)}
-
-			{error && (
-				<div className="flex items-center gap-2 text-xs text-red-600">
-					<ExclamationTriangleIcon className="h-4 w-4" />
-					<span>{error}</span>
-				</div>
-			)}
-
-			{warning && !error && (
-				<div className="flex items-center gap-2 text-xs text-yellow-600">
-					<ExclamationTriangleIcon className="h-4 w-4" />
-					<span>{warning}</span>
-				</div>
-			)}
 		</div>
 	);
 };

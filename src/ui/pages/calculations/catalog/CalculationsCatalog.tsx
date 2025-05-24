@@ -1,4 +1,6 @@
-import React, {useState, useMemo, useEffect, useCallback} from "react";
+// ui/pages/calculations/catalog/CalculationsCatalog.tsx
+
+import React, {useState, useMemo, useEffect} from "react";
 import {
 	CheckBadgeIcon,
 	MagnifyingGlassIcon,
@@ -14,7 +16,7 @@ import {TemplateCard} from "./components/TemplateCard";
 import {CategoryFilter} from "./components/CategoryFilter";
 import {TemplatePreview} from "./components/TemplatePreview";
 
-// Usar los hooks corregidos
+// Usar los hooks especializados
 import {
 	useCatalogTemplates,
 	useCatalogSearch,
@@ -22,6 +24,7 @@ import {
 import type {
 	CalculationTemplate as UITemplate,
 	TemplateFilters as UITemplateFilters,
+	SortOption,
 } from "../shared/types/template.types";
 
 interface CalculationsCatalogProps {
@@ -55,6 +58,8 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 	);
 
 	// ==================== HOOKS ESPECIALIZADOS ====================
+
+	// Hook principal del catálogo
 	const {
 		categories,
 		isLoading,
@@ -66,10 +71,11 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 		setCurrentUserId,
 	} = useCatalogTemplates({
 		autoLoad: true,
-		includePersonal: false,
+		includePersonal: false, // Solo plantillas públicas en catálogo
 		onlyVerified: true,
 	});
 
+	// Hook de búsqueda
 	const {
 		searchTerm,
 		activeFilters,
@@ -84,131 +90,78 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 
 	// ==================== CONFIGURACIÓN DE USUARIO ====================
 	useEffect(() => {
+		// TODO: Obtener del contexto de autenticación real
 		const mockUserId = localStorage.getItem("current_user_id") || "user_123";
-		setCurrentUserId?.(mockUserId);
+		setCurrentUserId(mockUserId);
 	}, [setCurrentUserId]);
 
-	// ==================== FILTRADO POR CATEGORÍA (SIN BUCLE INFINITO) ====================
-	const handleCategoryChange = useCallback(
-		(categoryId: string | null) => {
-			setSelectedCategory(categoryId);
-			setSelectedSubcategory(null);
+	// ==================== FILTRADO POR CATEGORÍA ====================
 
-			// Actualizar filtros de manera controlada
-			if (categoryId !== activeFilters.category) {
-				updateFilter("category", categoryId);
-			}
-		},
-		[activeFilters.category, updateFilter]
-	);
-
-	const handleSubcategoryChange = useCallback(
-		(subcategoryId: string | null) => {
-			setSelectedSubcategory(subcategoryId);
-
-			// Actualizar filtros de manera controlada
-			if (subcategoryId !== activeFilters.subcategory) {
-				updateFilter("subcategory", subcategoryId);
-			}
-		},
-		[activeFilters.subcategory, updateFilter]
-	);
+	// Aplicar filtros de categoría a los filtros activos
+	useEffect(() => {
+		if (selectedCategory !== activeFilters.category) {
+			updateFilter("category", selectedCategory);
+		}
+		if (selectedSubcategory !== activeFilters.subcategory) {
+			updateFilter("subcategory", selectedSubcategory);
+		}
+	}, [selectedCategory, selectedSubcategory, activeFilters, updateFilter]);
 
 	// ==================== ESTADÍSTICAS COMPUTADAS ====================
 	const currentStats = useMemo(() => {
-		if (!filteredTemplates || filteredTemplates.length === 0) {
-			return {
-				verifiedCount: 0,
-				avgRating: 0,
-				totalUsage: 0,
-			};
-		}
-
-		const verifiedCount = filteredTemplates.filter(
-			(t) => t.verified || t.is_verified
-		).length;
-		const totalRating = filteredTemplates.reduce((sum, t) => {
-			const rating =
-				typeof t.rating === "number"
-					? t.rating
-					: typeof t.average_rating === "number"
-						? t.average_rating
-						: 0;
-			return sum + rating;
-		}, 0);
-		const avgRating =
-			filteredTemplates.length > 0 ? totalRating / filteredTemplates.length : 0;
-		const totalUsage = filteredTemplates.reduce((sum, t) => {
-			const usage =
-				typeof t.usageCount === "number"
-					? t.usageCount
-					: typeof t.usage_count === "number"
-						? t.usage_count
-						: 0;
-			return sum + usage;
-		}, 0);
-
 		return {
-			verifiedCount,
-			avgRating,
-			totalUsage,
+			verifiedCount: stats.verifiedCount,
+			avgRating: stats.avgRating,
+			totalUsage: stats.totalUsage,
 		};
-	}, [filteredTemplates]);
+	}, [stats]);
 
 	// ==================== HANDLERS ====================
-	const handleTemplatePreview = useCallback(
-		(template: UITemplate) => {
-			setPreviewTemplate(template);
-			onPreviewTemplate?.(template);
-		},
-		[onPreviewTemplate]
-	);
+	const handleCategoryChange = (categoryId: string | null) => {
+		setSelectedCategory(categoryId);
+		setSelectedSubcategory(null); // Reset subcategory when category changes
+	};
 
-	const handleTemplateSelect = useCallback(
-		(template: UITemplate) => {
-			setPreviewTemplate(null);
-			onTemplateSelect(template);
-		},
-		[onTemplateSelect]
-	);
+	const handleSubcategoryChange = (subcategoryId: string | null) => {
+		setSelectedSubcategory(subcategoryId);
+	};
 
-	const handleToggleFavorite = useCallback(
-		async (templateId: string) => {
-			try {
-				await toggleFavorite(templateId);
-			} catch (error) {
-				console.error("Error al cambiar favorito:", error);
-			}
-		},
-		[toggleFavorite]
-	);
+	const handleTemplatePreview = (template: UITemplate) => {
+		setPreviewTemplate(template);
+		onPreviewTemplate?.(template);
+	};
 
-	const handleClearAllFilters = useCallback(() => {
+	const handleTemplateSelect = (template: UITemplate) => {
+		setPreviewTemplate(null);
+		onTemplateSelect(template);
+	};
+
+	const handleToggleFavorite = async (templateId: string) => {
+		try {
+			await toggleFavorite(templateId);
+		} catch (error) {
+			console.error("Error al cambiar favorito:", error);
+		}
+	};
+
+	const handleClearAllFilters = () => {
 		clearFilters();
 		setSelectedCategory(null);
 		setSelectedSubcategory(null);
-	}, [clearFilters]);
+	};
 
-	const handleQuickFilter = useCallback(
-		(filterType: string, value: boolean) => {
-			switch (filterType) {
-				case "favorites":
-					updateFilter("showOnlyFavorites", value);
-					break;
-				case "verified":
-					updateFilter("showOnlyVerified", value);
-					break;
-				default:
-					break;
-			}
-		},
-		[updateFilter]
-	);
-
-	const handleRefresh = useCallback(() => {
-		clearError();
-		refreshTemplates();
-	}, [clearError, refreshTemplates]);
+	const handleQuickFilter = (filterType: string, value: boolean) => {
+		switch (filterType) {
+			case "favorites":
+				updateFilter("showOnlyFavorites", value);
+				break;
+			case "verified":
+				updateFilter("showOnlyVerified", value);
+				break;
+			default:
+				break;
+		}
+	};
 
 	// ==================== ESTADO DE CARGA ====================
 	if (isLoading) {
@@ -233,7 +186,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 					</h2>
 					<p className="text-gray-600 mb-4">{error}</p>
 					<button
-						onClick={handleRefresh}
+						onClick={refreshTemplates}
 						className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
 					>
 						Reintentar
@@ -307,7 +260,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 							</button>
 
 							<button
-								onClick={handleRefresh}
+								onClick={refreshTemplates}
 								className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-all duration-200"
 								title="Actualizar plantillas"
 							>
@@ -331,46 +284,6 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 								onCategoryChange={handleCategoryChange}
 								onSubcategoryChange={handleSubcategoryChange}
 							/>
-
-							{/* Filtros adicionales */}
-							<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-								<h3 className="text-lg font-semibold text-gray-900 mb-4">
-									Filtros Avanzados
-								</h3>
-
-								{/* Dificultad */}
-								<div className="mb-4">
-									<label className="block text-sm font-medium text-gray-700 mb-2">
-										Dificultad
-									</label>
-									<div className="space-y-2">
-										{[
-											{value: null, label: "Todas"},
-											{value: "basic", label: "Básico"},
-											{value: "intermediate", label: "Intermedio"},
-											{value: "advanced", label: "Avanzado"},
-										].map((option) => (
-											<label
-												key={option.value || "all"}
-												className="flex items-center"
-											>
-												<input
-													type="radio"
-													name="difficulty"
-													checked={activeFilters.difficulty === option.value}
-													onChange={() =>
-														updateFilter("difficulty", option.value)
-													}
-													className="h-4 w-4 text-primary-600 focus:ring-primary-500"
-												/>
-												<span className="ml-2 text-sm text-gray-700">
-													{option.label}
-												</span>
-											</label>
-										))}
-									</div>
-								</div>
-							</div>
 						</div>
 					</div>
 
@@ -397,10 +310,8 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 								<div className="flex items-center gap-3">
 									<AdjustmentsHorizontalIcon className="h-5 w-5 text-gray-500" />
 									<select
-										value={sortBy || "popular"}
-										onChange={(e) =>
-											setSortBy(e.target.value as UITemplateFilters["sortBy"])
-										}
+										value={sortBy}
+										onChange={(e) => setSortBy(e.target.value as SortOption)}
 										className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white min-w-[180px]"
 									>
 										{SORT_OPTIONS.map((option) => (
@@ -414,30 +325,29 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 						</div>
 
 						{/* Estadísticas de resultados */}
-						{hasActiveFilters && (
-							<div className="mb-6">
-								<div className="flex items-center justify-between">
-									<div>
-										<h2 className="text-xl font-semibold text-gray-900">
-											{selectedCategory
-												? categories.find((c) => c.id === selectedCategory)
-														?.name
-												: "Resultados de búsqueda"}
-										</h2>
-										<p className="text-gray-600">
-											{filteredTemplates.length} plantillas encontradas
-										</p>
-									</div>
+						<div className="mb-6">
+							<div className="flex items-center justify-between">
+								<div>
+									<h2 className="text-xl font-semibold text-gray-900">
+										{selectedCategory
+											? categories.find((c) => c.id === selectedCategory)?.name
+											: "Todas las plantillas"}
+									</h2>
+									<p className="text-gray-600">
+										{filteredTemplates.length} plantillas encontradas
+									</p>
+								</div>
 
+								{hasActiveFilters && (
 									<button
 										onClick={handleClearAllFilters}
 										className="text-primary-600 hover:text-primary-700 text-sm font-medium"
 									>
 										Limpiar filtros
 									</button>
-								</div>
+								)}
 							</div>
-						)}
+						</div>
 
 						{/* Grid de plantillas */}
 						<div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
@@ -487,6 +397,16 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 					onSelect={() => handleTemplateSelect(previewTemplate)}
 					onToggleFavorite={() => handleToggleFavorite(previewTemplate.id)}
 				/>
+			)}
+
+			{/* Debug: Mostrar datos cargados */}
+			{process.env.NODE_ENV === "development" && (
+				<div className="fixed bottom-4 right-4 bg-black text-white p-2 rounded text-xs max-w-xs">
+					<div>Stats Total: {stats.total}</div>
+					<div>Filtered: {filteredTemplates.length}</div>
+					<div>Loading: {isLoading.toString()}</div>
+					<div>Has Filters: {hasActiveFilters.toString()}</div>
+				</div>
 			)}
 
 			{/* Estilos adicionales */}
