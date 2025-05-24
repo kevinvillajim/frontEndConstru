@@ -1,229 +1,130 @@
-import type {ComponentType, SVGProps} from "react";
+// src/ui/pages/calculations/shared/types/template.types.ts
 
-// ==================== TIPOS BÁSICOS ====================
-export type DifficultyLevel = "basic" | "intermediate" | "advanced";
-export type TemplateDifficulty = "basic" | "intermediate" | "advanced"; // Alias para compatibilidad
-export type TemplateCategory =
-	| "structural"
-	| "electrical"
-	| "architectural"
-	| "hydraulic"
-	| "custom";
-export type TemplateStatus = "draft" | "active" | "archived" | "under_review";
-export type ParameterType = "number" | "select" | "text" | "boolean" | "date";
-export type SortOption =
-	| "popular"
-	| "rating"
-	| "trending"
-	| "recent"
-	| "name"
-	| "date"
-	| "usage"
-	| "category";
+import type {ComponentType} from "react";
 
-// Tipos para sugerencias
-export type SuggestionType =
-	| "formula"
-	| "parameters"
-	| "description"
-	| "requirements"
-	| "necReference"
-	| "other";
-export type SuggestionStatus =
-	| "pending"
-	| "approved"
-	| "rejected"
-	| "implemented"
-	| "reviewed";
-export type SuggestionPriority = "low" | "medium" | "high" | "critical";
-
-// Tipos para valores de parámetros
-export type ParameterValue = string | number | boolean | Date | null;
-export type ParameterValues = Record<string, ParameterValue>;
-
-// Tipo para condiciones de parámetros
-export type ParameterCondition = {
-	operator:
-		| "eq"
-		| "neq"
-		| "gt"
-		| "lt"
-		| "gte"
-		| "lte"
-		| "contains"
-		| "startsWith"
-		| "endsWith";
-	value: string | number | boolean | null;
-};
-
-// ==================== PARÁMETROS ====================
-export interface TemplateParameter {
+// ==================== TIPOS BASE DESDE LA DB ====================
+/**
+ * Estructura real de la base de datos
+ */
+export interface DatabaseTemplate {
 	id: string;
 	name: string;
+	description: string;
+	type: string;
+	targetProfession: string; // En DB es target_profession
+	formula: string;
+	nec_reference: string;
+	is_active: boolean;
+	version: string;
+	parent_template_id?: string;
+	source?: string;
+	created_by?: string;
+	is_verified: boolean;
+	verified_by?: string;
+	verified_at?: string;
+	is_featured: boolean;
+	usage_count: number;
+	average_rating: number;
+	rating_count: number;
+	share_level: "private" | "public" | "organization";
+	created_at: string;
+	updated_at: string;
+	tags?: string[] | null;
+}
+
+// ==================== PARÁMETROS Y RESULTADOS ====================
+export interface TemplateParameter {
+	name: string;
 	label: string;
-	type: ParameterType;
+	type: "number" | "text" | "select" | "boolean";
 	unit?: string;
 	required: boolean;
-	defaultValue?: string | number | boolean;
-	options?: string[];
 	min?: number;
 	max?: number;
-	step?: number;
+	options?: string[];
+	defaultValue?: any;
 	placeholder?: string;
 	tooltip?: string;
-	typicalRange?: string;
 	validation?: {
 		pattern?: string;
 		message?: string;
 	};
-	dependencies?: {
-		dependsOn: string;
-		condition: ParameterCondition; // Reemplazado "any" con tipo específico
-		action: "show" | "hide" | "require" | "disable";
-	}[];
 }
-
-// Alias para compatibilidad
-export type CalculationParameter = TemplateParameter;
-
-// ==================== FÓRMULAS Y VALIDACIÓN ====================
-export interface CalculationFormula {
-	expression: string;
-	variables: Record<string, string>;
-	description?: string;
-	units?: string;
-}
-
-export interface ValidationRule {
-	field: string;
-	type: "required" | "min" | "max" | "pattern" | "custom";
-	value?: string | number | boolean | RegExp | null; // Reemplazado "any" con tipos específicos
-	message: string;
-	condition?: string;
-}
-
-export interface TemplateValidation {
-	parameterValidations: Record<
-		string,
-		{
-			required?: boolean;
-			min?: number;
-			max?: number;
-			pattern?: string;
-			customValidator?: string;
-			errorMessage?: string;
-		}
-	>;
-	crossValidations?: Array<{
-		condition: string;
-		errorMessage: string;
-	}>;
-}
-
-// ==================== REFERENCIAS Y EJEMPLOS ====================
-export interface NormReference {
-	code: string;
-	section: string;
-	description: string;
-	url?: string;
-}
-
-// Tipo para resultados de cálculos
-export type CalculationOutput = {
-	mainResult: number | string;
-	additionalData?: Record<string, ParameterValue>;
-	isValid: boolean;
-};
-
-export interface TemplateExample {
-	name: string;
-	description: string;
-	inputs: ParameterValues; // Reemplazado "Record<string, any>" con tipo específico
-	expectedOutput: CalculationOutput; // Reemplazado "any" con tipo específico
-}
-
-// ==================== RESULTADOS DE CÁLCULO ====================
-// Tipos para gráficos
-export type ChartDataPoint = {
-	x: number | string;
-	y: number;
-	label?: string;
-	color?: string;
-	[key: string]: unknown; // Para propiedades adicionales específicas
-};
-
-export type ChartConfig = {
-	xAxis?: {
-		title?: string;
-		min?: number;
-		max?: number;
-		tickInterval?: number;
-	};
-	yAxis?: {
-		title?: string;
-		min?: number;
-		max?: number;
-		tickInterval?: number;
-	};
-	legend?: {
-		show: boolean;
-		position?: "top" | "bottom" | "left" | "right";
-	};
-	colors?: string[];
-	[key: string]: unknown; // Para configuraciones adicionales
-};
 
 export interface CalculationResult {
-	mainResult: {
-		label: string;
-		value: string | number;
-		unit: string;
-		significance?: "primary" | "secondary";
+	id?: string;
+	templateId?: string;
+	timestamp?: string;
+	inputs?: Record<string, any>;
+	outputs?: Record<string, any>;
+	metadata?: {
+		executionTime?: number;
+		necCompliance?: boolean;
+		warnings?: string[];
+		recommendations?: string[];
 	};
-	breakdown: Array<{
-		label: string;
-		value: string | number;
-		unit?: string;
-		factor?: string;
-		description?: string;
-		category?: string | null;
-	}>;
-	recommendations: Array<{
-		type: "success" | "warning" | "info" | "error";
-		title: string;
-		description: string;
-		action?: {
-			label: string;
-			callback: () => void;
-		};
-	}>;
-	compliance: {
-		isCompliant: boolean;
-		necReference: string;
-		notes: string[];
-		violations?: string[];
-	};
-	charts?: Array<{
-		type: "line" | "bar" | "pie" | "scatter";
-		title: string;
-		data: ChartDataPoint[]; // Reemplazado "any[]" con tipo específico
-		config?: ChartConfig; // Reemplazado "any" con tipo específico
-	}>;
+	[key: string]: any;
 }
 
-// ==================== PLANTILLA BASE ====================
-interface BaseTemplate {
+// ==================== TEMPLATES PARA UI ====================
+/**
+ * Template para UI - compatibilidad con componentes existentes
+ * Campos opcionales para mapear diferencias entre DB y UI
+ */
+export interface CalculationTemplate {
+	id: string;
+	name: string;
+	description: string;
+	version?: string;
+	category: string;
+	subcategory?: string;
+	profession?: string[];
+	targetProfession?: string; // Para compatibilidad con DB
+	tags?: string[];
+	difficulty?: "basic" | "intermediate" | "advanced";
+	estimatedTime?: string;
+	necReference?: string;
+	nec_reference?: string; // Para compatibilidad con DB
+	requirements?: string[];
+	parameters?: TemplateParameter[];
+	verified?: boolean;
+	is_verified?: boolean; // Para compatibilidad con DB
+	isPublic?: boolean;
+	isNew?: boolean;
+	trending?: boolean;
+	popular?: boolean;
+	rating?: number;
+	average_rating?: number; // Para compatibilidad con DB
+	usageCount?: number;
+	usage_count?: number; // Para compatibilidad con DB
+	lastUpdated?: string;
+	isFavorite?: boolean;
+	color?: string;
+	icon?: ComponentType<any> | null;
+	allowSuggestions?: boolean;
+	createdBy?: string;
+	created_by?: string; // Para compatibilidad con DB
+	contributors?: string[];
+	type?: string; // Para TemplateCard
+	formula?: string;
+}
+
+/**
+ * Plantilla personal del usuario
+ */
+export interface MyCalculationTemplate {
 	id: string;
 	name: string;
 	description: string;
 	longDescription?: string;
-	category: TemplateCategory;
-	subcategory: string;
+	category: string;
+	subcategory?: string;
 	targetProfessions: string[];
-	difficulty: TemplateDifficulty;
-	tags: string[];
+	difficulty: "basic" | "intermediate" | "advanced";
 	estimatedTime?: string;
 	necReference?: string;
+	tags: string[];
+	isPublic: boolean;
 	parameters: TemplateParameter[];
 	formula?: string;
 	requirements?: string[];
@@ -233,129 +134,124 @@ interface BaseTemplate {
 	usageCount: number;
 	createdAt: string;
 	lastModified: string;
-	isFavorite?: boolean;
-}
-
-// ==================== PLANTILLA PERSONAL ====================
-export interface MyCalculationTemplate extends BaseTemplate {
-	isPublic: boolean;
 	isActive: boolean;
-	status: TemplateStatus;
+	status: "draft" | "published" | "archived";
 	sharedWith: string[];
-	rating?: {
-		min: number;
-		max: number;
-	};
-	totalRatings?: number;
-	publishedAt?: string;
+	isFavorite: boolean;
 	author?: {
 		id: string;
 		name: string;
-		profession?: string;
+		email: string;
 	};
 	contributors?: Array<{
 		id: string;
 		name: string;
-		contribution: string;
-		date: string;
+		role: "editor" | "viewer";
 	}>;
-	changeLog?: Array<{
-		version: string;
-		changes: string[];
-		date: string;
-		author: string;
-	}>;
+	totalRatings?: number;
+	averageRating?: number;
+	isNew?: boolean;
 }
 
-// ==================== PLANTILLA PÚBLICA ====================
-export interface PublicCalculationTemplate extends BaseTemplate {
-	verified: boolean;
-	verifiedBy?: {
-		id: string;
-		name: string;
-		credentials: string;
-		date: string;
-	};
-	downloadCount: number;
-	communityRating: {
-		average: number;
-		count: number;
-		distribution: Record<number, number>;
-	};
-	lastReviewed?: string;
-	reviewComments?: string;
-	author: {
-		id: string;
-		name: string;
-		profession?: string;
-	};
-	isPublic: true; // Siempre true para plantillas públicas
-	isActive: boolean;
-	status: string;
-	sharedWith: string[];
-}
-
-// ==================== PLANTILLA LEGACY (Para compatibilidad) ====================
-export interface CalculationTemplate {
-	// Identificación
+/**
+ * Plantilla pública verificada
+ */
+export interface PublicCalculationTemplate {
 	id: string;
 	name: string;
 	description: string;
-	version?: string;
-
-	// Categorización
 	category: string;
-	subcategory: string;
-	profession: string[];
+	subcategory?: string;
+	targetProfessions: string[];
+	difficulty: "basic" | "intermediate" | "advanced";
+	estimatedTime?: string;
+	necReference?: string;
 	tags: string[];
-
-	// Metadatos técnicos
-	difficulty: DifficultyLevel;
-	estimatedTime: string;
-	necReference: string;
-	requirements: string[];
 	parameters: TemplateParameter[];
-
-	// Estado y verificación
-	verified: boolean;
-	isPublic?: boolean;
-	isNew?: boolean;
-	trending?: boolean;
-	popular?: boolean;
-
-	// Métricas
-	rating: number;
+	version: string;
 	usageCount: number;
-	lastUpdated: string;
-
-	// Personalización y favoritos
-	isFavorite?: boolean;
-	color: string;
-	icon: ComponentType<SVGProps<SVGSVGElement>>;
-
-	// Colaboración
-	allowSuggestions?: boolean;
-	createdBy?: string;
-	contributors?: string[];
-
-	// Configuración avanzada
-	settings?: {
-		autoSave?: boolean;
-		allowExport?: boolean;
-		showSteps?: boolean;
-		includeCharts?: boolean;
+	createdAt: string;
+	lastModified: string;
+	verified: boolean;
+	featured: boolean;
+	author?: {
+		id: string;
+		name: string;
+		email: string;
 	};
+	communityRating: {
+		average: number;
+		count: number;
+		distribution: {
+			1: number;
+			2: number;
+			3: number;
+			4: number;
+			5: number;
+		};
+	};
+	isFavorite: boolean;
+	isNew?: boolean;
 }
 
-// ==================== DATOS PARA OPERACIONES ====================
+// ==================== CATEGORÍAS ====================
+export interface TemplateCategoryType {
+	id: string;
+	name: string;
+	description: string;
+	color: string;
+	count: number;
+	subcategories?: Array<{
+		id: string;
+		name: string;
+		description?: string;
+		count: number;
+	}>;
+}
+
+// ==================== FILTROS Y BÚSQUEDA ====================
+export interface TemplateFilters {
+	searchTerm?: string;
+	category?: string | null;
+	subcategory?: string | null;
+	targetProfession?: string;
+	difficulty?: "basic" | "intermediate" | "advanced" | null;
+	showOnlyFavorites?: boolean;
+	showOnlyVerified?: boolean;
+	showOnlyFeatured?: boolean;
+	tags?: string[];
+	sortBy?: SortOption;
+}
+
+export type SortOption = "popular" | "rating" | "trending" | "recent" | "name";
+
+export interface TemplateSearchOptions {
+	query?: string;
+	filters?: TemplateFilters;
+	page?: number;
+	limit?: number;
+}
+
+export interface TemplateListResponse {
+	templates: (MyCalculationTemplate | PublicCalculationTemplate)[];
+	pagination: {
+		total: number;
+		page: number;
+		limit: number;
+		pages: number;
+	};
+	filters: TemplateFilters;
+}
+
+// ==================== OPERACIONES ====================
 export interface TemplateCreateData {
 	name: string;
 	description: string;
 	longDescription?: string;
-	category: TemplateCategory;
-	subcategory: string;
+	category: string;
+	subcategory?: string;
 	targetProfessions: string[];
-	difficulty: TemplateDifficulty;
+	difficulty: "basic" | "intermediate" | "advanced";
 	estimatedTime?: string;
 	necReference?: string;
 	tags: string[];
@@ -369,116 +265,19 @@ export interface TemplateCreateData {
 
 export interface TemplateUpdateData extends Partial<TemplateCreateData> {
 	version?: string;
-	status?: TemplateStatus;
+	isActive?: boolean;
 }
 
-export interface TemplateFormData {
-	name: string;
-	description: string;
-	longDescription: string;
-	category: string;
-	subcategory: string;
-	targetProfessions: string[];
-	difficulty: TemplateDifficulty;
-	estimatedTime: string;
-	necReference: string;
-	tags: string[];
-	isPublic: boolean;
-	parameters: TemplateParameter[];
-	formula: string;
-	requirements: string[];
-	applicationCases: string[];
-	limitations: string[];
-}
-
-// ==================== FILTROS Y BÚSQUEDA ====================
-export interface TemplateFilters {
-	search?: string;
-	category?: TemplateCategory | string | null;
-	subcategory?: string | null;
-	difficulty?: TemplateDifficulty | DifficultyLevel | null;
-	profession?: string[];
-	verified?: boolean;
-	rating?: {min: number; max: number};
-	tags?: string[];
-	dateRange?: {
-		from: string;
-		to: string;
-	};
-	usageRange?: {
-		min: number;
-		max: number;
-	};
-	status?: TemplateStatus[];
-	favorites?: boolean;
-	sortBy?: SortOption;
-	sortOrder?: "asc" | "desc";
-
-	// Filtros específicos para catálogo público
-	searchTerm?: string;
-	showOnlyFavorites?: boolean;
-	showOnlyVerified?: boolean;
-}
-
-export interface TemplateSearchOptions {
-	query?: string;
-	filters?: TemplateFilters;
-	pagination?: {
-		page: number;
-		limit: number;
-	};
-	sort?: {
-		field: SortOption;
-		order: "asc" | "desc";
-	};
-}
-
-// ==================== RESPUESTAS DE API ====================
-export interface TemplateListResponse {
-	templates: MyCalculationTemplate[] | PublicCalculationTemplate[];
-	pagination: {
-		page: number;
-		limit: number;
-		total: number;
-		pages: number;
-	};
-	filters: TemplateFilters;
-	stats?: {
-		totalByCategory: Record<string, number>;
-		totalByDifficulty: Record<string, number>;
-		averageRating: number;
-	};
+export interface TemplateOperationResult {
+	success: boolean;
+	data?: any;
+	error?: string;
 }
 
 export interface TemplateValidationResponse {
 	isValid: boolean;
-	errors: Array<{
-		type: string;
-		message: string;
-		field?: string;
-	}>;
-	warnings: Array<{
-		type: string;
-		message: string;
-		field?: string;
-	}>;
-	suggestions?: string[];
-}
-
-// Tipo para valores de campos de formulario
-export type FormFieldValue =
-	| string
-	| number
-	| boolean
-	| string[]
-	| TemplateParameter[]
-	| null;
-
-export interface TemplateOperationResult {
-	success: boolean;
-	data?: unknown; // Reemplazado "any" con "unknown" para mayor seguridad
-	error?: string;
-	message?: string;
+	errors: Array<{type: string; message: string; field?: string}>;
+	warnings: Array<{type: string; message: string; field?: string}>;
 }
 
 // ==================== SUGERENCIAS ====================
@@ -486,146 +285,39 @@ export interface TemplateSuggestion {
 	id: string;
 	templateId: string;
 	templateName: string;
-	suggestionType: SuggestionType;
+	suggestionType: "improvement" | "correction" | "addition" | "other";
 	title: string;
 	description: string;
 	currentValue?: string;
 	proposedValue?: string;
 	justification: string;
-	priority: SuggestionPriority;
+	priority: "low" | "medium" | "high";
 	affectsAccuracy: boolean;
 	affectsCompliance: boolean;
 	references?: string[];
 	contactForFollowUp: boolean;
-
-	// Estado de la sugerencia
-	status: SuggestionStatus;
-	reviewComments?: string;
-	reviewedBy?: string;
-	reviewedAt?: string;
-
-	// Autor
+	status: "pending" | "approved" | "rejected" | "implemented";
 	authorId: string;
-	authorName?: string;
-	authorEmail?: string;
+	authorName: string;
 	createdAt: string;
-
-	// Implementación
-	implementedAt?: string;
-	implementedInVersion?: string;
 }
 
-// ==================== EJECUCIÓN Y HISTORIAL ====================
+// ==================== EJECUCIÓN ====================
 export interface CalculationExecution {
 	id: string;
 	templateId: string;
-	parameters: ParameterValues; // Reemplazado "Record<string, any>" con tipo específico
-	result?: CalculationResult;
-	status: "pending" | "calculating" | "completed" | "error";
-	error?: string;
+	parameters: Record<string, any>;
+	results?: CalculationResult;
+	status: "pending" | "running" | "completed" | "failed";
 	startedAt: string;
 	completedAt?: string;
 	duration?: number;
+	error?: string;
 }
 
-export interface CalculationHistory {
-	id: string;
-	templateId: string;
-	templateName: string;
-	templateVersion: string;
-
-	// Datos de entrada
-	inputParameters: ParameterValues; // Reemplazado "Record<string, any>" con tipo específico
-
-	// Resultados
-	results: CalculationResult;
-	calculationTime: number; // en millisegundos
-
-	// Metadatos
-	createdAt: string;
-	userId: string;
-	projectId?: string;
-	projectName?: string;
-	notes?: string;
-	tags?: string[];
-
-	// Validación
-	isValid: boolean;
-	validationErrors?: string[];
-	warnings?: string[];
-}
-
-// ==================== VALIDACIÓN DE PARÁMETROS ====================
-export interface ParameterValidation {
-	isValid: boolean;
-	errors: Record<string, string>;
-	warnings: Record<string, string>;
-}
-
-// ==================== ESTADÍSTICAS ====================
-export interface TemplateStats {
-	total: number;
-	verifiedCount: number;
-	avgRating: number;
-	totalUsage: number;
-	trendingCount: number;
-	popularCount: number;
-	byCategory?: {
-		[categoryId: string]: {
-			count: number;
-			avgRating: number;
-			totalUsage: number;
-		};
-	};
-	byDifficulty?: {
-		[difficulty in DifficultyLevel]: number;
-	};
-
-	// Estadísticas específicas de plantilla
-	templateId?: string;
-	uniqueUsers?: number;
-	averageRating?: number;
-	totalRatings?: number;
-	usageByMonth?: Record<string, number>;
-	mostCommonInputs?: ParameterValues; // Reemplazado "Record<string, any>" con tipo específico
-	errorRate?: number;
-	averageCalculationTime?: number;
-}
-
-// ==================== CATEGORÍAS Y SUBCATEGORÍAS ====================
-export interface TemplateSubcategory {
-	id: string;
-	name: string;
-	description?: string;
-	count: number;
-	icon?: ComponentType<SVGProps<SVGSVGElement>>;
-}
-
-export interface TemplateCategoryType {
-	id: TemplateCategory;
-	name: string;
-	description?: string;
-	icon?: ComponentType<SVGProps<SVGSVGElement>>;
-	color: string;
-	count: number;
-	subcategories?: TemplateSubcategory[];
-	featured?: boolean;
-}
-
-// ==================== OPCIONES DE HOOKS ====================
-export interface UseTemplateOptions {
-	autoLoad?: boolean;
-	defaultFilters?: TemplateFilters;
-	includePublic?: boolean;
-	includePersonal?: boolean;
-}
-
-// ==================== ESTADOS DE FORMULARIO ====================
+// ==================== FORMULARIOS ====================
 export interface TemplateFormState {
-	basic: any;
-	parameters: any;
-	formulas: any;
-	data: TemplateFormData;
+	data: TemplateCreateData;
 	errors: Record<string, string>;
 	isSubmitting: boolean;
 	isDirty: boolean;
@@ -637,126 +329,124 @@ export interface TemplateFormErrors {
 	[key: string]: string;
 }
 
-// ==================== CONTEXTOS Y CONFIGURACIÓN ====================
-export interface TemplateUsageContext {
-	projectId?: string;
-	projectName?: string;
-	calculationName?: string;
-	collaborators?: string[];
-	shared?: boolean;
-	autoSave?: boolean;
+export type FormFieldValue =
+	| string
+	| number
+	| boolean
+	| string[]
+	| TemplateParameter[];
+
+// ==================== HOOKS ====================
+export interface UseTemplateOptions {
+	autoLoad?: boolean;
+	defaultFilters?: TemplateFilters;
+	includePublic?: boolean;
+	includePersonal?: boolean;
 }
 
-export interface ExportConfig {
-	format: "pdf" | "excel" | "word" | "json";
-	includeParameters: boolean;
-	includeResults: boolean;
-	includeCharts: boolean;
-	includeNotes: boolean;
-	template?: "standard" | "detailed" | "summary";
-	branding?: {
-		logo?: string;
-		company?: string;
-		engineer?: string;
+// ==================== ESTADÍSTICAS ====================
+export interface TemplateStats {
+	total: number;
+	verifiedCount: number;
+	avgRating: number;
+	totalUsage: number;
+	trendingCount: number;
+	popularCount: number;
+}
+
+// ==================== PARÁMETROS Y VALIDACIÓN ====================
+export type ParameterType = "number" | "text" | "select" | "boolean";
+
+export interface ParameterValidation {
+	isValid: boolean;
+	errors: Record<string, string>;
+	warnings: Record<string, string>;
+}
+
+export type ParameterValues = Record<string, any>;
+
+export const DEFAULT_PARAMETER_VALUES: ParameterValues = {};
+
+// ==================== EXPORTS PARA COMPATIBILIDAD ====================
+export type {
+	CalculationTemplate as UITemplate,
+	TemplateFilters as UITemplateFilters,
+};
+
+// Función helper para mapear DB a UI
+export const mapDatabaseToUI = (
+	dbTemplate: DatabaseTemplate
+): CalculationTemplate => {
+	// Calcular si es nuevo (últimos 30 días)
+	const thirtyDaysAgo = new Date();
+	thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+	const isNew = new Date(dbTemplate.created_at) > thirtyDaysAgo;
+
+	// Calcular trending y popular
+	const isPopular = dbTemplate.usage_count > 100;
+	const isTrending =
+		dbTemplate.usage_count > 50 && dbTemplate.average_rating > 4.0;
+
+	return {
+		id: dbTemplate.id,
+		name: dbTemplate.name,
+		description: dbTemplate.description,
+		version: dbTemplate.version,
+		category: dbTemplate.type,
+		subcategory: dbTemplate.type,
+		profession: dbTemplate.targetProfession
+			? [dbTemplate.targetProfession]
+			: [],
+		targetProfession: dbTemplate.targetProfession,
+		tags: Array.isArray(dbTemplate.tags) ? dbTemplate.tags : [],
+		difficulty: "basic", // Por defecto, podría calcularse
+		estimatedTime: "10-15 min", // Por defecto
+		necReference: dbTemplate.nec_reference,
+		nec_reference: dbTemplate.nec_reference,
+		requirements: [], // No existe en DB
+		parameters: [], // Vendría por separado
+		verified: dbTemplate.is_verified,
+		is_verified: dbTemplate.is_verified,
+		isPublic: dbTemplate.share_level === "public",
+		isNew: isNew,
+		trending: isTrending,
+		popular: isPopular,
+		rating: dbTemplate.average_rating,
+		average_rating: dbTemplate.average_rating,
+		usageCount: dbTemplate.usage_count,
+		usage_count: dbTemplate.usage_count,
+		lastUpdated: dbTemplate.updated_at,
+		isFavorite: false, // Se carga por separado
+		color: getCategoryColor(dbTemplate.type),
+		icon: null,
+		allowSuggestions: true,
+		createdBy: dbTemplate.created_by,
+		created_by: dbTemplate.created_by,
+		contributors: [],
+		type: dbTemplate.type,
+		formula: dbTemplate.formula,
 	};
-}
-
-export interface TemplateWizardState {
-	currentStep: "select" | "configure" | "calculate" | "results";
-	selectedTemplate: CalculationTemplate | null;
-	parameters: ParameterValues;
-	results: CalculationResult | null;
-	validation: ParameterValidation;
-	isCalculating: boolean;
-	history: CalculationHistory[];
-}
-
-// ==================== PROPS DE COMPONENTES ====================
-export interface BaseTemplateProps {
-	template: CalculationTemplate;
-	onSelect?: (template: CalculationTemplate) => void;
-	onPreview?: (template: CalculationTemplate) => void;
-	onToggleFavorite?: (templateId: string) => void;
-	className?: string;
-}
-
-export interface DisplayConfig {
-	compact?: boolean;
-	showPreview?: boolean;
-	showFavorites?: boolean;
-	showMetrics?: boolean;
-	animationDelay?: number;
-}
-
-export interface TemplateContextValue {
-	templates: CalculationTemplate[];
-	categories: TemplateCategoryType[];
-	filters: TemplateFilters;
-	isLoading: boolean;
-	error?: string;
-
-	// Acciones
-	setFilters: (filters: Partial<TemplateFilters>) => void;
-	toggleFavorite: (templateId: string) => void;
-	getTemplateById: (id: string) => CalculationTemplate | undefined;
-	getFilteredTemplates: () => CalculationTemplate[];
-	refreshTemplates: () => Promise<void>;
-}
-
-// ==================== CONSTANTES ====================
-export const TEMPLATE_CATEGORIES: Record<
-	TemplateCategory,
-	TemplateCategoryType
-> = {
-	structural: {
-		id: "structural",
-		name: "Estructural",
-		description: "Análisis y diseño estructural",
-		color: "bg-blue-50 border-blue-200 text-blue-700",
-		count: 0,
-	},
-	electrical: {
-		id: "electrical",
-		name: "Eléctrico",
-		description: "Instalaciones eléctricas",
-		color: "bg-yellow-50 border-yellow-200 text-yellow-700",
-		count: 0,
-	},
-	architectural: {
-		id: "architectural",
-		name: "Arquitectónico",
-		description: "Diseño arquitectónico",
-		color: "bg-green-50 border-green-200 text-green-700",
-		count: 0,
-	},
-	hydraulic: {
-		id: "hydraulic",
-		name: "Hidráulico",
-		description: "Sistemas hidráulicos",
-		color: "bg-cyan-50 border-cyan-200 text-cyan-700",
-		count: 0,
-	},
-	custom: {
-		id: "custom",
-		name: "Personalizada",
-		description: "Plantillas personalizadas",
-		color: "bg-purple-50 border-purple-200 text-purple-700",
-		count: 0,
-	},
 };
 
-export const DEFAULT_PARAMETER_VALUES: Record<ParameterType, ParameterValue> = {
-	number: 0,
-	text: "",
-	select: "",
-	boolean: false,
-	date: new Date().toISOString().split("T")[0],
+// Helper para colores de categoría
+const getCategoryColor = (category: string): string => {
+	switch (category?.toLowerCase()) {
+		case "structural":
+		case "foundation":
+			return "from-blue-600 to-blue-500";
+		case "electrical":
+		case "installation":
+			return "from-yellow-600 to-yellow-500";
+		case "architectural":
+			return "from-green-600 to-green-500";
+		case "hydraulic":
+		case "plumbing":
+			return "from-cyan-600 to-cyan-500";
+		case "mechanical":
+			return "from-purple-600 to-purple-500";
+		case "geotechnical":
+			return "from-gray-600 to-gray-500";
+		default:
+			return "from-primary-600 to-secondary-500";
+	}
 };
-
-// ==================== ALIASES PARA COMPATIBILIDAD ====================
-export type Template = MyCalculationTemplate;
-export type PublicTemplate = PublicCalculationTemplate;
-export type Category = TemplateCategoryType;
-export type Filters = TemplateFilters;
-export type Result = CalculationResult;
-export type Parameter = TemplateParameter;

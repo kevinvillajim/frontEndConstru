@@ -9,11 +9,16 @@ import {
 	EyeIcon,
 	FireIcon,
 	HeartIcon,
-	ArrowTrendingUpIcon
+	ArrowTrendingUpIcon,
+	BoltIcon,
+	BuildingOffice2Icon,
+	AcademicCapIcon,
+	BeakerIcon,
+	WrenchScrewdriverIcon,
+	CubeIcon,
+	Squares2X2Icon,
 } from "@heroicons/react/24/outline";
-import {
-	HeartIcon as HeartSolidIcon,
-} from "@heroicons/react/24/solid";
+import {HeartIcon as HeartSolidIcon} from "@heroicons/react/24/solid";
 import type {CalculationTemplate} from "../../shared/types/template.types";
 
 interface TemplateCardProps {
@@ -25,6 +30,31 @@ interface TemplateCardProps {
 	showPreviewButton?: boolean;
 	compact?: boolean;
 }
+
+// Mapeo de categorías a iconos
+const getCategoryIcon = (category: string, type?: string) => {
+	switch (category?.toLowerCase() || type?.toLowerCase()) {
+		case "structural":
+		case "foundation":
+			return BuildingOffice2Icon;
+		case "electrical":
+		case "installation":
+			return BoltIcon;
+		case "architectural":
+			return AcademicCapIcon;
+		case "hydraulic":
+		case "plumbing":
+			return BeakerIcon;
+		case "mechanical":
+			return WrenchScrewdriverIcon;
+		case "geotechnical":
+			return CubeIcon;
+		case "material_calculation":
+			return Squares2X2Icon;
+		default:
+			return CalculatorIcon;
+	}
+};
 
 export const TemplateCard: React.FC<TemplateCardProps> = ({
 	template,
@@ -55,7 +85,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 			default:
 				return {
 					color: "bg-gray-100 text-gray-700 border-gray-200",
-					label: difficulty,
+					label: difficulty || "General",
 				};
 		}
 	};
@@ -64,13 +94,43 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 		if (template.trending) {
 			return <ArrowTrendingUpIcon className="h-4 w-4 text-orange-500" />;
 		}
-		if (template.popular) {
+		if (
+			template.popular ||
+			(template.usage_count && template.usage_count > 100)
+		) {
 			return <FireIcon className="h-4 w-4 text-red-500" />;
 		}
 		return null;
 	};
 
 	const difficultyConfig = getDifficultyConfig(template.difficulty);
+
+	// Obtener el icono correcto basado en la categoría/tipo
+	const IconComponent =
+		template.icon || getCategoryIcon(template.category, template.type);
+
+	// Color de gradiente basado en categoría
+	const getGradientColor = (category: string) => {
+		switch (category?.toLowerCase()) {
+			case "structural":
+			case "foundation":
+				return "from-blue-600 to-blue-500";
+			case "electrical":
+			case "installation":
+				return "from-yellow-600 to-yellow-500";
+			case "architectural":
+				return "from-green-600 to-green-500";
+			case "hydraulic":
+			case "plumbing":
+				return "from-cyan-600 to-cyan-500";
+			case "mechanical":
+				return "from-purple-600 to-purple-500";
+			case "geotechnical":
+				return "from-stone-600 to-stone-500";
+			default:
+				return template.color || "from-primary-600 to-secondary-500";
+		}
+	};
 
 	return (
 		<div
@@ -79,7 +139,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 		>
 			{/* Header con gradiente y patrones */}
 			<div
-				className={`h-32 bg-gradient-to-r ${template.color} relative overflow-hidden`}
+				className={`h-32 bg-gradient-to-r ${getGradientColor(template.category)} relative overflow-hidden`}
 			>
 				{/* Patrón arquitectónico */}
 				<div className="absolute inset-0 opacity-20">
@@ -116,13 +176,13 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 				{/* Icono principal */}
 				<div className="absolute inset-0 flex items-center justify-center">
 					<div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-						<template.icon className="h-8 w-8 text-white" />
+						{IconComponent && <IconComponent className="h-8 w-8 text-white" />}
 					</div>
 				</div>
 
 				{/* Indicadores superiores */}
 				<div className="absolute top-4 left-4 flex items-center gap-2">
-					{template.verified && (
+					{(template.verified || template.is_verified) && (
 						<div className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full">
 							<CheckBadgeIcon className="h-4 w-4 text-white" />
 						</div>
@@ -180,7 +240,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 				<div className="grid grid-cols-2 gap-3 mb-4 text-xs text-gray-500">
 					<div className="flex items-center gap-1">
 						<BookOpenIcon className="h-3 w-3 text-primary-600" />
-						<span className="truncate">{template.necReference}</span>
+						<span className="truncate">{template.necReference || "NEC"}</span>
 					</div>
 					<div className="flex items-center gap-1">
 						<ClockIcon className="h-3 w-3 text-green-600" />
@@ -189,58 +249,93 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 					<div className="flex items-center gap-1">
 						<StarIcon className="h-3 w-3 text-yellow-500" />
 						<span>
-							{template.rating} ({template.usageCount})
+							{template.rating?.toFixed(1) || "0.0"} ({template.usageCount || 0}
+							)
 						</span>
 					</div>
 					<div className="flex items-center gap-1">
 						<UserGroupIcon className="h-3 w-3 text-gray-500" />
-						<span>{template.profession.length} esp.</span>
+						<span>{template.profession?.length || 0} esp.</span>
 					</div>
 				</div>
 
 				{/* Requerimientos principales */}
-				{!compact && (
-					<div className="mb-4">
-						<p className="text-xs font-medium text-gray-700 mb-2">
-							Datos requeridos:
-						</p>
-						<div className="flex flex-wrap gap-1">
-							{template.requirements.slice(0, 2).map((req, idx) => (
-								<span
-									key={idx}
-									className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md truncate max-w-[120px]"
-									title={req}
-								>
-									{req}
-								</span>
-							))}
-							{template.requirements.length > 2 && (
-								<span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-md">
-									+{template.requirements.length - 2}
-								</span>
-							)}
+				{!compact &&
+					template.requirements &&
+					template.requirements.length > 0 && (
+						<div className="mb-4">
+							<p className="text-xs font-medium text-gray-700 mb-2">
+								Datos requeridos:
+							</p>
+							<div className="flex flex-wrap gap-1">
+								{template.requirements.slice(0, 2).map((req, idx) => (
+									<span
+										key={idx}
+										className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md truncate max-w-[120px]"
+										title={req}
+									>
+										{req}
+									</span>
+								))}
+								{template.requirements.length > 2 && (
+									<span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-md">
+										+{template.requirements.length - 2}
+									</span>
+								)}
+							</div>
 						</div>
-					</div>
-				)}
+					)}
 
-				{/* Tags */}
-				<div className="mb-6">
-					<div className="flex flex-wrap gap-1">
-						{template.tags.slice(0, 3).map((tag, idx) => (
-							<span
-								key={idx}
-								className="px-2 py-1 bg-primary-50 text-primary-600 text-xs rounded-md font-medium"
-							>
-								#{tag}
-							</span>
-						))}
-						{template.tags.length > 3 && (
-							<span className="px-2 py-1 bg-gray-50 text-gray-500 text-xs rounded-md">
-								+{template.tags.length - 3}
-							</span>
-						)}
-					</div>
-				</div>
+				{/* Requerimientos principales - Solo mostrar si existen */}
+				{!compact &&
+					template.requirements &&
+					Array.isArray(template.requirements) &&
+					template.requirements.length > 0 && (
+						<div className="mb-4">
+							<p className="text-xs font-medium text-gray-700 mb-2">
+								Datos requeridos:
+							</p>
+							<div className="flex flex-wrap gap-1">
+								{template.requirements.slice(0, 2).map((req, idx) => (
+									<span
+										key={idx}
+										className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md truncate max-w-[120px]"
+										title={req}
+									>
+										{req}
+									</span>
+								))}
+								{template.requirements.length > 2 && (
+									<span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-md">
+										+{template.requirements.length - 2}
+									</span>
+								)}
+							</div>
+						</div>
+					)}
+
+				{/* Tags - Solo mostrar si existen */}
+				{template.tags &&
+					Array.isArray(template.tags) &&
+					template.tags.length > 0 && (
+						<div className="mb-6">
+							<div className="flex flex-wrap gap-1">
+								{template.tags.slice(0, 3).map((tag, idx) => (
+									<span
+										key={idx}
+										className="px-2 py-1 bg-primary-50 text-primary-600 text-xs rounded-md font-medium"
+									>
+										#{tag}
+									</span>
+								))}
+								{template.tags.length > 3 && (
+									<span className="px-2 py-1 bg-gray-50 text-gray-500 text-xs rounded-md">
+										+{template.tags.length - 3}
+									</span>
+								)}
+							</div>
+						</div>
+					)}
 
 				{/* Botones de acción */}
 				<div className="space-y-2">
@@ -274,7 +369,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 
 			{/* Sombra proyectada elegante */}
 			<div
-				className={`absolute inset-0 bg-gradient-to-r ${template.color} rounded-2xl -z-10 blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500 transform group-hover:scale-110`}
+				className={`absolute inset-0 bg-gradient-to-r ${getGradientColor(template.category)} rounded-2xl -z-10 blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500 transform group-hover:scale-110`}
 			/>
 		</div>
 	);

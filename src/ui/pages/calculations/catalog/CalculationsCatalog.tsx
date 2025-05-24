@@ -15,11 +15,17 @@ import {
 import {TemplateCard} from "./components/TemplateCard";
 import {CategoryFilter} from "./components/CategoryFilter";
 import {TemplatePreview} from "./components/TemplatePreview";
+
+// Usar el hook especializado para catálogo
 import {
-	useTemplates,
-	UITemplate,
-	UITemplateFilters,
-} from "../shared/hooks/useTemplates";
+	useCatalogTemplates,
+	useCatalogSearch,
+} from "../shared/hooks/useCatalogTemplates";
+import type {
+	CalculationTemplate as UITemplate,
+	TemplateFilters as UITemplateFilters,
+	SortOption,
+} from "../shared/types/template.types";
 
 interface CalculationsCatalogProps {
 	onTemplateSelect: (template: UITemplate) => void;
@@ -42,61 +48,111 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 	onTemplateSelect,
 	onPreviewTemplate,
 }) => {
-	// Estados locales
+	// ==================== ESTADOS LOCALES ====================
 	const [previewTemplate, setPreviewTemplate] = useState<UITemplate | null>(
 		null
 	);
-	const [filters, setFilters] = useState<UITemplateFilters>({
-		category: null,
-		subcategory: null,
-		searchTerm: "",
-		sortBy: "popular",
-		showOnlyFavorites: false,
-		showOnlyVerified: true, // Solo plantillas verificadas por defecto
-		difficulty: null,
-	});
+	const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+	const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
+		null
+	);
 
-	// Hook personalizado para gestionar plantillas con Clean Architecture
+	// ==================== HOOKS ESPECIALIZADOS ====================
+
+	// Hook principal del catálogo
 	const {
-		templates,
 		categories,
 		isLoading,
 		error,
 		stats,
-		getFilteredTemplates,
 		toggleFavorite,
 		refreshTemplates,
+		clearError,
 		setCurrentUserId,
-	} = useTemplates();
+	} = useCatalogTemplates({
+		autoLoad: true,
+		includePersonal: false, // Solo plantillas públicas en catálogo
+		onlyVerified: true,
+	});
 
-	// Simular usuario logueado (en producción esto vendría del contexto de auth)
+	// Hook de búsqueda
+	const {
+		searchTerm,
+		activeFilters,
+		sortBy,
+		templates: filteredTemplates,
+		setSearchTerm,
+		setSortBy,
+		updateFilter,
+		clearFilters,
+		hasActiveFilters,
+	} = useCatalogSearch();
+
+	// ==================== CONFIGURACIÓN DE USUARIO ====================
 	useEffect(() => {
 		// TODO: Obtener del contexto de autenticación real
 		const mockUserId = localStorage.getItem("current_user_id") || "user_123";
 		setCurrentUserId(mockUserId);
 	}, [setCurrentUserId]);
 
-	// Templates filtrados y ordenados
-	const filteredTemplates = useMemo(() => {
-		return getFilteredTemplates(filters);
-	}, [getFilteredTemplates, filters]);
+	// ==================== FILTRADO POR CATEGORÍA ====================
 
-	// Estadísticas para mostrar
+	// Aplicar filtros de categoría a los filtros activos
+	useEffect(() => {
+		const categoryFilters: Partial<UITemplateFilters> = {};
+
+		if (selectedCategory) {
+			categoryFilters.category = selectedCategory;
+		}
+
+		if (selectedSubcategory) {
+			categoryFilters.subcategory = selectedSubcategory;
+		}
+
+		// Actualizar filtros solo si han cambiado
+		if (
+			selectedCategory !== activeFilters.category ||
+			selectedSubcategory !== activeFilters.subcategory
+		) {
+			Object.entries(categoryFilters).forEach(([key, value]) => {
+				updateFilter(key as keyof UITemplateFilters, value);
+			});
+		}
+	}, [
+		selectedCategory,
+		selectedSubcategory,
+		activeFilters.category,
+		activeFilters.subcategory,
+		updateFilter,
+	]);
+
+	// ==================== ESTADÍSTICAS COMPUTADAS ====================
 	const currentStats = useMemo(() => {
+		if (filteredTemplates.length === 0) {
+			return {
+				verifiedCount: 0,
+				avgRating: 0,
+				totalUsage: 0,
+			};
+		}
+
 		return {
 			verifiedCount: filteredTemplates.filter((t) => t.verified).length,
 			avgRating:
-				filteredTemplates.length > 0
-					? filteredTemplates.reduce((sum, t) => sum + t.rating, 0) /
-						filteredTemplates.length
-					: 0,
+				filteredTemplates.reduce((sum, t) => sum + t.rating, 0) /
+				filteredTemplates.length,
 			totalUsage: filteredTemplates.reduce((sum, t) => sum + t.usageCount, 0),
 		};
 	}, [filteredTemplates]);
 
-	// Handlers
-	const handleFilterChange = (newFilters: Partial<UITemplateFilters>) => {
-		setFilters((prev) => ({...prev, ...newFilters}));
+	// ==================== HANDLERS ====================
+	const handleCategoryChange = (categoryId: string | null) => {
+		setSelectedCategory(categoryId);
+		setSelectedSubcategory(null); // Reset subcategory when category changes
+	};
+
+	const handleSubcategoryChange = (subcategoryId: string | null) => {
+		setSelectedSubcategory(subcategoryId);
 	};
 
 	const handleTemplatePreview = (template: UITemplate) => {
@@ -109,19 +165,34 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 		onTemplateSelect(template);
 	};
 
-	const clearFilters = () => {
-		setFilters({
-			category: null,
-			subcategory: null,
-			searchTerm: "",
-			sortBy: "popular",
-			showOnlyFavorites: false,
-			showOnlyVerified: true,
-			difficulty: null,
-		});
+	const handleToggleFavorite = async (templateId: string) => {
+		try {
+			await toggleFavorite(templateId);
+		} catch (error) {
+			console.error("Error al cambiar favorito:", error);
+		}
 	};
 
-	// Estado de carga
+	const handleClearAllFilters = () => {
+		clearFilters();
+		setSelectedCategory(null);
+		setSelectedSubcategory(null);
+	};
+
+	const handleQuickFilter = (filterType: string, value: boolean) => {
+		switch (filterType) {
+			case "favorites":
+				updateFilter("showOnlyFavorites", value);
+				break;
+			case "verified":
+				updateFilter("showOnlyVerified", value);
+				break;
+			default:
+				break;
+		}
+	};
+
+	// ==================== ESTADO DE CARGA ====================
 	if (isLoading) {
 		return (
 			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -133,7 +204,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 		);
 	}
 
-	// Estado de error
+	// ==================== ESTADO DE ERROR ====================
 	if (error) {
 		return (
 			<div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -154,6 +225,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 		);
 	}
 
+	// ==================== RENDER PRINCIPAL ====================
 	return (
 		<div className="min-h-screen bg-gray-50 relative">
 			{/* Header optimizado */}
@@ -187,12 +259,13 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 						<div className="flex items-center gap-3">
 							<button
 								onClick={() =>
-									handleFilterChange({
-										showOnlyFavorites: !filters.showOnlyFavorites,
-									})
+									handleQuickFilter(
+										"favorites",
+										!activeFilters.showOnlyFavorites
+									)
 								}
 								className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
-									filters.showOnlyFavorites
+									activeFilters.showOnlyFavorites
 										? "bg-secondary-50 border-secondary-300 text-secondary-700"
 										: "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
 								}`}
@@ -203,12 +276,10 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 
 							<button
 								onClick={() =>
-									handleFilterChange({
-										showOnlyVerified: !filters.showOnlyVerified,
-									})
+									handleQuickFilter("verified", !activeFilters.showOnlyVerified)
 								}
 								className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
-									filters.showOnlyVerified
+									activeFilters.showOnlyVerified
 										? "bg-green-50 border-green-300 text-green-700"
 										: "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
 								}`}
@@ -237,17 +308,10 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 							{/* Filtros por categoría */}
 							<CategoryFilter
 								categories={categories}
-								selectedCategory={filters.category}
-								selectedSubcategory={filters.subcategory}
-								onCategoryChange={(category) =>
-									handleFilterChange({
-										category,
-										subcategory: null,
-									})
-								}
-								onSubcategoryChange={(subcategory) =>
-									handleFilterChange({subcategory})
-								}
+								selectedCategory={selectedCategory}
+								selectedSubcategory={selectedSubcategory}
+								onCategoryChange={handleCategoryChange}
+								onSubcategoryChange={handleSubcategoryChange}
 							/>
 
 							{/* Filtros adicionales */}
@@ -275,11 +339,9 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 												<input
 													type="radio"
 													name="difficulty"
-													checked={filters.difficulty === option.value}
+													checked={activeFilters.difficulty === option.value}
 													onChange={() =>
-														handleFilterChange({
-															difficulty: option.value as any,
-														})
+														updateFilter("difficulty", option.value)
 													}
 													className="h-4 w-4 text-primary-600 focus:ring-primary-500"
 												/>
@@ -306,10 +368,8 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 										<input
 											type="text"
 											placeholder="Buscar plantillas técnicas..."
-											value={filters.searchTerm}
-											onChange={(e) =>
-												handleFilterChange({searchTerm: e.target.value})
-											}
+											value={searchTerm}
+											onChange={(e) => setSearchTerm(e.target.value)}
 											className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
 										/>
 									</div>
@@ -319,11 +379,9 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 								<div className="flex items-center gap-3">
 									<AdjustmentsHorizontalIcon className="h-5 w-5 text-gray-500" />
 									<select
-										value={filters.sortBy}
+										value={sortBy}
 										onChange={(e) =>
-											handleFilterChange({
-												sortBy: e.target.value as UITemplateFilters["sortBy"],
-											})
+											setSortBy(e.target.value as UITemplateFilters["sortBy"])
 										}
 										className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white min-w-[180px]"
 									>
@@ -338,13 +396,13 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 						</div>
 
 						{/* Estadísticas de resultados */}
-						{(filters.category || filters.searchTerm) && (
+						{hasActiveFilters && (
 							<div className="mb-6">
 								<div className="flex items-center justify-between">
 									<div>
 										<h2 className="text-xl font-semibold text-gray-900">
-											{filters.category
-												? categories.find((c) => c.id === filters.category)
+											{selectedCategory
+												? categories.find((c) => c.id === selectedCategory)
 														?.name
 												: "Resultados de búsqueda"}
 										</h2>
@@ -353,14 +411,12 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 										</p>
 									</div>
 
-									{(filters.category || filters.searchTerm) && (
-										<button
-											onClick={clearFilters}
-											className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-										>
-											Limpiar filtros
-										</button>
-									)}
+									<button
+										onClick={handleClearAllFilters}
+										className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+									>
+										Limpiar filtros
+									</button>
 								</div>
 							</div>
 						)}
@@ -373,7 +429,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 									template={template}
 									onSelect={() => handleTemplateSelect(template)}
 									onPreview={() => handleTemplatePreview(template)}
-									onToggleFavorite={() => toggleFavorite(template.id)}
+									onToggleFavorite={() => handleToggleFavorite(template.id)}
 									animationDelay={index * 0.05}
 								/>
 							))}
@@ -389,12 +445,12 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 									No se encontraron plantillas
 								</h3>
 								<p className="text-gray-600 mb-6">
-									{filters.searchTerm
+									{searchTerm
 										? "Intenta con otros términos de búsqueda"
 										: "No hay plantillas disponibles para los filtros seleccionados"}
 								</p>
 								<button
-									onClick={clearFilters}
+									onClick={handleClearAllFilters}
 									className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-colors duration-200"
 								>
 									Limpiar Filtros
@@ -411,7 +467,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 					template={previewTemplate}
 					onClose={() => setPreviewTemplate(null)}
 					onSelect={() => handleTemplateSelect(previewTemplate)}
-					onToggleFavorite={() => toggleFavorite(previewTemplate.id)}
+					onToggleFavorite={() => handleToggleFavorite(previewTemplate.id)}
 				/>
 			)}
 
@@ -427,7 +483,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 						transform: translateY(0);
 					}
 				}
-
+				
 				.animate-fade-in {
 					animation: fadeIn 0.6s ease-out forwards;
 					opacity: 0;
