@@ -1,6 +1,4 @@
-// ui/pages/calculations/catalog/CalculationsCatalog.tsx
-
-import React, {useState, useMemo, useEffect} from "react";
+import React, {useState, useMemo, useEffect, useCallback} from "react";
 import {
 	CheckBadgeIcon,
 	MagnifyingGlassIcon,
@@ -16,7 +14,7 @@ import {TemplateCard} from "./components/TemplateCard";
 import {CategoryFilter} from "./components/CategoryFilter";
 import {TemplatePreview} from "./components/TemplatePreview";
 
-// Usar el hook especializado para catálogo
+// Usar los hooks corregidos
 import {
 	useCatalogTemplates,
 	useCatalogSearch,
@@ -24,7 +22,6 @@ import {
 import type {
 	CalculationTemplate as UITemplate,
 	TemplateFilters as UITemplateFilters,
-	SortOption,
 } from "../shared/types/template.types";
 
 interface CalculationsCatalogProps {
@@ -58,8 +55,6 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 	);
 
 	// ==================== HOOKS ESPECIALIZADOS ====================
-
-	// Hook principal del catálogo
 	const {
 		categories,
 		isLoading,
@@ -71,11 +66,10 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 		setCurrentUserId,
 	} = useCatalogTemplates({
 		autoLoad: true,
-		includePersonal: false, // Solo plantillas públicas en catálogo
+		includePersonal: false,
 		onlyVerified: true,
 	});
 
-	// Hook de búsqueda
 	const {
 		searchTerm,
 		activeFilters,
@@ -90,45 +84,39 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 
 	// ==================== CONFIGURACIÓN DE USUARIO ====================
 	useEffect(() => {
-		// TODO: Obtener del contexto de autenticación real
 		const mockUserId = localStorage.getItem("current_user_id") || "user_123";
-		setCurrentUserId(mockUserId);
+		setCurrentUserId?.(mockUserId);
 	}, [setCurrentUserId]);
 
-	// ==================== FILTRADO POR CATEGORÍA ====================
+	// ==================== FILTRADO POR CATEGORÍA (SIN BUCLE INFINITO) ====================
+	const handleCategoryChange = useCallback(
+		(categoryId: string | null) => {
+			setSelectedCategory(categoryId);
+			setSelectedSubcategory(null);
 
-	// Aplicar filtros de categoría a los filtros activos
-	useEffect(() => {
-		const categoryFilters: Partial<UITemplateFilters> = {};
+			// Actualizar filtros de manera controlada
+			if (categoryId !== activeFilters.category) {
+				updateFilter("category", categoryId);
+			}
+		},
+		[activeFilters.category, updateFilter]
+	);
 
-		if (selectedCategory) {
-			categoryFilters.category = selectedCategory;
-		}
+	const handleSubcategoryChange = useCallback(
+		(subcategoryId: string | null) => {
+			setSelectedSubcategory(subcategoryId);
 
-		if (selectedSubcategory) {
-			categoryFilters.subcategory = selectedSubcategory;
-		}
-
-		// Actualizar filtros solo si han cambiado
-		if (
-			selectedCategory !== activeFilters.category ||
-			selectedSubcategory !== activeFilters.subcategory
-		) {
-			Object.entries(categoryFilters).forEach(([key, value]) => {
-				updateFilter(key as keyof UITemplateFilters, value);
-			});
-		}
-	}, [
-		selectedCategory,
-		selectedSubcategory,
-		activeFilters.category,
-		activeFilters.subcategory,
-		updateFilter,
-	]);
+			// Actualizar filtros de manera controlada
+			if (subcategoryId !== activeFilters.subcategory) {
+				updateFilter("subcategory", subcategoryId);
+			}
+		},
+		[activeFilters.subcategory, updateFilter]
+	);
 
 	// ==================== ESTADÍSTICAS COMPUTADAS ====================
 	const currentStats = useMemo(() => {
-		if (filteredTemplates.length === 0) {
+		if (!filteredTemplates || filteredTemplates.length === 0) {
 			return {
 				verifiedCount: 0,
 				avgRating: 0,
@@ -136,61 +124,91 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 			};
 		}
 
+		const verifiedCount = filteredTemplates.filter(
+			(t) => t.verified || t.is_verified
+		).length;
+		const totalRating = filteredTemplates.reduce((sum, t) => {
+			const rating =
+				typeof t.rating === "number"
+					? t.rating
+					: typeof t.average_rating === "number"
+						? t.average_rating
+						: 0;
+			return sum + rating;
+		}, 0);
+		const avgRating =
+			filteredTemplates.length > 0 ? totalRating / filteredTemplates.length : 0;
+		const totalUsage = filteredTemplates.reduce((sum, t) => {
+			const usage =
+				typeof t.usageCount === "number"
+					? t.usageCount
+					: typeof t.usage_count === "number"
+						? t.usage_count
+						: 0;
+			return sum + usage;
+		}, 0);
+
 		return {
-			verifiedCount: filteredTemplates.filter((t) => t.verified).length,
-			avgRating:
-				filteredTemplates.reduce((sum, t) => sum + t.rating, 0) /
-				filteredTemplates.length,
-			totalUsage: filteredTemplates.reduce((sum, t) => sum + t.usageCount, 0),
+			verifiedCount,
+			avgRating,
+			totalUsage,
 		};
 	}, [filteredTemplates]);
 
 	// ==================== HANDLERS ====================
-	const handleCategoryChange = (categoryId: string | null) => {
-		setSelectedCategory(categoryId);
-		setSelectedSubcategory(null); // Reset subcategory when category changes
-	};
+	const handleTemplatePreview = useCallback(
+		(template: UITemplate) => {
+			setPreviewTemplate(template);
+			onPreviewTemplate?.(template);
+		},
+		[onPreviewTemplate]
+	);
 
-	const handleSubcategoryChange = (subcategoryId: string | null) => {
-		setSelectedSubcategory(subcategoryId);
-	};
+	const handleTemplateSelect = useCallback(
+		(template: UITemplate) => {
+			setPreviewTemplate(null);
+			onTemplateSelect(template);
+		},
+		[onTemplateSelect]
+	);
 
-	const handleTemplatePreview = (template: UITemplate) => {
-		setPreviewTemplate(template);
-		onPreviewTemplate?.(template);
-	};
+	const handleToggleFavorite = useCallback(
+		async (templateId: string) => {
+			try {
+				await toggleFavorite(templateId);
+			} catch (error) {
+				console.error("Error al cambiar favorito:", error);
+			}
+		},
+		[toggleFavorite]
+	);
 
-	const handleTemplateSelect = (template: UITemplate) => {
-		setPreviewTemplate(null);
-		onTemplateSelect(template);
-	};
-
-	const handleToggleFavorite = async (templateId: string) => {
-		try {
-			await toggleFavorite(templateId);
-		} catch (error) {
-			console.error("Error al cambiar favorito:", error);
-		}
-	};
-
-	const handleClearAllFilters = () => {
+	const handleClearAllFilters = useCallback(() => {
 		clearFilters();
 		setSelectedCategory(null);
 		setSelectedSubcategory(null);
-	};
+	}, [clearFilters]);
 
-	const handleQuickFilter = (filterType: string, value: boolean) => {
-		switch (filterType) {
-			case "favorites":
-				updateFilter("showOnlyFavorites", value);
-				break;
-			case "verified":
-				updateFilter("showOnlyVerified", value);
-				break;
-			default:
-				break;
-		}
-	};
+	const handleQuickFilter = useCallback(
+		(filterType: string, value: boolean) => {
+			switch (filterType) {
+				case "favorites":
+					updateFilter("showOnlyFavorites", value);
+					break;
+				case "verified":
+					updateFilter("showOnlyVerified", value);
+					break;
+				default:
+					break;
+			}
+		},
+		[updateFilter]
+	);
+
+	const handleRefresh = useCallback(() => {
+		clearError();
+		refreshTemplates();
+	}, [clearError, refreshTemplates]);
 
 	// ==================== ESTADO DE CARGA ====================
 	if (isLoading) {
@@ -215,7 +233,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 					</h2>
 					<p className="text-gray-600 mb-4">{error}</p>
 					<button
-						onClick={refreshTemplates}
+						onClick={handleRefresh}
 						className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
 					>
 						Reintentar
@@ -289,7 +307,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 							</button>
 
 							<button
-								onClick={refreshTemplates}
+								onClick={handleRefresh}
 								className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-all duration-200"
 								title="Actualizar plantillas"
 							>
@@ -379,7 +397,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 								<div className="flex items-center gap-3">
 									<AdjustmentsHorizontalIcon className="h-5 w-5 text-gray-500" />
 									<select
-										value={sortBy}
+										value={sortBy || "popular"}
 										onChange={(e) =>
 											setSortBy(e.target.value as UITemplateFilters["sortBy"])
 										}

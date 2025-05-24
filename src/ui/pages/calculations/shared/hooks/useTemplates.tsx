@@ -1,6 +1,6 @@
 // src/ui/pages/calculations/shared/hooks/useTemplates.tsx
 
-import {useState, useEffect, useCallback, useMemo} from "react";
+import {useState, useEffect, useCallback, useMemo, useRef} from "react";
 import {templateApplicationService} from "../../../../../core/application/ServiceFactory";
 import {CalculationTemplate} from "../../../../../core/domain/models/calculations/CalculationTemplate";
 import type {
@@ -8,11 +8,11 @@ import type {
 	PaginatedResult,
 } from "../../../../../core/domain/repositories/CalculationTemplateRepository";
 
-// ==================== IMPORTAR TIPOS EXISTENTES ====================
+// IMPORTAR TIPOS EXISTENTES
 import type {
 	MyCalculationTemplate,
 	PublicCalculationTemplate,
-	CalculationTemplate as UICalculationTemplate, // Renombrar para evitar conflicto
+	CalculationTemplate as UICalculationTemplate,
 	TemplateCreateData,
 	TemplateUpdateData,
 	TemplateFilters as UITemplateFilters,
@@ -32,7 +32,7 @@ import type {
 	FormFieldValue,
 } from "../types/template.types";
 
-// ==================== INTERFACES DEL HOOK (mantener existentes) ====================
+// ==================== INTERFACES DEL HOOK ====================
 export interface UseTemplatesReturn {
 	// Estados principales
 	templates: MyCalculationTemplate[];
@@ -126,7 +126,7 @@ export interface UseTemplatesReturn {
 
 // ==================== CONFIGURACIÓN ====================
 const DEFAULT_OPTIONS: UseTemplateOptions = {
-	autoLoad: true,
+	autoLoad: false, // Cambiado a false para evitar carga automática
 	defaultFilters: {},
 	includePublic: true,
 	includePersonal: true,
@@ -159,13 +159,9 @@ const INITIAL_FORM_STATE: TemplateFormState = {
 };
 
 // ==================== CONVERSIÓN DE TIPOS ====================
-/**
- * Convierte Domain CalculationTemplate a UI MyCalculationTemplate
- */
 const convertDomainToMyTemplate = (
 	domain: CalculationTemplate
 ): MyCalculationTemplate => {
-	// Calcular si es nuevo (últimos 30 días)
 	const thirtyDaysAgo = new Date();
 	thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 	const isNew = domain.createdAt > thirtyDaysAgo;
@@ -174,8 +170,8 @@ const convertDomainToMyTemplate = (
 		id: domain.id,
 		name: domain.name,
 		description: domain.description,
-		longDescription: domain.description, // Fallback
-		category: domain.type, // Mapear type a category
+		longDescription: domain.description,
+		category: domain.type,
 		subcategory: domain.type,
 		targetProfessions: domain.targetProfession ? [domain.targetProfession] : [],
 		difficulty: domain.getDifficultyLevel(),
@@ -185,36 +181,32 @@ const convertDomainToMyTemplate = (
 		isPublic: domain.isPublic(),
 		parameters: domain.parameters || [],
 		formula: domain.formula || "",
-		requirements: [], // No existe en DB, array vacío
-		applicationCases: [], // No existe en DB, array vacío
-		limitations: [], // No existe en DB, array vacío
+		requirements: [],
+		applicationCases: [],
+		limitations: [],
 		version: domain.version,
 		usageCount: domain.usageCount,
 		createdAt: domain.createdAt.toISOString(),
 		lastModified: domain.updatedAt.toISOString(),
 		isActive: domain.isActive,
 		status: domain.isActive ? "published" : "draft",
-		sharedWith: [], // No existe en DB, array vacío
-		isFavorite: false, // Por defecto false, se carga después
+		sharedWith: [],
+		isFavorite: false,
 		author: {
 			id: domain.createdBy || "unknown",
 			name: "Usuario",
 			email: "user@example.com",
 		},
-		contributors: [], // No existe en DB, array vacío
+		contributors: [],
 		totalRatings: domain.ratingCount,
 		averageRating: domain.averageRating,
 		isNew: isNew,
 	};
 };
 
-/**
- * Convierte Domain CalculationTemplate a UI PublicCalculationTemplate
- */
 const convertDomainToPublicTemplate = (
 	domain: CalculationTemplate
 ): PublicCalculationTemplate => {
-	// Calcular si es nuevo (últimos 30 días)
 	const thirtyDaysAgo = new Date();
 	thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 	const isNew = domain.createdAt > thirtyDaysAgo;
@@ -223,7 +215,7 @@ const convertDomainToPublicTemplate = (
 		id: domain.id,
 		name: domain.name,
 		description: domain.description,
-		category: domain.type, // Mapear type a category
+		category: domain.type,
 		subcategory: domain.type,
 		targetProfessions: domain.targetProfession ? [domain.targetProfession] : [],
 		difficulty: domain.getDifficultyLevel(),
@@ -245,16 +237,13 @@ const convertDomainToPublicTemplate = (
 		communityRating: {
 			average: domain.averageRating,
 			count: domain.ratingCount,
-			distribution: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}, // No existe en DB, valores por defecto
+			distribution: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
 		},
-		isFavorite: false, // Por defecto false, se carga después
+		isFavorite: false,
 		isNew: isNew,
 	};
 };
 
-/**
- * Convierte UI filters a Domain filters
- */
 const convertUIFiltersToDomain = (
 	uiFilters?: UITemplateFilters
 ): DomainTemplateFilters => {
@@ -266,7 +255,7 @@ const convertUIFiltersToDomain = (
 		targetProfession: uiFilters.targetProfession || undefined,
 		isVerified: uiFilters.showOnlyVerified,
 		isFeatured: uiFilters.showOnlyFeatured,
-		isActive: true, // Solo templates activos
+		isActive: true,
 		tags: uiFilters.tags || undefined,
 		difficulty: uiFilters.difficulty || undefined,
 		sortBy:
@@ -329,7 +318,7 @@ export const useTemplates = (
 ): UseTemplatesReturn => {
 	const config = {...DEFAULT_OPTIONS, ...options};
 
-	// ==================== ESTADOS ====================
+	// Estados
 	const [templates, setTemplates] = useState<MyCalculationTemplate[]>([]);
 	const [publicTemplates, setPublicTemplates] = useState<
 		PublicCalculationTemplate[]
@@ -346,7 +335,12 @@ export const useTemplates = (
 	const [originalFormState, setOriginalFormState] =
 		useState<TemplateFormState | null>(null);
 
-	// ==================== VALIDACIÓN ====================
+	// Referencias para evitar bucles infinitos
+	const loadingRef = useRef(false);
+	const abortControllerRef = useRef<AbortController | null>(null);
+	const hasLoadedInitially = useRef(false);
+
+	// Validación
 	const isValid = useMemo(() => {
 		if (!formState) return false;
 		return (
@@ -357,7 +351,7 @@ export const useTemplates = (
 		);
 	}, [formState, formErrors]);
 
-	// ==================== UTILIDADES ====================
+	// Utilidades
 	const handleError = useCallback((error: unknown, context: string) => {
 		console.error(`Error in ${context}:`, error);
 		const message =
@@ -380,9 +374,8 @@ export const useTemplates = (
 				setLoading(true);
 				clearError();
 
-				// Crear CalculationTemplate domain object
 				const domainTemplate = new CalculationTemplate(
-					"", // ID se genera en el backend
+					"",
 					data.name,
 					data.description,
 					data.category,
@@ -391,12 +384,12 @@ export const useTemplates = (
 					data.necReference || "",
 					"1.0.0",
 					data.parameters || [],
-					true, // isActive
-					false, // isVerified (nuevas plantillas no están verificadas)
-					false, // isFeatured
-					0, // usageCount
-					0, // averageRating
-					0, // ratingCount
+					true,
+					false,
+					false,
+					0,
+					0,
+					0,
 					data.isPublic ? "public" : "private",
 					data.tags || []
 				);
@@ -404,7 +397,6 @@ export const useTemplates = (
 				const result =
 					await templateApplicationService.createTemplate(domainTemplate);
 				const newTemplate = convertDomainToMyTemplate(result);
-
 				setTemplates((prev) => [newTemplate, ...prev]);
 
 				return {success: true, data: newTemplate};
@@ -469,7 +461,6 @@ export const useTemplates = (
 				clearError();
 
 				await templateApplicationService.deleteTemplate(id);
-
 				setTemplates((prev) => prev.filter((t) => t.id !== id));
 
 				if (currentTemplate?.id === id) {
@@ -512,7 +503,7 @@ export const useTemplates = (
 					estimatedTime: original.estimatedTime,
 					necReference: original.necReference,
 					tags: original.tags,
-					isPublic: false, // Las copias no son públicas por defecto
+					isPublic: false,
 					parameters: original.parameters,
 					formula: original.formula,
 					requirements: original.requirements,
@@ -541,12 +532,9 @@ export const useTemplates = (
 				setLoading(true);
 				const domainTemplate =
 					await templateApplicationService.getTemplateById(id);
-
-				if (domainTemplate) {
-					return convertDomainToMyTemplate(domainTemplate);
-				}
-
-				return null;
+				return domainTemplate
+					? convertDomainToMyTemplate(domainTemplate)
+					: null;
 			} catch (error) {
 				handleError(error, "Obtener plantilla");
 				return null;
@@ -571,7 +559,6 @@ export const useTemplates = (
 					options.query || "",
 					domainFilters
 				);
-
 				const convertedTemplates = result.data.map(convertDomainToMyTemplate);
 
 				return {
@@ -600,7 +587,7 @@ export const useTemplates = (
 				const domainFilters: DomainTemplateFilters = {
 					...convertUIFiltersToDomain(options?.filters),
 					shareLevel: "public",
-					isVerified: true, // Solo plantillas públicas verificadas
+					isVerified: true,
 				};
 
 				const result =
@@ -634,8 +621,6 @@ export const useTemplates = (
 				setLoading(true);
 				const domainFilters: DomainTemplateFilters = {
 					...convertUIFiltersToDomain(options?.filters),
-					// createdBy se obtendría del contexto de auth
-					// createdBy: currentUserId
 				};
 
 				const result =
@@ -661,49 +646,80 @@ export const useTemplates = (
 		[handleError]
 	);
 
-	// ==================== CARGAR TEMPLATES ====================
+	// ==================== CARGAR TEMPLATES (SIN BUCLE INFINITO) ====================
 	const refreshTemplates = useCallback(async () => {
-		if (!config.autoLoad) return;
+		if (loadingRef.current) return;
 
 		try {
+			loadingRef.current = true;
 			setLoading(true);
 			clearError();
 
-			// Cargar plantillas en paralelo
-			const [publicResult, myResult] = await Promise.all([
-				config.includePublic
-					? getPublicTemplates()
-					: Promise.resolve({
-							templates: [],
-							pagination: {page: 1, limit: 10, total: 0, pages: 0},
-							filters: {},
-						}),
-				config.includePersonal
-					? getMyTemplates()
-					: Promise.resolve({
-							templates: [],
-							pagination: {page: 1, limit: 10, total: 0, pages: 0},
-							filters: {},
-						}),
-			]);
+			// Cancelar request anterior si existe
+			if (abortControllerRef.current) {
+				abortControllerRef.current.abort();
+			}
+			abortControllerRef.current = new AbortController();
+
+			const promises = [];
 
 			if (config.includePublic) {
+				promises.push(getPublicTemplates());
+			}
+
+			if (config.includePersonal) {
+				promises.push(getMyTemplates());
+			}
+
+			const results = await Promise.allSettled(promises);
+
+			let publicResult: TemplateListResponse | null = null;
+			let myResult: TemplateListResponse | null = null;
+
+			if (
+				config.includePublic &&
+				results[0] &&
+				results[0].status === "fulfilled"
+			) {
+				publicResult = results[0].value;
+			}
+
+			const personalIndex = config.includePublic ? 1 : 0;
+			if (
+				config.includePersonal &&
+				results[personalIndex] &&
+				results[personalIndex].status === "fulfilled"
+			) {
+				myResult = results[personalIndex].value;
+			}
+
+			if (publicResult && config.includePublic) {
 				setPublicTemplates(
 					publicResult.templates as PublicCalculationTemplate[]
 				);
 			}
 
-			if (config.includePersonal) {
+			if (myResult && config.includePersonal) {
 				setTemplates(myResult.templates as MyCalculationTemplate[]);
 			}
 		} catch (error) {
-			handleError(error, "Refrescar plantillas");
+			if (error.name !== "AbortError") {
+				handleError(error, "Refrescar plantillas");
+			}
 		} finally {
+			loadingRef.current = false;
 			setLoading(false);
 		}
-	}, [config, getPublicTemplates, getMyTemplates, handleError, clearError]);
+	}, [
+		config.includePublic,
+		config.includePersonal,
+		getPublicTemplates,
+		getMyTemplates,
+		handleError,
+		clearError,
+	]);
 
-	// ==================== RESTO DE MÉTODOS (implementación simplificada) ====================
+	// ==================== RESTO DE MÉTODOS SIMPLIFICADOS ====================
 	const validateTemplate = useCallback(
 		async (
 			template: Partial<MyCalculationTemplate>
@@ -719,7 +735,6 @@ export const useTemplates = (
 					field: "name",
 				});
 			}
-
 			if (!template.description?.trim()) {
 				errors.push({
 					type: "required",
@@ -727,7 +742,6 @@ export const useTemplates = (
 					field: "description",
 				});
 			}
-
 			if (!template.category) {
 				errors.push({
 					type: "required",
@@ -736,11 +750,7 @@ export const useTemplates = (
 				});
 			}
 
-			return {
-				isValid: errors.length === 0,
-				errors,
-				warnings,
-			};
+			return {isValid: errors.length === 0, errors, warnings};
 		},
 		[]
 	);
@@ -754,16 +764,12 @@ export const useTemplates = (
 				errors.general = "Parámetros inválidos";
 			}
 
-			return {
-				isValid: Object.keys(errors).length === 0,
-				errors,
-				warnings,
-			};
+			return {isValid: Object.keys(errors).length === 0, errors, warnings};
 		},
 		[]
 	);
 
-	// ==================== FORMULARIOS ====================
+	// FORMULARIOS
 	const initializeForm = useCallback((template?: MyCalculationTemplate) => {
 		const initialState: TemplateFormState = template
 			? {
@@ -805,16 +811,13 @@ export const useTemplates = (
 
 			setFormState((prev) => {
 				if (!prev) return prev;
-
 				const keys = field.split(".");
 				const newState = JSON.parse(JSON.stringify(prev));
-
 				let current = newState;
 				for (let i = 0; i < keys.length - 1; i++) {
 					current = current[keys[i]];
 				}
 				current[keys[keys.length - 1]] = value;
-
 				return newState;
 			});
 
@@ -847,10 +850,9 @@ export const useTemplates = (
 		return result;
 	}, [formState, createTemplate]);
 
-	// ==================== MÉTODOS SIMPLIFICADOS ====================
+	// MÉTODOS SIMPLIFICADOS
 	const getSuggestions = useCallback(
 		async (templateId: string): Promise<TemplateSuggestion[]> => {
-			// Implementación simplificada - en el futuro conectar con API
 			return [];
 		},
 		[]
@@ -860,7 +862,6 @@ export const useTemplates = (
 		async (
 			suggestion: Partial<TemplateSuggestion>
 		): Promise<TemplateSuggestion> => {
-			// Implementación simplificada
 			throw new Error("No implementado aún");
 		},
 		[]
@@ -911,19 +912,15 @@ export const useTemplates = (
 
 	const getExecutionHistory = useCallback(
 		async (templateId?: string): Promise<CalculationExecution[]> => {
-			// Implementación simplificada
 			return [];
 		},
 		[]
 	);
 
-	// ==================== UTILIDADES PARA COMPATIBILIDAD ====================
+	// UTILIDADES PARA COMPATIBILIDAD
 	const getFilteredTemplates = useCallback(
 		(filters?: UITemplateFilters): UICalculationTemplate[] => {
-			// Convertir templates a formato legacy para compatibilidad
 			const allTemplates = [...templates, ...publicTemplates];
-
-			// Aplicar filtros
 			let filtered = allTemplates;
 
 			if (filters?.searchTerm) {
@@ -960,7 +957,6 @@ export const useTemplates = (
 				);
 			}
 
-			// Convertir a formato legacy UICalculationTemplate
 			return filtered.map(convertToLegacyTemplate);
 		},
 		[templates, publicTemplates]
@@ -1001,19 +997,16 @@ export const useTemplates = (
 	const toggleFavorite = useCallback(
 		async (templateId: string) => {
 			try {
-				// Usar el service para toggle favorite
 				const newIsFavorite = await templateApplicationService.toggleFavorite(
 					"current-user",
 					templateId
 				);
 
-				// Actualizar estado local
 				setTemplates((prev) =>
 					prev.map((t) =>
 						t.id === templateId ? {...t, isFavorite: newIsFavorite} : t
 					)
 				);
-
 				setPublicTemplates((prev) =>
 					prev.map((t) =>
 						t.id === templateId ? {...t, isFavorite: newIsFavorite} : t
@@ -1026,14 +1019,17 @@ export const useTemplates = (
 		[handleError]
 	);
 
-	// ==================== HELPER PARA CONVERSIÓN LEGACY ====================
+	// HELPER PARA CONVERSIÓN LEGACY
 	const convertToLegacyTemplate = useCallback(
 		(
 			template: MyCalculationTemplate | PublicCalculationTemplate
 		): UICalculationTemplate => {
 			const isPublic = "verified" in template;
+			const usageCount = template.usageCount || 0;
+			const averageRating = isPublic
+				? (template as PublicCalculationTemplate).communityRating?.average || 0
+				: (template as MyCalculationTemplate).averageRating || 0;
 
-			// Función para obtener color basado en categoría
 			const getCategoryColor = (category: string) => {
 				switch (category?.toLowerCase()) {
 					case "structural":
@@ -1056,13 +1052,6 @@ export const useTemplates = (
 				}
 			};
 
-			// Calcular campos derivados
-			const usageCount = template.usageCount || 0;
-			const averageRating = isPublic
-				? (template as PublicCalculationTemplate).communityRating?.average || 0
-				: (template as MyCalculationTemplate).averageRating || 0;
-
-			// Calcular trending y popular
 			const isPopular = usageCount > 100;
 			const isTrending = usageCount > 50 && averageRating > 4.0;
 
@@ -1093,16 +1082,14 @@ export const useTemplates = (
 				lastUpdated: template.lastModified,
 				isFavorite: template.isFavorite || false,
 				color: getCategoryColor(template.category),
-				icon: null, // Se maneja en TemplateCard con getCategoryIcon
+				icon: null,
 				allowSuggestions: true,
 				createdBy: template.author?.id,
 				contributors: [],
-				type: template.category, // Agregar type para TemplateCard
-
-				// Campos adicionales que pueden venir directamente de la API
-				nec_reference: template.necReference, // Para compatibilidad
-				usage_count: usageCount, // Para compatibilidad
-				average_rating: averageRating, // Para compatibilidad
+				type: template.category,
+				nec_reference: template.necReference,
+				usage_count: usageCount,
+				average_rating: averageRating,
 				is_verified: isPublic
 					? (template as PublicCalculationTemplate).verified
 					: false,
@@ -1111,14 +1098,20 @@ export const useTemplates = (
 		[]
 	);
 
-	// ==================== EFECTOS ====================
+	// EFECTOS CONTROLADOS (sin bucle infinito)
 	useEffect(() => {
-		if (config.autoLoad) {
+		if (config.autoLoad && !hasLoadedInitially.current) {
+			hasLoadedInitially.current = true;
 			refreshTemplates();
 		}
-	}, [config.autoLoad, refreshTemplates]);
 
-	// ==================== RETORNO ====================
+		return () => {
+			if (abortControllerRef.current) {
+				abortControllerRef.current.abort();
+			}
+		};
+	}, []); // Solo se ejecuta una vez al montar
+
 	return {
 		// Estados principales
 		templates,
@@ -1180,7 +1173,7 @@ export const useTemplates = (
 	};
 };
 
-// ==================== HOOKS ESPECÍFICOS ====================
+// HOOKS ESPECÍFICOS
 export const useTemplateForm = (template?: MyCalculationTemplate) => {
 	const {
 		formState,
@@ -1210,12 +1203,7 @@ export const useTemplateForm = (template?: MyCalculationTemplate) => {
 
 export const useTemplateSearch = () => {
 	const {searchTemplates, getPublicTemplates, getMyTemplates} = useTemplates();
-
-	return {
-		searchTemplates,
-		getPublicTemplates,
-		getMyTemplates,
-	};
+	return {searchTemplates, getPublicTemplates, getMyTemplates};
 };
 
 export default useTemplates;

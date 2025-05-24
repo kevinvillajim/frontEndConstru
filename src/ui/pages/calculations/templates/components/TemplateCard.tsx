@@ -1,258 +1,381 @@
 import React from "react";
 import {
-	EyeIcon,
-	PencilIcon,
-	TrashIcon,
-	DocumentDuplicateIcon,
-	ShareIcon,
-	BookOpenIcon,
 	ClockIcon,
-	LightBulbIcon } from "@heroicons/react/24/outline";
-import {StarIcon as StarSolidIcon} from "@heroicons/react/24/solid";
-import type {MyCalculationTemplate} from "../../shared/types/template.types";
+	StarIcon,
+	CheckBadgeIcon,
+	BookOpenIcon,
+	UserGroupIcon,
+	CalculatorIcon,
+	EyeIcon,
+	FireIcon,
+	HeartIcon,
+	ArrowTrendingUpIcon,
+	BoltIcon,
+	BuildingOffice2Icon,
+	AcademicCapIcon,
+	BeakerIcon,
+	WrenchScrewdriverIcon,
+	CubeIcon,
+	Squares2X2Icon,
+} from "@heroicons/react/24/outline";
+import {HeartIcon as HeartSolidIcon} from "@heroicons/react/24/solid";
+import type {CalculationTemplate} from "../../shared/types/template.types";
 
 interface TemplateCardProps {
-	template: MyCalculationTemplate;
-	onToggleFavorite: (templateId: string) => void;
-	onDuplicate: (templateId: string) => void;
-	onDelete: (template: MyCalculationTemplate) => void;
-	onToggleStatus: (templateId: string) => void;
-	onView: (templateId: string) => void;
-	onEdit: (templateId: string) => void;
-	onShare: (template: MyCalculationTemplate) => void;
-	onSuggestChange?: (templateId: string) => void;
+	template: CalculationTemplate;
+	onSelect: () => void;
+	onPreview?: () => void;
+	onToggleFavorite: () => void;
 	animationDelay?: number;
+	showPreviewButton?: boolean;
+	compact?: boolean;
 }
 
-const categories = {
-	structural: {
-		name: "Estructural",
-		icon: "🏗️",
-		color: "bg-blue-50 text-blue-700",
-	},
-	electrical: {
-		name: "Eléctrico",
-		icon: "⚡",
-		color: "bg-yellow-50 text-yellow-700",
-	},
-	architectural: {
-		name: "Arquitectónico",
-		icon: "🏛️",
-		color: "bg-green-50 text-green-700",
-	},
-	hydraulic: {
-		name: "Hidráulico",
-		icon: "🚰",
-		color: "bg-cyan-50 text-cyan-700",
-	},
-	custom: {
-		name: "Personalizada",
-		icon: "⚒️",
-		color: "bg-purple-50 text-purple-700",
-	},
+// Helper para asegurar que un valor sea un número válido
+const ensureNumber = (value: any, defaultValue: number = 0): number => {
+	if (typeof value === "number" && !isNaN(value)) {
+		return value;
+	}
+	if (typeof value === "string") {
+		const parsed = parseFloat(value);
+		return !isNaN(parsed) ? parsed : defaultValue;
+	}
+	return defaultValue;
 };
 
-const TemplateCard: React.FC<TemplateCardProps> = ({
+// Helper para formatear rating de manera segura
+const formatRating = (rating: any): string => {
+	const numRating = ensureNumber(rating, 0);
+	return numRating.toFixed(1);
+};
+
+// Mapeo de categorías a iconos
+const getCategoryIcon = (category: string, type?: string) => {
+	switch (category?.toLowerCase() || type?.toLowerCase()) {
+		case "structural":
+		case "foundation":
+			return BuildingOffice2Icon;
+		case "electrical":
+		case "installation":
+			return BoltIcon;
+		case "architectural":
+			return AcademicCapIcon;
+		case "hydraulic":
+		case "plumbing":
+			return BeakerIcon;
+		case "mechanical":
+			return WrenchScrewdriverIcon;
+		case "geotechnical":
+			return CubeIcon;
+		case "material_calculation":
+			return Squares2X2Icon;
+		default:
+			return CalculatorIcon;
+	}
+};
+
+export const TemplateCard: React.FC<TemplateCardProps> = ({
 	template,
+	onSelect,
+	onPreview,
 	onToggleFavorite,
-	onDuplicate,
-	onDelete,
-	onToggleStatus,
-	onView,
-	onEdit,
-	onShare,
-	onSuggestChange,
 	animationDelay = 0,
+	showPreviewButton = true,
+	compact = false,
 }) => {
-	const formatDate = (dateString: string) => {
-		return new Date(dateString).toLocaleDateString("es-EC", {
-			day: "2-digit",
-			month: "short",
-			year: "numeric",
-		});
+	// Normalizar datos del template para evitar errores
+	const normalizedTemplate = {
+		...template,
+		rating: ensureNumber(template.rating || template.average_rating, 0),
+		usageCount: ensureNumber(template.usageCount || template.usage_count, 0),
+		verified: Boolean(template.verified || template.is_verified),
+		necReference: template.necReference || template.nec_reference || "NEC",
+		profession:
+			template.profession ||
+			(template.targetProfession ? [template.targetProfession] : []),
+		estimatedTime: template.estimatedTime || "10-15 min",
+		requirements: template.requirements || [],
+		tags: template.tags || [],
+		isFavorite: Boolean(template.isFavorite),
+		isNew: Boolean(template.isNew),
+		trending: Boolean(template.trending),
+		popular: Boolean(template.popular),
 	};
 
-	const getCategoryInfo = (category: string) => {
-		return categories[category as keyof typeof categories] || categories.custom;
-	};
-
-	const getStatusBadge = (status: string, isActive: boolean) => {
-		if (status === "draft") {
-			return (
-				<span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full font-medium">
-					Borrador
-				</span>
-			);
+	const getDifficultyConfig = (difficulty: string) => {
+		switch (difficulty) {
+			case "basic":
+				return {
+					color: "bg-green-100 text-green-700 border-green-200",
+					label: "Básico",
+				};
+			case "intermediate":
+				return {
+					color: "bg-yellow-100 text-yellow-700 border-yellow-200",
+					label: "Intermedio",
+				};
+			case "advanced":
+				return {
+					color: "bg-red-100 text-red-700 border-red-200",
+					label: "Avanzado",
+				};
+			default:
+				return {
+					color: "bg-gray-100 text-gray-700 border-gray-200",
+					label: difficulty || "General",
+				};
 		}
-		if (!isActive) {
-			return (
-				<span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">
-					Archivada
-				</span>
-			);
-		}
-		return (
-			<span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">
-				Activa
-			</span>
-		);
 	};
 
-	const categoryInfo = getCategoryInfo(template.category);
+	const getTrendingIcon = () => {
+		if (normalizedTemplate.trending) {
+			return <ArrowTrendingUpIcon className="h-4 w-4 text-orange-500" />;
+		}
+		if (normalizedTemplate.popular || normalizedTemplate.usageCount > 100) {
+			return <FireIcon className="h-4 w-4 text-red-500" />;
+		}
+		return null;
+	};
+
+	const difficultyConfig = getDifficultyConfig(normalizedTemplate.difficulty);
+
+	// Obtener el icono correcto basado en la categoría/tipo
+	const IconComponent =
+		normalizedTemplate.icon ||
+		getCategoryIcon(normalizedTemplate.category, normalizedTemplate.type);
+
+	// Color de gradiente basado en categoría
+	const getGradientColor = (category: string) => {
+		switch (category?.toLowerCase()) {
+			case "structural":
+			case "foundation":
+				return "from-blue-600 to-blue-500";
+			case "electrical":
+			case "installation":
+				return "from-yellow-600 to-yellow-500";
+			case "architectural":
+				return "from-green-600 to-green-500";
+			case "hydraulic":
+			case "plumbing":
+				return "from-cyan-600 to-cyan-500";
+			case "mechanical":
+				return "from-purple-600 to-purple-500";
+			case "geotechnical":
+				return "from-stone-600 to-stone-500";
+			default:
+				return normalizedTemplate.color || "from-primary-600 to-secondary-500";
+		}
+	};
 
 	return (
 		<div
-			className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 overflow-hidden"
-			style={{animationDelay: `${animationDelay * 0.05}s`}}
+			className="group bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden animate-fade-in"
+			style={{animationDelay: `${animationDelay}s`}}
 		>
-			<div className="p-6">
-				{/* Header */}
-				<div className="flex items-start justify-between mb-4">
-					<div className="flex-1 min-w-0">
-						<div className="flex items-center gap-2 mb-2">
-							<h3 className="font-semibold text-gray-900 truncate">
-								{template.name}
-							</h3>
-							{getStatusBadge(template.status, template.isActive)}
-						</div>
-						<p className="text-sm text-gray-600 mb-3 line-clamp-2">
-							{template.description}
-						</p>
-						<div
-							className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${categoryInfo.color}`}
-						>
-							<span>{categoryInfo.icon}</span>
-							<span>{categoryInfo.name}</span>
-						</div>
-					</div>
-
-					<button
-						onClick={() => onToggleFavorite(template.id)}
-						className="p-1 hover:bg-gray-100 rounded-full transition-colors shrink-0 ml-2"
-						title={
-							template.isFavorite
-								? "Quitar de favoritos"
-								: "Agregar a favoritos"
-						}
+			{/* Header con gradiente y patrones */}
+			<div
+				className={`h-32 bg-gradient-to-r ${getGradientColor(normalizedTemplate.category)} relative overflow-hidden`}
+			>
+				{/* Patrón arquitectónico */}
+				<div className="absolute inset-0 opacity-20">
+					<svg
+						className="w-full h-full"
+						viewBox="0 0 100 100"
+						preserveAspectRatio="none"
 					>
-						<StarSolidIcon
-							className={`h-4 w-4 ${
-								template.isFavorite ? "text-secondary-500" : "text-gray-300"
-							}`}
+						<defs>
+							<pattern
+								id={`pattern-${normalizedTemplate.id}`}
+								x="0"
+								y="0"
+								width="20"
+								height="20"
+								patternUnits="userSpaceOnUse"
+							>
+								<path
+									d="M 20 0 L 0 0 0 20"
+									fill="none"
+									stroke="white"
+									strokeWidth="0.5"
+								/>
+							</pattern>
+						</defs>
+						<rect
+							width="100"
+							height="100"
+							fill={`url(#pattern-${normalizedTemplate.id})`}
 						/>
-					</button>
+					</svg>
+				</div>
+
+				{/* Icono principal */}
+				<div className="absolute inset-0 flex items-center justify-center">
+					<div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+						{IconComponent && <IconComponent className="h-8 w-8 text-white" />}
+					</div>
+				</div>
+
+				{/* Indicadores superiores */}
+				<div className="absolute top-4 left-4 flex items-center gap-2">
+					{normalizedTemplate.verified && (
+						<div className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full">
+							<CheckBadgeIcon className="h-4 w-4 text-white" />
+						</div>
+					)}
+					{normalizedTemplate.isNew && (
+						<span className="px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">
+							NUEVO
+						</span>
+					)}
+					{getTrendingIcon() && (
+						<div className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full">
+							{getTrendingIcon()}
+						</div>
+					)}
+				</div>
+
+				{/* Botón de favorito */}
+				<button
+					onClick={(e) => {
+						e.stopPropagation();
+						onToggleFavorite();
+					}}
+					className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all duration-200 transform hover:scale-110"
+				>
+					{normalizedTemplate.isFavorite ? (
+						<HeartSolidIcon className="h-4 w-4 text-red-400" />
+					) : (
+						<HeartIcon className="h-4 w-4 text-white" />
+					)}
+				</button>
+
+				{/* Badge de dificultad */}
+				<div className="absolute bottom-4 left-4">
+					<span
+						className={`px-2 py-1 rounded-full text-xs font-medium border ${difficultyConfig.color}`}
+					>
+						{difficultyConfig.label}
+					</span>
+				</div>
+			</div>
+
+			{/* Contenido principal */}
+			<div className={`p-6 ${compact ? "p-4" : ""}`}>
+				{/* Título y descripción */}
+				<div className="mb-4">
+					<h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors duration-200 line-clamp-1">
+						{normalizedTemplate.name}
+					</h3>
+					<p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
+						{normalizedTemplate.description}
+					</p>
 				</div>
 
 				{/* Metadata */}
-				<div className="space-y-2 mb-4">
-					<div className="flex items-center justify-between text-xs text-gray-500">
-						<span>Versión {template.version}</span>
-						<span>{template.usageCount} usos</span>
+				<div className="grid grid-cols-2 gap-3 mb-4 text-xs text-gray-500">
+					<div className="flex items-center gap-1">
+						<BookOpenIcon className="h-3 w-3 text-primary-600" />
+						<span className="truncate">{normalizedTemplate.necReference}</span>
 					</div>
-					<div className="flex items-center justify-between text-xs text-gray-500">
-						<span>Modificado: {formatDate(template.lastModified)}</span>
-						{template.isPublic && (
-							<span className="text-green-600 font-medium">Pública</span>
-						)}
+					<div className="flex items-center gap-1">
+						<ClockIcon className="h-3 w-3 text-green-600" />
+						<span>{normalizedTemplate.estimatedTime}</span>
 					</div>
-					{template.necReference && (
-						<div className="flex items-center gap-1 text-xs text-primary-600">
-							<BookOpenIcon className="h-3 w-3" />
-							<span className="truncate">{template.necReference}</span>
-						</div>
-					)}
-					{template.estimatedTime && (
-						<div className="flex items-center gap-1 text-xs text-gray-500">
-							<ClockIcon className="h-3 w-3" />
-							<span>{template.estimatedTime}</span>
-						</div>
-					)}
+					<div className="flex items-center gap-1">
+						<StarIcon className="h-3 w-3 text-yellow-500" />
+						<span>
+							{formatRating(normalizedTemplate.rating)} (
+							{normalizedTemplate.usageCount})
+						</span>
+					</div>
+					<div className="flex items-center gap-1">
+						<UserGroupIcon className="h-3 w-3 text-gray-500" />
+						<span>{normalizedTemplate.profession?.length || 0} esp.</span>
+					</div>
 				</div>
 
-				{/* Tags */}
-				<div className="flex flex-wrap gap-1 mb-4">
-					{template.tags.slice(0, 3).map((tag, tagIndex) => (
-						<span
-							key={tagIndex}
-							className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md"
-						>
-							{tag}
-						</span>
-					))}
-					{template.tags.length > 3 && (
-						<span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-md">
-							+{template.tags.length - 3}
-						</span>
+				{/* Requerimientos principales - Solo mostrar si existen */}
+				{!compact &&
+					normalizedTemplate.requirements &&
+					normalizedTemplate.requirements.length > 0 && (
+						<div className="mb-4">
+							<p className="text-xs font-medium text-gray-700 mb-2">
+								Datos requeridos:
+							</p>
+							<div className="flex flex-wrap gap-1">
+								{normalizedTemplate.requirements.slice(0, 2).map((req, idx) => (
+									<span
+										key={idx}
+										className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md truncate max-w-[120px]"
+										title={req}
+									>
+										{req}
+									</span>
+								))}
+								{normalizedTemplate.requirements.length > 2 && (
+									<span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-md">
+										+{normalizedTemplate.requirements.length - 2}
+									</span>
+								)}
+							</div>
+						</div>
 					)}
-				</div>
 
-				{/* Actions */}
-				<div className="flex justify-between items-center">
-					<div className="flex gap-1">
+				{/* Tags - Solo mostrar si existen */}
+				{normalizedTemplate.tags && normalizedTemplate.tags.length > 0 && (
+					<div className="mb-6">
+						<div className="flex flex-wrap gap-1">
+							{normalizedTemplate.tags.slice(0, 3).map((tag, idx) => (
+								<span
+									key={idx}
+									className="px-2 py-1 bg-primary-50 text-primary-600 text-xs rounded-md font-medium"
+								>
+									#{tag}
+								</span>
+							))}
+							{normalizedTemplate.tags.length > 3 && (
+								<span className="px-2 py-1 bg-gray-50 text-gray-500 text-xs rounded-md">
+									+{normalizedTemplate.tags.length - 3}
+								</span>
+							)}
+						</div>
+					</div>
+				)}
+
+				{/* Botones de acción */}
+				<div className="space-y-2">
+					{/* Botón principal */}
+					<button
+						onClick={onSelect}
+						className="w-full bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-2 font-medium"
+					>
+						<CalculatorIcon className="h-4 w-4" />
+						<span>Usar Plantilla</span>
+					</button>
+
+					{/* Botón de vista previa */}
+					{showPreviewButton && onPreview && (
 						<button
-							onClick={() => onView(template.id)}
-							className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
-							title="Ver plantilla"
+							onClick={(e) => {
+								e.stopPropagation();
+								onPreview();
+							}}
+							className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 text-sm"
 						>
 							<EyeIcon className="h-4 w-4" />
+							<span>Vista Previa</span>
 						</button>
-						<button
-							onClick={() => onEdit(template.id)}
-							className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
-							title="Editar plantilla"
-						>
-							<PencilIcon className="h-4 w-4" />
-						</button>
-						<button
-							onClick={() => onDuplicate(template.id)}
-							className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
-							title="Duplicar plantilla"
-						>
-							<DocumentDuplicateIcon className="h-4 w-4" />
-						</button>
-						{template.isPublic && (
-							<>
-								<button
-									onClick={() => onShare(template)}
-									className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-									title="Compartir plantilla"
-								>
-									<ShareIcon className="h-4 w-4" />
-								</button>
-								{onSuggestChange && (
-									<button
-										onClick={() => onSuggestChange(template.id)}
-										className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-										title="Sugerir mejoras"
-									>
-										<LightBulbIcon className="h-4 w-4" />
-									</button>
-								)}
-							</>
-						)}
-						<button
-							onClick={() => onDelete(template)}
-							className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-							title="Eliminar plantilla"
-						>
-							<TrashIcon className="h-4 w-4" />
-						</button>
-					</div>
-
-					<button
-						onClick={() => onToggleStatus(template.id)}
-						className={`px-4 py-2 text-sm rounded-lg transition-colors font-medium ${
-							template.isActive
-								? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-								: "bg-primary-600 text-white hover:bg-primary-700"
-						}`}
-					>
-						{template.isActive ? "Archivar" : "Activar"}
-					</button>
+					)}
 				</div>
 			</div>
+
+			{/* Efecto de hover */}
+			<div className="absolute inset-0 bg-gradient-to-r from-primary-600/5 to-secondary-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+			{/* Sombra proyectada elegante */}
+			<div
+				className={`absolute inset-0 bg-gradient-to-r ${getGradientColor(normalizedTemplate.category)} rounded-2xl -z-10 blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500 transform group-hover:scale-110`}
+			/>
 		</div>
 	);
 };
-
-export default TemplateCard;
