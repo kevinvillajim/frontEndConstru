@@ -43,11 +43,14 @@ const user = {
 // Endpoints de cálculos técnicos
 const calculations = {
 	execute: getFullUrl("/calculations/execute"),
-	saveResult: getFullUrl("/calculations/save-result"),
+	saveResult: getFullUrl("/calculations/save"),
+	recommendations: getFullUrl("/calculations/recommendations"),
 	savedCalculations: getFullUrl("/calculations/saved"), // Endpoint que puede necesitar ser agregado al backend
 	templates: {
 		list: getFullUrl("/calculations/templates"),
 		create: getFullUrl("/calculations/templates"),
+		search: getFullUrl("/calculations/templates/search"), // Añadida ruta de búsqueda
+		trending: getFullUrl("/calculations/templates/trending"),
 		getById: (id: string) => getFullUrl(`/calculations/templates/${id}`),
 		update: (id: string) => getFullUrl(`/calculations/templates/${id}`),
 		delete: (id: string) => getFullUrl(`/calculations/templates/${id}`),
@@ -57,9 +60,23 @@ const calculations = {
 		exportMultiple: getFullUrl("/calculations/templates/export-multiple"),
 		import: getFullUrl("/calculations/templates/import"),
 		importMultiple: getFullUrl("/calculations/templates/import-multiple"),
-		toggleFavorite: (id: string) =>
-			getFullUrl(`/calculations/templates/${id}/favorite`), // Endpoint que puede necesitar ser agregado
+		toggleFavorite: (templateId: string) =>
+			getFullUrl(`/calculations/templates/${templateId}/favorite`), // Endpoint que puede necesitar ser agregado
+		getUserFavorites: getFullUrl("/calculations/users/favorites"),
+
+		rate: (templateId: string) =>
+			getFullUrl(`/calculations/templates/${templateId}/rate`),
+		// Sugerencias
+		suggest: (templateId: string) =>
+			getFullUrl(`/calculations/templates/${templateId}/suggestions`),
+		getSuggestions: (templateId: string) =>
+			getFullUrl(`/calculations/templates/${templateId}/suggestions`),
+		getUserSuggestions: getFullUrl("/users/suggestions"),
 	},
+	compare: getFullUrl("/calculations/compare"),
+	savedComparisons: getFullUrl("/calculations/comparisons"),
+	deleteComparison: (id: string) =>
+		getFullUrl(`/calculations/comparisons/${id}`),
 };
 
 // Endpoints de recomendaciones

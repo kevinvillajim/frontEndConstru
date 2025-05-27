@@ -1,7 +1,5 @@
 // src/ui/pages/calculations/shared/types/template.types.ts
 
-import type {ComponentType} from "react";
-
 // ==================== TIPOS BASE DESDE LA DB ====================
 /**
  * Estructura real de la base de datos
@@ -53,17 +51,22 @@ export interface TemplateParameter {
 
 export interface CalculationResult {
 	id?: string;
-	templateId?: string;
-	timestamp?: string;
-	inputs?: Record<string, any>;
-	outputs?: Record<string, any>;
-	metadata?: {
-		executionTime?: number;
-		necCompliance?: boolean;
-		warnings?: string[];
-		recommendations?: string[];
-	};
-	[key: string]: any;
+	calculationTemplateId: string;
+	projectId?: string;
+	userId: string;
+	inputParameters: Record<string, any>;
+	results: Record<string, any>;
+	isSaved: boolean;
+	name?: string;
+	notes?: string;
+	executionTimeMs?: number;
+	wasSuccessful: boolean;
+	errorMessage?: string;
+	usedInProject: boolean;
+	ledToMaterialOrder: boolean;
+	ledToBudget: boolean;
+	createdAt?: string;
+	updatedAt?: string;
 }
 
 // ==================== TEMPLATES PARA UI ====================
@@ -75,38 +78,38 @@ export interface CalculationTemplate {
 	id: string;
 	name: string;
 	description: string;
-	version?: string;
-	category: string;
-	subcategory?: string;
-	profession?: string[];
-	targetProfession?: string; // Para compatibilidad con DB
+	type: string; // Coincide con CalculationType del backend
+	targetProfession: string; // Coincide con ProfessionType del backend
+	formula: string;
+	necReference: string; // Coincide con nec_reference del backend
+	isActive: boolean;
+	version: number; // number en lugar de string
+	parentTemplateId?: string;
+	source: "system" | "user" | "community" | "improved";
+	createdBy?: string;
+	isVerified: boolean;
+	verifiedBy?: string;
+	verifiedAt?: string;
+	isFeatured: boolean;
+	usageCount: number;
+	averageRating: number;
+	ratingCount: number;
 	tags?: string[];
-	difficulty?: "basic" | "intermediate" | "advanced";
-	estimatedTime?: string;
-	necReference?: string;
-	nec_reference?: string; // Para compatibilidad con DB
-	requirements?: string[];
+	shareLevel: "private" | "organization" | "public";
+	difficulty?: string;
+	estimatedTime?: number; // en minutos
+	complianceLevel?: string;
 	parameters?: TemplateParameter[];
-	verified?: boolean;
-	is_verified?: boolean; // Para compatibilidad con DB
-	isPublic?: boolean;
-	isNew?: boolean;
+	createdAt: string;
+	updatedAt: string;
+
+	// Campos computados para UI
 	trending?: boolean;
 	popular?: boolean;
-	rating?: number;
-	average_rating?: number; // Para compatibilidad con DB
-	usageCount?: number;
-	usage_count?: number; // Para compatibilidad con DB
-	lastUpdated?: string;
+	isNew?: boolean;
 	isFavorite?: boolean;
 	color?: string;
-	icon?: ComponentType<any> | null;
-	allowSuggestions?: boolean;
-	createdBy?: string;
-	created_by?: string; // Para compatibilidad con DB
-	contributors?: string[];
-	type?: string; // Para TemplateCard
-	formula?: string;
+	icon?: any;
 }
 
 /**
