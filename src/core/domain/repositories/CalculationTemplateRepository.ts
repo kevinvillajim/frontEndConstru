@@ -1,33 +1,27 @@
-// core/domain/repositories/CalculationTemplateRepository.ts
+// src/core/domain/repositories/CalculationTemplateRepository.ts
 
-import {
-	CalculationTemplate
-} from "../models/calculations/CalculationTemplate";
 import type {
+	CalculationTemplate,
 	CalculationResult,
 } from "../models/calculations/CalculationTemplate";
+
+// ==================== FILTROS ====================
 export interface TemplateFilters {
 	searchTerm?: string;
-	type?: string;
+	category?: string | null;
+	subcategory?: string | null;
 	targetProfession?: string;
-	isVerified?: boolean;
-	isFeatured?: boolean;
-	isActive?: boolean;
-	shareLevel?: "private" | "public" | "organization";
+	difficulty?: "basic" | "intermediate" | "advanced" | null;
+	showOnlyFavorites?: boolean;
+	showOnlyVerified?: boolean;
+	showOnlyFeatured?: boolean;
 	tags?: string[];
-	createdBy?: string;
-	difficulty?: "basic" | "intermediate" | "advanced";
-	sortBy?:
-		| "name"
-		| "usage_count"
-		| "average_rating"
-		| "created_at"
-		| "updated_at";
-	sortOrder?: "ASC" | "DESC";
-	page?: number;
+	sortBy?: "popular" | "rating" | "trending" | "recent" | "name";
 	limit?: number;
+	page?: number;
 }
 
+// ==================== RESPUESTA PAGINADA ====================
 export interface PaginatedResult<T> {
 	data: T[];
 	pagination: {
@@ -38,82 +32,66 @@ export interface PaginatedResult<T> {
 	};
 }
 
+// ==================== REPOSITORIO DE PLANTILLAS ====================
 export interface CalculationTemplateRepository {
-	// Operaciones básicas CRUD
-	findById(id: string): Promise<CalculationTemplate | null>;
+	// Métodos básicos CRUD
 	findAll(
 		filters?: TemplateFilters
 	): Promise<PaginatedResult<CalculationTemplate>>;
-	create(template: CalculationTemplate): Promise<CalculationTemplate>;
+	findById(id: string): Promise<CalculationTemplate | null>;
+	create(
+		templateData: Partial<CalculationTemplate>
+	): Promise<CalculationTemplate>;
 	update(
 		id: string,
-		template: Partial<CalculationTemplate>
+		templateData: Partial<CalculationTemplate>
 	): Promise<CalculationTemplate>;
 	delete(id: string): Promise<boolean>;
 
-	// Operaciones específicas del dominio
+	// Métodos de búsqueda específicos
 	findByType(type: string): Promise<CalculationTemplate[]>;
-	findByProfession(profession: string): Promise<CalculationTemplate[]>;
 	findVerified(): Promise<CalculationTemplate[]>;
 	findFeatured(): Promise<CalculationTemplate[]>;
 	findTrending(): Promise<CalculationTemplate[]>;
-	findPublic(): Promise<CalculationTemplate[]>;
-
-	// Búsqueda y filtrado
 	search(
 		query: string,
 		filters?: TemplateFilters
 	): Promise<PaginatedResult<CalculationTemplate>>;
-	findByTags(tags: string[]): Promise<CalculationTemplate[]>;
-	findSimilar(
-		templateId: string,
-		limit?: number
-	): Promise<CalculationTemplate[]>;
 
-	// Operaciones de estadísticas
-	getUsageStats(
-		templateId: string
-	): Promise<{usageCount: number; averageRating: number; ratingCount: number}>;
-	incrementUsage(templateId: string): Promise<void>;
-	addRating(templateId: string, rating: number): Promise<void>;
-
-	// Operaciones de recomendaciones
+	// Métodos de recomendaciones
 	getRecommendations(
 		userId?: string,
 		templateId?: string,
 		profession?: string,
 		limit?: number
 	): Promise<CalculationTemplate[]>;
+	findSimilar(
+		templateId: string,
+		limit?: number
+	): Promise<CalculationTemplate[]>;
+
+	// Métodos de estadísticas
+	incrementUsage(templateId: string): Promise<void>;
+	getUsageStats(templateId: string): Promise<Record<string, unknown>>;
 }
 
-// Repositorio para ejecuciones de cálculos
+// ==================== REPOSITORIO DE EJECUCIÓN ====================
 export interface CalculationExecutionRepository {
-	// Guardar resultado de cálculo
+	// Guardar y obtener ejecuciones
 	saveExecution(result: CalculationResult): Promise<string>;
-
-	// Obtener historial de cálculos
 	getExecutionHistory(
 		userId?: string,
 		templateId?: string,
 		limit?: number
 	): Promise<CalculationResult[]>;
+	getExecution(id: string): Promise<CalculationResult | null>;
+	deleteExecution(id: string): Promise<boolean>;
 
-	// Obtener ejecución específica
-	getExecution(executionId: string): Promise<CalculationResult | null>;
-
-	// Eliminar ejecución
-	deleteExecution(executionId: string): Promise<boolean>;
-
-	// Estadísticas de ejecuciones
-	getExecutionStats(templateId: string): Promise<{
-		totalExecutions: number;
-		averageExecutionTime: number;
-		successRate: number;
-		mostUsedParameters: Record<string, any>;
-	}>;
+	// Estadísticas de ejecución
+	getExecutionStats(templateId?: string): Promise<Record<string, unknown>>;
 }
 
-// Repositorio para favoritos de usuario
+// ==================== REPOSITORIO DE FAVORITOS ====================
 export interface UserFavoritesRepository {
 	// Gestión de favoritos
 	addFavorite(userId: string, templateId: string): Promise<void>;
@@ -122,7 +100,5 @@ export interface UserFavoritesRepository {
 	isFavorite(userId: string, templateId: string): Promise<boolean>;
 
 	// Estadísticas de favoritos
-	getFavoriteStats(
-		templateId: string
-	): Promise<{count: number; users: string[]}>;
+	getFavoriteStats(templateId: string): Promise<Record<string, unknown>>;
 }

@@ -3,21 +3,26 @@
 import {useState, useEffect, useCallback, useMemo} from "react";
 import {templateApplicationService} from "../../../../../core/application/ServiceFactory";
 import type {
-	CalculationTemplate as UITemplate,
+	CalculationTemplate,
 	TemplateFilters,
 	SortOption,
+	CatalogStats,
+	UseCatalogTemplatesOptions,
+	UseCatalogSearchReturn,
+	TemplateCategory,
 } from "../types/template.types";
+import {TEMPLATE_CATEGORIES} from "../types/template.types";
 import {useAuth} from "../../../../context/AuthContext";
-
 
 // ==================== HOOK PRINCIPAL ====================
 export const useCatalogTemplates = (
 	options: UseCatalogTemplatesOptions = {}
 ) => {
 	const {user} = useAuth();
-	const [templates, setTemplates] = useState<UITemplate[]>([]);
+	const [templates, setTemplates] = useState<CalculationTemplate[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
 	// Cargar templates
 	const refreshTemplates = useCallback(async () => {
@@ -85,7 +90,7 @@ export const useCatalogTemplates = (
 		},
 		[user]
 	);
-	
+
 	// Cargar al inicializar
 	useEffect(() => {
 		if (options.autoLoad !== false) {
@@ -95,9 +100,19 @@ export const useCatalogTemplates = (
 
 	// Calcular categorías con conteos
 	const categoriesWithCounts = useMemo(() => {
-		return MOCK_CATEGORIES.map((category) => ({
+		return TEMPLATE_CATEGORIES.map((category) => ({
 			...category,
-			count: templates.filter((t) => t.category === category.id).length,
+			count: templates.filter(
+				(t) => t.type === category.id || t.category === category.id
+			).length,
+			subcategories: category.subcategories?.map((sub) => ({
+				...sub,
+				count: templates.filter(
+					(t) =>
+						(t.type === category.id || t.category === category.id) &&
+						(t.subcategory === sub.id || t.type === sub.id)
+				).length,
+			})),
 		}));
 	}, [templates]);
 
@@ -105,12 +120,17 @@ export const useCatalogTemplates = (
 	const stats = useMemo((): CatalogStats => {
 		return {
 			total: templates.length,
-			verifiedCount: templates.filter((t) => t.verified).length,
+			verifiedCount: templates.filter((t) => t.isVerified || t.verified).length,
 			avgRating:
 				templates.length > 0
-					? templates.reduce((sum, t) => sum + t.rating, 0) / templates.length
+					? templates.reduce(
+							(sum, t) => sum + (t.averageRating || t.rating || 0),
+							0
+						) / templates.length
 					: 0,
-			totalUsage: templates.reduce((sum, t) => sum + t.usageCount, 0),
+			totalUsage: templates.reduce((sum, t) => sum + (t.usageCount || 0), 0),
+			trendingCount: templates.filter((t) => t.trending).length,
+			popularCount: templates.filter((t) => t.popular).length,
 		};
 	}, [templates]);
 
@@ -140,9 +160,12 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 	// Hook principal para obtener templates
 	const {templates: allTemplates} = useCatalogTemplates({autoLoad: true});
 
-	const updateFilter = useCallback((key: keyof TemplateFilters, value: any) => {
-		setActiveFilters((prev) => ({...prev, [key]: value}));
-	}, []);
+	const updateFilter = useCallback(
+		(key: keyof TemplateFilters, value: unknown) => {
+			setActiveFilters((prev) => ({...prev, [key]: value}));
+		},
+		[]
+	);
 
 	const clearFilters = useCallback(() => {
 		setSearchTerm("");
@@ -166,14 +189,18 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 		// Filtrar por categoría
 		if (activeFilters.category) {
 			filtered = filtered.filter(
-				(template) => template.category === activeFilters.category
+				(template) =>
+					template.type === activeFilters.category ||
+					template.category === activeFilters.category
 			);
 		}
 
 		// Filtrar por subcategoría
 		if (activeFilters.subcategory) {
 			filtered = filtered.filter(
-				(template) => template.subcategory === activeFilters.subcategory
+				(template) =>
+					template.subcategory === activeFilters.subcategory ||
+					template.type === activeFilters.subcategory
 			);
 		}
 
@@ -191,36 +218,43 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 
 		// Filtrar solo verificados
 		if (activeFilters.showOnlyVerified) {
-			filtered = filtered.filter((template) => template.verified);
+			filtered = filtered.filter(
+				(template) => template.isVerified || template.verified
+			);
 		}
 
 		// Filtrar solo destacados
 		if (activeFilters.showOnlyFeatured) {
 			filtered = filtered.filter(
-				(template) => template.trending || template.popular
+				(template) =>
+					template.trending || template.popular || template.isFeatured
 			);
 		}
 
 		// Ordenar
 		switch (sortBy) {
 			case "popular":
-				filtered.sort((a, b) => b.usageCount - a.usageCount);
+				filtered.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
 				break;
 			case "rating":
-				filtered.sort((a, b) => b.rating - a.rating);
+				filtered.sort(
+					(a, b) =>
+						(b.averageRating || b.rating || 0) -
+						(a.averageRating || a.rating || 0)
+				);
 				break;
 			case "trending":
 				filtered.sort((a, b) => {
 					if (b.trending && !a.trending) return 1;
 					if (!b.trending && a.trending) return -1;
-					return b.usageCount - a.usageCount;
+					return (b.usageCount || 0) - (a.usageCount || 0);
 				});
 				break;
 			case "recent":
 				filtered.sort(
 					(a, b) =>
-						new Date(b.lastUpdated).getTime() -
-						new Date(a.lastUpdated).getTime()
+						new Date(b.updatedAt || b.lastUpdated || 0).getTime() -
+						new Date(a.updatedAt || a.lastUpdated || 0).getTime()
 				);
 				break;
 			case "name":

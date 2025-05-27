@@ -3,7 +3,7 @@
 import type {
 	CalculationResult,
 } from "../../domain/models/calculations/CalculationTemplate";
-import {
+import type {
 	CalculationTemplate,
 } from "../../domain/models/calculations/CalculationTemplate";
 import type {
@@ -60,9 +60,7 @@ export interface TemplateApplicationService {
 	): Promise<CalculationResult[]>;
 }
 
-export class TemplateApplicationServiceImpl
-	implements TemplateApplicationService
-{
+export class TemplateApplicationServiceImpl implements TemplateApplicationService {
 	constructor(
 		private readonly templateRepository: CalculationTemplateRepository,
 		private readonly executionRepository: CalculationExecutionRepository,
@@ -236,7 +234,10 @@ export class TemplateApplicationServiceImpl
 				return true;
 			}
 		} catch (error) {
-			throw new Error(`Failed to toggle favorite: ${error.message}`);
+			console.error("Error in toggleFavorite:", error);
+			throw new Error(
+				`Failed to toggle favorite: ${error instanceof Error ? error.message : "Unknown error"}`
+			);
 		}
 	}
 
