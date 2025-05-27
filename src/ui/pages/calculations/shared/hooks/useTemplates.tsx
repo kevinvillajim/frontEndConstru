@@ -2,7 +2,7 @@
 
 import {useState, useEffect, useCallback, useMemo, useRef} from "react";
 import {templateApplicationService} from "../../../../../core/application/ServiceFactory";
-import type {CalculationTemplate} from "../../../../../core/domain/models/calculations/CalculationTemplate";
+import endpoints from "../../../../../utils/endpoints";
 import type {
 	TemplateFilters as DomainTemplateFilters,
 	PaginatedResult,
@@ -126,7 +126,7 @@ export interface UseTemplatesReturn {
 
 // ==================== CONFIGURACIÓN ====================
 const DEFAULT_OPTIONS: UseTemplateOptions = {
-	autoLoad: false, // Cambiado a false para evitar carga automática
+	autoLoad: false,
 	defaultFilters: {},
 	includePublic: true,
 	includePersonal: true,
@@ -159,158 +159,258 @@ const INITIAL_FORM_STATE: TemplateFormState = {
 };
 
 // ==================== CONVERSIÓN DE TIPOS ====================
-const convertDomainToMyTemplate = (
-	domain: CalculationTemplate
+const convertBackendToMyTemplate = (
+	backendData: any
 ): MyCalculationTemplate => {
 	const thirtyDaysAgo = new Date();
 	thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-	const isNew = domain.createdAt > thirtyDaysAgo;
+	const isNew = backendData.createdAt
+		? new Date(backendData.createdAt) > thirtyDaysAgo
+		: false;
+
+	// Función para obtener la dificultad basada en el tipo y parámetros
+	const getDifficultyFromTemplate = (
+		template: any
+	): "basic" | "intermediate" | "advanced" => {
+		if (template.difficulty) {
+			return template.difficulty;
+		}
+
+		const paramCount = template.parameters?.length || 0;
+		const isComplexType = ["foundation", "structural", "electrical"].includes(
+			template.type
+		);
+
+		if (paramCount <= 3 && !isComplexType) return "basic";
+		if (paramCount <= 8 || !isComplexType) return "intermediate";
+		return "advanced";
+	};
+
+	// Función para estimar tiempo basado en la dificultad y parámetros
+	const getEstimatedTimeFromTemplate = (template: any): string => {
+		if (template.estimatedTime) {
+			return template.estimatedTime.toString();
+		}
+
+		const difficulty = getDifficultyFromTemplate(template);
+
+		if (difficulty === "basic") return "5-10 min";
+		if (difficulty === "intermediate") return "10-20 min";
+		return "20-30 min";
+	};
+
+	// Convertir parámetros del backend al formato UI
+	const convertParameters = (backendParams: any[]): any[] => {
+		if (!Array.isArray(backendParams)) return [];
+
+		return backendParams
+			.filter((param) => param.scope === "input")
+			.sort(
+				(a, b) =>
+					(a.display_order || a.displayOrder || 0) -
+					(b.display_order || b.displayOrder || 0)
+			)
+			.map((param) => {
+				// Parsear allowed_values si existe
+				let options = undefined;
+				if (param.allowed_values || param.allowedValues) {
+					try {
+						const allowedValuesStr =
+							param.allowed_values || param.allowedValues;
+						if (typeof allowedValuesStr === "string") {
+							options = JSON.parse(allowedValuesStr).filter(
+								(option) => option !== ""
+							); // Filtrar opciones vacías
+						} else if (Array.isArray(allowedValuesStr)) {
+							options = allowedValuesStr.filter((option) => option !== "");
+						}
+					} catch (e) {
+						console.warn(
+							`Error parsing allowed_values for parameter ${param.name}:`,
+							e
+						);
+					}
+				}
+
+				// Determinar el tipo correcto
+				let inputType = param.dataType || param.data_type || "text";
+				if (inputType === "enum") {
+					inputType = "select";
+				}
+
+				return {
+					name: param.name,
+					label: param.description || param.name, // Usar description como label principal
+					type: inputType,
+					unit: param.unit_of_measure || param.unitOfMeasure,
+					required: param.is_required || param.isRequired || false,
+					min: param.min_value || param.minValue,
+					max: param.max_value || param.maxValue,
+					options: options,
+					defaultValue: param.default_value || param.defaultValue,
+					placeholder:
+						param.default_value?.toString() || param.defaultValue?.toString(),
+					tooltip: param.help_text || param.helpText,
+					validation:
+						param.regex_pattern || param.regexPattern
+							? {
+									pattern: param.regex_pattern || param.regexPattern,
+									message: "Formato inválido",
+								}
+							: undefined,
+				};
+			});
+	};
 
 	return {
-		id: domain.id,
-		name: domain.name,
-		description: domain.description,
-		longDescription: domain.description,
-		category: domain.type,
-		subcategory: domain.type,
-		targetProfessions: domain.targetProfession ? [domain.targetProfession] : [],
-		difficulty: domain.getDifficultyLevel(),
-		estimatedTime: domain.getEstimatedTime(),
-		necReference: domain.necReference,
-		tags: domain.tags || [],
-		isPublic: domain.isPublic(),
-		parameters: domain.parameters || [],
-		formula: domain.formula || "",
+		id: backendData.id,
+		name: backendData.name,
+		description: backendData.description,
+		longDescription: backendData.description,
+		category: backendData.type,
+		subcategory: backendData.type,
+		targetProfessions: backendData.targetProfession
+			? [backendData.targetProfession]
+			: [],
+		difficulty: getDifficultyFromTemplate(backendData),
+		estimatedTime: getEstimatedTimeFromTemplate(backendData),
+		necReference: backendData.necReference || "NEC",
+		tags: Array.isArray(backendData.tags) ? backendData.tags : [],
+		isPublic: backendData.shareLevel === "public",
+		parameters: convertParameters(backendData.parameters || []),
+		formula: backendData.formula || "",
 		requirements: [],
 		applicationCases: [],
 		limitations: [],
-		version: domain.version,
-		usageCount: domain.usageCount,
-		createdAt: domain.createdAt.toISOString(),
-		lastModified: domain.updatedAt.toISOString(),
-		isActive: domain.isActive,
-		status: domain.isActive ? "published" : "draft",
+		version: backendData.version?.toString() || "1.0",
+		usageCount: backendData.usageCount || 0,
+		createdAt: backendData.createdAt,
+		lastModified: backendData.updatedAt,
+		isActive: backendData.isActive !== false,
+		status: backendData.isActive ? "published" : "draft",
 		sharedWith: [],
 		isFavorite: false,
 		author: {
-			id: domain.createdBy || "unknown",
-			name: "Usuario",
-			email: "user@example.com",
+			id: backendData.createdBy || "system",
+			name: backendData.createdBy ? "Usuario" : "Sistema CONSTRU",
+			email: backendData.createdBy ? "user@constru.com" : "system@constru.com",
 		},
 		contributors: [],
-		totalRatings: domain.ratingCount,
-		averageRating: domain.averageRating,
+		totalRatings: backendData.ratingCount || 0,
+		averageRating: parseFloat(backendData.averageRating || "0"),
 		isNew: isNew,
 	};
 };
 
-const convertDomainToPublicTemplate = (
-	domain: CalculationTemplate
+const convertBackendToPublicTemplate = (
+	backendData: any
 ): PublicCalculationTemplate => {
-	const thirtyDaysAgo = new Date();
-	thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-	const isNew = domain.createdAt > thirtyDaysAgo;
+	const baseTemplate = convertBackendToMyTemplate(backendData);
 
 	return {
-		id: domain.id,
-		name: domain.name,
-		description: domain.description,
-		category: domain.type,
-		subcategory: domain.type,
-		targetProfessions: domain.targetProfession ? [domain.targetProfession] : [],
-		difficulty: domain.getDifficultyLevel(),
-		estimatedTime: domain.getEstimatedTime(),
-		necReference: domain.necReference,
-		tags: domain.tags || [],
-		parameters: domain.parameters || [],
-		version: domain.version,
-		usageCount: domain.usageCount,
-		createdAt: domain.createdAt.toISOString(),
-		lastModified: domain.updatedAt.toISOString(),
-		verified: domain.isVerified,
-		featured: domain.isFeatured,
+		...baseTemplate,
+		verified: backendData.isVerified || false,
+		featured: backendData.isFeatured || false,
 		author: {
-			id: domain.createdBy || "unknown",
+			id: backendData.createdBy || "system",
 			name: "Sistema CONSTRU",
 			email: "system@constru.com",
 		},
 		communityRating: {
-			average: domain.averageRating,
-			count: domain.ratingCount,
+			average: parseFloat(backendData.averageRating || "0"),
+			count: backendData.ratingCount || 0,
 			distribution: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
 		},
-		isFavorite: false,
-		isNew: isNew,
 	};
 };
 
-const convertUIFiltersToDomain = (
-	uiFilters?: UITemplateFilters
-): DomainTemplateFilters => {
-	if (!uiFilters) return {};
-
-	return {
-		searchTerm: uiFilters.searchTerm || undefined,
-		type: uiFilters.category || undefined,
-		targetProfession: uiFilters.targetProfession || undefined,
-		isVerified: uiFilters.showOnlyVerified,
-		isFeatured: uiFilters.showOnlyFeatured,
-		isActive: true,
-		tags: uiFilters.tags || undefined,
-		difficulty: uiFilters.difficulty || undefined,
-		sortBy:
-			uiFilters.sortBy === "popular"
-				? "usage_count"
-				: uiFilters.sortBy === "rating"
-					? "average_rating"
-					: uiFilters.sortBy === "recent"
-						? "created_at"
-						: uiFilters.sortBy === "name"
-							? "name"
-							: "usage_count",
-		sortOrder: "DESC",
-		limit: 50,
-	};
-};
-
-// ==================== CATEGORÍAS MOCK ====================
-const MOCK_CATEGORIES: TemplateCategoryType[] = [
+// ==================== CATEGORÍAS (basadas en los tipos del backend) ====================
+const TEMPLATE_CATEGORIES: TemplateCategoryType[] = [
 	{
 		id: "structural",
 		name: "Estructural",
 		description: "Análisis y diseño estructural",
 		color: "bg-blue-50 border-blue-200 text-blue-700",
-		count: 15,
+		count: 0,
 	},
 	{
 		id: "electrical",
 		name: "Eléctrico",
 		description: "Instalaciones eléctricas",
 		color: "bg-yellow-50 border-yellow-200 text-yellow-700",
-		count: 12,
+		count: 0,
 	},
 	{
-		id: "architectural",
-		name: "Arquitectónico",
-		description: "Diseño arquitectónico",
-		color: "bg-green-50 border-green-200 text-green-700",
-		count: 8,
+		id: "foundation",
+		name: "Cimentaciones",
+		description: "Diseño de cimentaciones",
+		color: "bg-stone-50 border-stone-200 text-stone-700",
+		count: 0,
 	},
 	{
-		id: "hydraulic",
-		name: "Hidráulico",
-		description: "Sistemas hidráulicos",
+		id: "installation",
+		name: "Instalaciones",
+		description: "Instalaciones hidráulicas y sanitarias",
 		color: "bg-cyan-50 border-cyan-200 text-cyan-700",
-		count: 6,
+		count: 0,
 	},
 	{
-		id: "custom",
-		name: "Personalizada",
-		description: "Plantillas personalizadas",
-		color: "bg-purple-50 border-purple-200 text-purple-700",
-		count: 3,
+		id: "material_calculation",
+		name: "Materiales",
+		description: "Cálculo de materiales",
+		color: "bg-green-50 border-green-200 text-green-700",
+		count: 0,
 	},
 ];
+
+// ==================== UTILIDADES DE API ====================
+const makeApiRequest = async (url: string, options: RequestInit = {}) => {
+	try {
+		const response = await fetch(url, {
+			...options,
+			credentials: "include",
+			headers: {
+				"Content-Type": "application/json",
+				...options.headers,
+			},
+		});
+
+		// Verificar si la respuesta es HTML (error de routing)
+		const contentType = response.headers.get("content-type");
+		if (contentType && contentType.includes("text/html")) {
+			throw new Error(
+				`Endpoint not found: ${url} (received HTML instead of JSON)`
+			);
+		}
+
+		if (!response.ok) {
+			const errorText = await response.text();
+			let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+
+			try {
+				const errorJson = JSON.parse(errorText);
+				if (errorJson.message) {
+					errorMessage = errorJson.message;
+				}
+			} catch {
+				// Si no es JSON válido, usar el texto como está
+				if (errorText) {
+					errorMessage = errorText;
+				}
+			}
+
+			throw new Error(errorMessage);
+		}
+
+		const result = await response.json();
+		return result;
+	} catch (error) {
+		if (error instanceof Error) {
+			throw error;
+		}
+		throw new Error("Unknown API error occurred");
+	}
+};
 
 // ==================== HOOK PRINCIPAL ====================
 export const useTemplates = (
@@ -319,6 +419,8 @@ export const useTemplates = (
 	const config = {...DEFAULT_OPTIONS, ...options};
 
 	// Estados
+	const hasLoadedInitially = useRef(false);
+	const abortControllerRef = useRef<AbortController | null>(null);
 	const [templates, setTemplates] = useState<MyCalculationTemplate[]>([]);
 	const [publicTemplates, setPublicTemplates] = useState<
 		PublicCalculationTemplate[]
@@ -335,11 +437,6 @@ export const useTemplates = (
 	const [originalFormState, setOriginalFormState] =
 		useState<TemplateFormState | null>(null);
 
-	// Referencias para evitar bucles infinitos
-	const loadingRef = useRef(false);
-	const abortControllerRef = useRef<AbortController | null>(null);
-	const hasLoadedInitially = useRef(false);
-
 	// Validación
 	const isValid = useMemo(() => {
 		if (!formState) return false;
@@ -354,12 +451,20 @@ export const useTemplates = (
 	// Utilidades
 	const handleError = useCallback((error: unknown, context: string) => {
 		console.error(`Error in ${context}:`, error);
-		const message =
-			error instanceof Error
-				? error.message
-				: typeof error === "string"
-					? error
-					: "Error desconocido";
+
+		let message = "Error desconocido";
+
+		if (error instanceof Error) {
+			message = error.message;
+		} else if (typeof error === "string") {
+			message = error;
+		}
+
+		// Log adicional para debugging
+		if (process.env.NODE_ENV === "development") {
+			console.error("Full error details:", error);
+		}
+
 		setError(`${context}: ${message}`);
 	}, []);
 
@@ -374,29 +479,27 @@ export const useTemplates = (
 				setLoading(true);
 				clearError();
 
-				const domainTemplate = new CalculationTemplate(
-					"",
-					data.name,
-					data.description,
-					data.category,
-					data.targetProfessions[0] || "architect",
-					data.formula || "",
-					data.necReference || "",
-					"1.0.0",
-					data.parameters || [],
-					true,
-					false,
-					false,
-					0,
-					0,
-					0,
-					data.isPublic ? "public" : "private",
-					data.tags || []
+				const templatePayload = {
+					name: data.name,
+					description: data.description,
+					type: data.category,
+					targetProfession: data.targetProfessions[0] || "architect",
+					formula: data.formula || "",
+					necReference: data.necReference || "",
+					shareLevel: data.isPublic ? "public" : "private",
+					tags: data.tags || [],
+					parameters: data.parameters || [],
+				};
+
+				const result = await makeApiRequest(
+					endpoints.calculations.templates.create,
+					{
+						method: "POST",
+						body: JSON.stringify(templatePayload),
+					}
 				);
 
-				const result =
-					await templateApplicationService.createTemplate(domainTemplate);
-				const newTemplate = convertDomainToMyTemplate(result);
+				const newTemplate = convertBackendToMyTemplate(result.data);
 				setTemplates((prev) => [newTemplate, ...prev]);
 
 				return {success: true, data: newTemplate};
@@ -423,11 +526,15 @@ export const useTemplates = (
 				setLoading(true);
 				clearError();
 
-				const result = await templateApplicationService.updateTemplate(
-					id,
-					data
+				const result = await makeApiRequest(
+					endpoints.calculations.templates.update(id),
+					{
+						method: "PUT",
+						body: JSON.stringify(data),
+					}
 				);
-				const updatedTemplate = convertDomainToMyTemplate(result);
+
+				const updatedTemplate = convertBackendToMyTemplate(result.data);
 
 				setTemplates((prev) =>
 					prev.map((t) => (t.id === id ? updatedTemplate : t))
@@ -460,7 +567,10 @@ export const useTemplates = (
 				setLoading(true);
 				clearError();
 
-				await templateApplicationService.deleteTemplate(id);
+				await makeApiRequest(endpoints.calculations.templates.delete(id), {
+					method: "DELETE",
+				});
+
 				setTemplates((prev) => prev.filter((t) => t.id !== id));
 
 				if (currentTemplate?.id === id) {
@@ -530,11 +640,17 @@ export const useTemplates = (
 		async (id: string): Promise<MyCalculationTemplate | null> => {
 			try {
 				setLoading(true);
-				const domainTemplate =
-					await templateApplicationService.getTemplateById(id);
-				return domainTemplate
-					? convertDomainToMyTemplate(domainTemplate)
-					: null;
+				clearError();
+
+				const result = await makeApiRequest(
+					endpoints.calculations.templates.getById(id)
+				);
+
+				if (result.success && result.data) {
+					return convertBackendToMyTemplate(result.data);
+				}
+
+				return null;
 			} catch (error) {
 				handleError(error, "Obtener plantilla");
 				return null;
@@ -542,28 +658,43 @@ export const useTemplates = (
 				setLoading(false);
 			}
 		},
-		[handleError]
+		[handleError, clearError]
 	);
 
 	const searchTemplates = useCallback(
 		async (options: TemplateSearchOptions): Promise<TemplateListResponse> => {
 			try {
 				setLoading(true);
-				const domainFilters = convertUIFiltersToDomain(options.filters);
+				clearError();
+
+				const params = new URLSearchParams();
 
 				if (options.query) {
-					domainFilters.searchTerm = options.query;
+					params.append("searchTerm", options.query);
 				}
 
-				const result = await templateApplicationService.searchTemplates(
-					options.query || "",
-					domainFilters
-				);
-				const convertedTemplates = result.data.map(convertDomainToMyTemplate);
+				if (options.filters?.category) {
+					params.append("types", options.filters.category);
+				}
+
+				if (options.filters?.showOnlyVerified) {
+					params.append("isVerified", "true");
+				}
+
+				const url = `${endpoints.calculations.templates.search}?${params.toString()}`;
+				const result = await makeApiRequest(url);
+
+				const convertedTemplates =
+					result.data?.templates?.map(convertBackendToMyTemplate) || [];
 
 				return {
 					templates: convertedTemplates,
-					pagination: result.pagination,
+					pagination: result.data?.pagination || {
+						page: 1,
+						limit: 10,
+						total: 0,
+						pages: 0,
+					},
 					filters: options.filters || {},
 				};
 			} catch (error) {
@@ -577,28 +708,38 @@ export const useTemplates = (
 				setLoading(false);
 			}
 		},
-		[handleError]
+		[handleError, clearError]
 	);
 
 	const getPublicTemplates = useCallback(
 		async (options?: TemplateSearchOptions): Promise<TemplateListResponse> => {
 			try {
 				setLoading(true);
-				const domainFilters: DomainTemplateFilters = {
-					...convertUIFiltersToDomain(options?.filters),
-					shareLevel: "public",
-					isVerified: true,
-				};
+				clearError();
 
-				const result =
-					await templateApplicationService.getTemplates(domainFilters);
-				const convertedTemplates = result.data.map(
-					convertDomainToPublicTemplate
-				);
+				const params = new URLSearchParams({
+					isVerified: "true",
+					shareLevel: "public",
+				});
+
+				if (options?.filters?.category) {
+					params.append("types", options.filters.category);
+				}
+
+				const url = `${endpoints.calculations.templates.list}?${params.toString()}`;
+				const result = await makeApiRequest(url);
+
+				const convertedTemplates =
+					result.data?.templates?.map(convertBackendToPublicTemplate) || [];
 
 				return {
 					templates: convertedTemplates,
-					pagination: result.pagination,
+					pagination: result.data?.pagination || {
+						page: 1,
+						limit: 10,
+						total: 0,
+						pages: 0,
+					},
 					filters: options?.filters || {},
 				};
 			} catch (error) {
@@ -612,24 +753,35 @@ export const useTemplates = (
 				setLoading(false);
 			}
 		},
-		[handleError]
+		[handleError, clearError]
 	);
 
 	const getMyTemplates = useCallback(
 		async (options?: TemplateSearchOptions): Promise<TemplateListResponse> => {
 			try {
 				setLoading(true);
-				const domainFilters: DomainTemplateFilters = {
-					...convertUIFiltersToDomain(options?.filters),
-				};
+				clearError();
 
-				const result =
-					await templateApplicationService.getTemplates(domainFilters);
-				const convertedTemplates = result.data.map(convertDomainToMyTemplate);
+				const params = new URLSearchParams();
+
+				if (options?.filters?.category) {
+					params.append("types", options.filters.category);
+				}
+
+				const url = `${endpoints.calculations.templates.list}?${params.toString()}`;
+				const result = await makeApiRequest(url);
+
+				const convertedTemplates =
+					result.data?.templates?.map(convertBackendToMyTemplate) || [];
 
 				return {
 					templates: convertedTemplates,
-					pagination: result.pagination,
+					pagination: result.data?.pagination || {
+						page: 1,
+						limit: 10,
+						total: 0,
+						pages: 0,
+					},
 					filters: options?.filters || {},
 				};
 			} catch (error) {
@@ -643,10 +795,10 @@ export const useTemplates = (
 				setLoading(false);
 			}
 		},
-		[handleError]
+		[handleError, clearError]
 	);
 
-	// ==================== CARGAR TEMPLATES (SIN BUCLE INFINITO) ====================
+	// ==================== CARGAR TEMPLATES ====================
 	const refreshTemplates = useCallback(async () => {
 		if (loadingRef.current) return;
 
@@ -655,7 +807,6 @@ export const useTemplates = (
 			setLoading(true);
 			clearError();
 
-			// Cancelar request anterior si existe
 			if (abortControllerRef.current) {
 				abortControllerRef.current.abort();
 			}
@@ -719,7 +870,7 @@ export const useTemplates = (
 		clearError,
 	]);
 
-	// ==================== RESTO DE MÉTODOS SIMPLIFICADOS ====================
+	// ==================== RESTO DE MÉTODOS ====================
 	const validateTemplate = useCallback(
 		async (
 			template: Partial<MyCalculationTemplate>
@@ -853,7 +1004,15 @@ export const useTemplates = (
 	// MÉTODOS SIMPLIFICADOS
 	const getSuggestions = useCallback(
 		async (templateId: string): Promise<TemplateSuggestion[]> => {
-			return [];
+			try {
+				const result = await makeApiRequest(
+					endpoints.calculations.templates.getSuggestions(templateId)
+				);
+				return result.data || [];
+			} catch (error) {
+				console.error("Error getting suggestions:", error);
+				return [];
+			}
 		},
 		[]
 	);
@@ -892,12 +1051,96 @@ export const useTemplates = (
 			parameters: ParameterValues
 		): Promise<TemplateOperationResult> => {
 			try {
-				const result = await templateApplicationService.executeCalculation(
-					templateId,
+				// Primero, intentar obtener la plantilla para validar que existe
+				const template = await makeApiRequest(
+					endpoints.calculations.templates.getById(templateId)
+				);
+				if (!template.success || !template.data) {
+					throw new Error("Plantilla no encontrada");
+				}
+
+				// Ejecutar la fórmula localmente usando los datos del template
+				const templateData = template.data;
+				if (!templateData.formula) {
+					throw new Error("La plantilla no tiene fórmula definida");
+				}
+
+				// Crear una función que evalúe la fórmula con los parámetros
+				const executeFormula = (
+					formula: string,
+					params: Record<string, any>
+				): any => {
+					try {
+						// Crear contexto con los parámetros
+						const context = {...params};
+
+						// Crear función que evalúe la fórmula
+						const func = new Function(
+							...Object.keys(context),
+							`
+							${formula}
+							
+							// Si la fórmula no retorna explícitamente, intentar capturar variables locales
+							if (typeof result !== 'undefined') return result;
+							
+							// Capturar variables definidas en la fórmula
+							const results = {};
+							try {
+								// Variables específicas por tipo de cálculo
+								if (typeof incrementoEsfuerzoCalculado !== 'undefined') results.incrementoEsfuerzoCalculado = incrementoEsfuerzoCalculado;
+								if (typeof asentamientoMetros !== 'undefined') results.asentamientoMetros = asentamientoMetros;
+								if (typeof asentamientoCentimetros !== 'undefined') results.asentamientoCentimetros = asentamientoCentimetros;
+								if (typeof evaluacion !== 'undefined') results.evaluacion = evaluacion;
+								
+								// Variables estructurales
+								if (typeof maxMoment !== 'undefined') results.maxMoment = maxMoment;
+								if (typeof requiredAs !== 'undefined') results.requiredAs = requiredAs;
+								if (typeof barsCount !== 'undefined') results.barsCount = barsCount;
+								
+								// Variables eléctricas
+								if (typeof demandaTotal !== 'undefined') results.demandaTotal = demandaTotal;
+								if (typeof corrienteTotal !== 'undefined') results.corrienteTotal = corrienteTotal;
+								
+								// Variables hidráulicas
+								if (typeof selectedDiameter !== 'undefined') results.selectedDiameter = selectedDiameter;
+								if (typeof totalLength !== 'undefined') results.totalLength = totalLength;
+								
+								// Variables SPT
+								if (typeof N60 !== 'undefined') results.N60 = N60;
+								if (typeof N60corregido !== 'undefined') results.N60corregido = N60corregido;
+								
+							} catch (e) {
+								console.warn('Error capturando variables:', e);
+							}
+							
+							return results;
+						`
+						);
+
+						return func.apply({}, Object.values(context));
+					} catch (error) {
+						console.error("Error ejecutando fórmula:", error);
+						throw new Error("Error en el cálculo: " + error.message);
+					}
+				};
+
+				// Ejecutar la fórmula
+				const calculationResults = executeFormula(
+					templateData.formula,
 					parameters
 				);
-				return {success: true, data: result};
+
+				return {
+					success: true,
+					data: {
+						templateId,
+						parameters,
+						results: calculationResults,
+						executedAt: new Date().toISOString(),
+					},
+				};
 			} catch (error) {
+				console.error("Error executing template:", error);
 				return {
 					success: false,
 					error:
@@ -997,21 +1240,64 @@ export const useTemplates = (
 	const toggleFavorite = useCallback(
 		async (templateId: string) => {
 			try {
-				const newIsFavorite = await templateApplicationService.toggleFavorite(
-					"current-user",
-					templateId
-				);
+				// Intentar usar el endpoint de favoritos si existe
+				try {
+					const result = await makeApiRequest(
+						endpoints.calculations.templates.toggleFavorite(templateId),
+						{
+							method: "POST",
+						}
+					);
 
-				setTemplates((prev) =>
-					prev.map((t) =>
-						t.id === templateId ? {...t, isFavorite: newIsFavorite} : t
-					)
-				);
-				setPublicTemplates((prev) =>
-					prev.map((t) =>
-						t.id === templateId ? {...t, isFavorite: newIsFavorite} : t
-					)
-				);
+					const newIsFavorite = result.data?.isFavorite || false;
+
+					setTemplates((prev) =>
+						prev.map((t) =>
+							t.id === templateId ? {...t, isFavorite: newIsFavorite} : t
+						)
+					);
+					setPublicTemplates((prev) =>
+						prev.map((t) =>
+							t.id === templateId ? {...t, isFavorite: newIsFavorite} : t
+						)
+					);
+				} catch (apiError) {
+					// Fallback a localStorage si el endpoint no existe
+					console.warn(
+						"Favorites endpoint not available, using localStorage fallback"
+					);
+
+					const favorites = JSON.parse(
+						localStorage.getItem("template_favorites") || "[]"
+					);
+					const isFavorite = favorites.includes(templateId);
+
+					if (isFavorite) {
+						const newFavorites = favorites.filter((id) => id !== templateId);
+						localStorage.setItem(
+							"template_favorites",
+							JSON.stringify(newFavorites)
+						);
+					} else {
+						favorites.push(templateId);
+						localStorage.setItem(
+							"template_favorites",
+							JSON.stringify(favorites)
+						);
+					}
+
+					const newIsFavorite = !isFavorite;
+					setTemplates((prev) =>
+						prev.map((t) =>
+							t.id === templateId ? {...t, isFavorite: newIsFavorite} : t
+						)
+					);
+					setPublicTemplates((prev) =>
+						prev.map((t) =>
+							t.id === templateId ? {...t, isFavorite: newIsFavorite} : t
+						)
+					);
+				}
 			} catch (error) {
 				handleError(error, "Toggle favorite");
 			}
@@ -1098,7 +1384,7 @@ export const useTemplates = (
 		[]
 	);
 
-	// EFECTOS CONTROLADOS (sin bucle infinito)
+	// EFECTOS CONTROLADOS
 	useEffect(() => {
 		if (config.autoLoad && !hasLoadedInitially.current) {
 			hasLoadedInitially.current = true;
@@ -1163,7 +1449,7 @@ export const useTemplates = (
 		getTemplateStats,
 		getRelatedTemplates,
 		toggleFavorite,
-		categories: MOCK_CATEGORIES,
+		categories: TEMPLATE_CATEGORIES,
 		isLoading: loading,
 
 		// Utilidades

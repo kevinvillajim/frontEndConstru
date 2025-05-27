@@ -244,7 +244,7 @@ export const useCalculations = () => {
 					const calculations = data.data.map(
 						(calc: BackendCalculationResult) => ({
 							...calc,
-							templateName: calc.templateName || "Plantilla",
+							templateName: calc.name || "Plantilla",
 							userId: calc.userId || "current-user",
 						})
 					);

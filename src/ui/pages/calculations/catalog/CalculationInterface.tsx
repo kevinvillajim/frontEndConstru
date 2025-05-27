@@ -6,25 +6,18 @@ import {
 	CheckBadgeIcon,
 	BookOpenIcon,
 	StarIcon,
-	ClockIcon,
 	CalculatorIcon,
 	DocumentArrowDownIcon,
 	HeartIcon,
 	ExclamationTriangleIcon,
-	LightBulbIcon,
 	CheckIcon,
 	PencilSquareIcon,
-	UserGroupIcon,
-	SparklesIcon,
 	EyeIcon,
 	PlayIcon,
 	DocumentDuplicateIcon,
-	ShareIcon,
-	PrinterIcon,
 	UserIcon,
 	ChartBarIcon,
 	CpuChipIcon,
-	DocumentTextIcon,
 	InformationCircleIcon,
 	CheckCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -33,8 +26,7 @@ import ParameterInput from "./components/ParameterInput";
 import {useTemplates} from "../shared/hooks/useTemplates";
 import {useCalculations} from "../shared/hooks/useCalculations";
 import type {
-	MyCalculationTemplate,
-	TemplateParameter,
+	CalculationTemplate as MyCalculationTemplate,
 } from "../shared/types/template.types";
 
 interface ValidationResult {
@@ -44,6 +36,48 @@ interface ValidationResult {
 }
 
 type CalculationStep = "overview" | "parameters" | "calculating" | "results";
+
+
+// Types Test
+interface OverviewViewProps {
+	template: MyCalculationTemplate;
+	isFavorite: boolean;
+	handleToggleFavorite: () => void;
+	setCurrentStep: (step: CalculationStep) => void;
+	difficultyConfig: {
+		color: string;
+		label: string;
+	};
+	TypeIcon: React.ComponentType<{className?: string}>;
+}
+
+interface ParametersViewProps {
+	template: MyCalculationTemplate;
+	parameters: Record<string, any>;
+	calculationName: string;
+	validation: ValidationResult;
+	handleParameterChange: (paramName: string, value: any) => void;
+	setCalculationName: (name: string) => void;
+	handleCalculate: () => void;
+	setCurrentStep: (step: CalculationStep) => void;
+}
+
+interface CalculatingViewProps {
+	template: MyCalculationTemplate;
+}
+
+interface ResultsViewProps {
+	results: any;
+	setCurrentStep: (step: CalculationStep) => void;
+	handleSaveResult: () => void;
+}
+
+interface StepIndicatorProps {
+	currentStep: CalculationStep;
+	handleStepNavigation: (step: CalculationStep) => void;
+	isCalculating: boolean;
+}
+
 
 const CalculationInterface: React.FC = () => {
 	const {templateId} = useParams<{templateId: string}>();
@@ -129,7 +163,7 @@ const CalculationInterface: React.FC = () => {
 
 			// Validación requerido
 			if (
-				param.required &&
+				param.isRequired &&
 				(value === undefined || value === "" || value === null)
 			) {
 				errors[param.name] = "Este campo es requerido";
@@ -189,41 +223,40 @@ const CalculationInterface: React.FC = () => {
 		}
 	}, [template, toggleFavorite]);
 
-	const handleCalculate = useCallback(async () => {
-		if (!validation.isValid || !template) return;
+		const handleCalculate = useCallback(async () => {
+			if (!validation.isValid || !template) return;
 
-		setIsCalculating(true);
-		setCurrentStep("calculating");
+			setIsCalculating(true);
+			setCurrentStep("calculating");
 
-		try {
-			// Ejecutar cálculo usando el servicio real
-			const calculationResults = await executeCalculation(
-				template.id,
-				parameters
-			);
+			try {
+				// Simular delay de procesamiento
+				await new Promise((resolve) => setTimeout(resolve, 1500));
 
-			setResults(calculationResults);
-			setCurrentStep("results");
+				// Ejecutar la fórmula dinámicamente usando la función del template
+				const calculationResults = executeFormula(template.formula, parameters);
+				setResults(calculationResults);
+				setCurrentStep("results");
 
-			// Agregar al historial
-			const newCalculation = {
-				id: Date.now(),
-				timestamp: new Date().toISOString(),
-				inputs: {...parameters},
-				results: calculationResults,
-			};
-			setCalculationHistory((prev) => [newCalculation, ...prev.slice(0, 4)]);
-		} catch (error) {
-			console.error("Error en cálculo:", error);
-			setError(
-				error instanceof Error ? error.message : "Error ejecutando el cálculo"
-			);
-			setCurrentStep("parameters");
-		} finally {
-			setIsCalculating(false);
-		}
-	}, [validation.isValid, template, parameters, executeCalculation]);
-
+				// Agregar al historial
+				const newCalculation = {
+					id: Date.now(),
+					timestamp: new Date().toISOString(),
+					inputs: {...parameters},
+					results: calculationResults,
+				};
+				setCalculationHistory((prev) => [newCalculation, ...prev.slice(0, 4)]);
+			} catch (error) {
+				console.error("Error en cálculo:", error);
+				setError(
+					error instanceof Error ? error.message : "Error ejecutando el cálculo"
+				);
+				setCurrentStep("parameters");
+			} finally {
+				setIsCalculating(false);
+			}
+		}, [validation.isValid, template, parameters]);
+	
 	const handleStepNavigation = useCallback(
 		(step: CalculationStep) => {
 			if (step === "calculating" || isCalculating) return;
@@ -327,11 +360,15 @@ const CalculationInterface: React.FC = () => {
 		);
 	}
 
-	const difficultyConfig = getDifficultyConfig(template.difficulty);
-	const TypeIcon = getTypeIcon(template.category);
+	const difficultyConfig = getDifficultyConfig(template?.difficulty || "general");
+	const TypeIcon = getTypeIcon(template?.category || "default");
 
 	// Componente del indicador de pasos
-	const StepIndicator = () => {
+	const StepIndicator: React.FC<StepIndicatorProps> = ({
+		currentStep,
+		handleStepNavigation,
+		isCalculating,
+	}) => {
 		const steps = [
 			{id: "overview", label: "Vista General", icon: EyeIcon},
 			{id: "parameters", label: "Parámetros", icon: PencilSquareIcon},
@@ -384,7 +421,14 @@ const CalculationInterface: React.FC = () => {
 	};
 
 	// Vista general de la plantilla
-	const OverviewView = () => (
+	const OverviewView: React.FC<OverviewViewProps> = ({
+		template,
+		isFavorite,
+		handleToggleFavorite,
+		setCurrentStep,
+		difficultyConfig,
+		TypeIcon,
+	}) => (
 		<div className="space-y-6">
 			<div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 				{/* Header colorido */}
@@ -393,7 +437,7 @@ const CalculationInterface: React.FC = () => {
 					<div className="absolute inset-0 flex items-center justify-between p-6">
 						<div className="flex items-center gap-4">
 							<div className="w-16 h-16 bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-								<TypeIcon className="h-8 w-8 text-white" />
+								<TypeIcon className="h-8 w-8 text-secondary-700" />
 							</div>
 							<div>
 								<h1 className="text-2xl font-bold text-white mb-1">
@@ -419,7 +463,7 @@ const CalculationInterface: React.FC = () => {
 								{isFavorite ? (
 									<HeartSolidIcon className="h-5 w-5 text-red-400" />
 								) : (
-									<HeartIcon className="h-5 w-5 text-white" />
+									<HeartIcon className="h-5 w-5 text-secondary-700" />
 								)}
 							</button>
 							<div className="flex items-center gap-1 text-white text-sm">
@@ -480,7 +524,16 @@ const CalculationInterface: React.FC = () => {
 	);
 
 	// Vista de parámetros
-	const ParametersView = () => (
+	const ParametersView: React.FC<ParametersViewProps> = ({
+		template,
+		parameters,
+		calculationName,
+		validation,
+		handleParameterChange,
+		setCalculationName,
+		handleCalculate,
+		setCurrentStep,
+	}) => (
 		<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
 			<div className="mb-6">
 				<h2 className="text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
@@ -555,7 +608,7 @@ const CalculationInterface: React.FC = () => {
 	);
 
 	// Vista de cálculo en progreso
-	const CalculatingView = () => (
+	const CalculatingView: React.FC<CalculatingViewProps> = ({template}) => (
 		<div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
 			<div className="mb-6">
 				<div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -584,7 +637,11 @@ const CalculationInterface: React.FC = () => {
 	);
 
 	// Vista de resultados
-	const ResultsView = () => {
+	const ResultsView: React.FC<ResultsViewProps> = ({
+		results,
+		setCurrentStep,
+		handleSaveResult,
+	}) => {
 		if (!results) return null;
 
 		return (
@@ -688,13 +745,45 @@ const CalculationInterface: React.FC = () => {
 				</div>
 
 				{/* Indicador de pasos */}
-				<StepIndicator />
+				<StepIndicator
+					currentStep={currentStep}
+					handleStepNavigation={handleStepNavigation}
+					isCalculating={isCalculating}
+				/>
 
 				{/* Contenido principal basado en el paso actual */}
-				{currentStep === "overview" && <OverviewView />}
-				{currentStep === "parameters" && <ParametersView />}
-				{currentStep === "calculating" && <CalculatingView />}
-				{currentStep === "results" && <ResultsView />}
+				{currentStep === "overview" && (
+					<OverviewView
+						template={template}
+						isFavorite={isFavorite}
+						handleToggleFavorite={handleToggleFavorite}
+						setCurrentStep={setCurrentStep}
+						difficultyConfig={difficultyConfig}
+						TypeIcon={TypeIcon}
+					/>
+				)}
+				{currentStep === "parameters" && (
+					<ParametersView
+						template={template}
+						parameters={parameters}
+						calculationName={calculationName}
+						validation={validation}
+						handleParameterChange={handleParameterChange}
+						setCalculationName={setCalculationName}
+						handleCalculate={handleCalculate}
+						setCurrentStep={setCurrentStep}
+					/>
+				)}
+				{currentStep === "calculating" && (
+					<CalculatingView template={template} />
+				)}
+				{currentStep === "results" && results && (
+					<ResultsView
+						results={results}
+						setCurrentStep={setCurrentStep}
+						handleSaveResult={handleSaveResult}
+					/>
+				)}
 
 				{/* Panel lateral con historial e información */}
 				{(currentStep === "parameters" || currentStep === "results") && (
@@ -780,3 +869,4 @@ const CalculationInterface: React.FC = () => {
 };
 
 export default CalculationInterface;
+
