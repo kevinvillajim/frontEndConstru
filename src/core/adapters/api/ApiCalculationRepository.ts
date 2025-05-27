@@ -19,7 +19,7 @@ export class ApiCalculationTemplateRepository implements CalculationTemplateRepo
     try {
       const params = this.buildQueryParams(filters);
       // ✅ USA LA RUTA CORRECTA DEL BACKEND
-      const response = await this.apiClient.get(`/templates?${params.toString()}`);
+      const response = await this.apiClient.get(`/calculations/templates?${params.toString()}`);
 
       if (response.data.success && response.data.data) {
         const templates = response.data.data.templates.map((data: any) =>
@@ -42,7 +42,7 @@ export class ApiCalculationTemplateRepository implements CalculationTemplateRepo
   async findById(id: string): Promise<CalculationTemplate | null> {
     try {
       // ✅ USA LA RUTA CORRECTA
-      const response = await this.apiClient.get(`/templates/${id}`);
+      const response = await this.apiClient.get(`/calculations/templates/${id}`);
       
       if (response.data.success && response.data.data) {
         return this.convertAPIResponse(response.data.data);
@@ -57,7 +57,7 @@ export class ApiCalculationTemplateRepository implements CalculationTemplateRepo
   // ✅ MÉTODOS PARA FAVORITOS SEGÚN TU BACKEND
   async toggleFavorite(userId: string, templateId: string): Promise<boolean> {
     try {
-      const response = await this.apiClient.post(`/templates/${templateId}/favorite`);
+      const response = await this.apiClient.post(`/calculations/templates/${templateId}/favorite`);
       return response.data.success;
     } catch (error) {
       console.error("Error toggling favorite:", error);
@@ -122,7 +122,7 @@ export class ApiCalculationTemplateRepository implements CalculationTemplateRepo
   async search(query: string, filters?: TemplateFilters): Promise<PaginatedResult<CalculationTemplate>> {
     try {
       const params = this.buildQueryParams({ ...filters, searchTerm: query });
-      const response = await this.apiClient.get(`/templates/search?${params.toString()}`);
+      const response = await this.apiClient.get(`/calculations/templates/search?${params.toString()}`);
       
       if (response.data.success && response.data.data) {
         const templates = response.data.data.templates.map((data: any) => 
@@ -235,7 +235,7 @@ export class ApiUserFavoritesRepository implements UserFavoritesRepository {
 
   async toggleFavorite(userId: string, templateId: string): Promise<boolean> {
     try {
-      const response = await this.apiClient.post(`/templates/${templateId}/favorite`);
+      const response = await this.apiClient.post(`/calculations/templates/${templateId}/favorite`);
       return response.data.success;
     } catch (error) {
       console.error("Error toggling favorite:", error);
