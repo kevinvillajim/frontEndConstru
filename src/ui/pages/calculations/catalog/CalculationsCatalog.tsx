@@ -12,7 +12,7 @@ import {
 	ArrowTrendingUpIcon,
 	ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-import {TemplateCard} from "./components/TemplateCard";
+import {TemplateCard} from "./components/TemplateCardCatalog";
 import {CategoryFilter} from "./components/CategoryFilter";
 import {TemplatePreview} from "./components/TemplatePreview";
 

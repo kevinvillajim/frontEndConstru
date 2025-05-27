@@ -8,7 +8,7 @@ import {
 	ArrowTrendingUpIcon,
 	SparklesIcon,
 } from "@heroicons/react/24/outline";
-import {TemplateCard} from "./components/TemplateCard";
+import {TemplateCard} from "./components/TemplateCardCatalog";
 import {useTemplates} from "../shared/hooks/useTemplates";
 import type {
 	CalculationTemplate,

@@ -32,7 +32,7 @@ interface TemplateCardProps {
 }
 
 // Helper para asegurar que un valor sea un número válido
-const ensureNumber = (value: any, defaultValue: number = 0): number => {
+const ensureNumber = (value: unknown, defaultValue: number = 0): number => {
 	if (typeof value === "number" && !isNaN(value)) {
 		return value;
 	}
@@ -43,10 +43,16 @@ const ensureNumber = (value: any, defaultValue: number = 0): number => {
 	return defaultValue;
 };
 
+// Helper para asegurar que un valor sea un float con 2 decimales
+const ensureFloat = (value: unknown, defaultValue: number = 0): number => {
+	const numValue = ensureNumber(value, defaultValue);
+	return parseFloat(numValue.toFixed(2));
+};
+
 // Helper para formatear rating de manera segura
-const formatRating = (rating: any): string => {
-	const numRating = ensureNumber(rating, 0);
-	return numRating.toFixed(1);
+const formatRating = (rating: unknown): string => {
+	const numRating = ensureFloat(rating, 0.0);
+	return numRating.toFixed(2);
 };
 
 // Mapeo de categorías a iconos
@@ -83,16 +89,32 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 	showPreviewButton = true,
 	compact = false,
 }) => {
+	// --- DEBUG LOGS ---
+	console.log("TemplateCard received template ID:", template.id);
+	console.log(
+		"typeof template.averageRating:",
+		typeof template.averageRating,
+		"| value:",
+		template.averageRating
+	);
+	console.log(
+		"typeof template.rating (compatibility field):",
+		typeof template.rating,
+		"| value:",
+		template.rating
+	);
+
+	// --- END DEBUG LOGS ---
+
 	// Normalizar datos del template para evitar errores
 	const normalizedTemplate = {
 		...template,
-		rating: ensureNumber(template.rating || template.average_rating, 0),
-		usageCount: ensureNumber(template.usageCount || template.usage_count, 0),
-		verified: Boolean(template.verified || template.is_verified),
-		necReference: template.necReference || template.nec_reference || "NEC",
-		profession:
-			template.profession ||
-			(template.targetProfession ? [template.targetProfession] : []),
+		// Usar averageRating como fuente principal, con fallback a rating - CONVERTIR A FLOAT
+		rating: ensureFloat(template.averageRating || template.rating, 0.0),
+		usageCount: ensureNumber(template.usageCount, 0),
+		verified: Boolean(template.verified || template.isVerified),
+		necReference: template.necReference || "",
+		profession: template.targetProfession || "",
 		estimatedTime: template.estimatedTime || "10-15 min",
 		requirements: template.requirements || [],
 		tags: template.tags || [],
@@ -100,6 +122,11 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 		isNew: Boolean(template.isNew),
 		trending: Boolean(template.trending),
 		popular: Boolean(template.popular),
+		category: template.category,
+		type: template.type,
+		difficulty: template.difficulty || "intermediate",
+		icon: template.icon,
+		color: template.color,
 	};
 
 	const getDifficultyConfig = (difficulty: string) => {
@@ -142,7 +169,10 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 	// Obtener el icono correcto basado en la categoría/tipo
 	const IconComponent =
 		normalizedTemplate.icon ||
-		getCategoryIcon(normalizedTemplate.category, normalizedTemplate.type);
+		getCategoryIcon(
+			normalizedTemplate.category || "",
+			normalizedTemplate.type || ""
+		);
 
 	// Color de gradiente basado en categoría
 	const getGradientColor = (category: string) => {
@@ -174,7 +204,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 		>
 			{/* Header con gradiente y patrones */}
 			<div
-				className={`h-32 bg-gradient-to-r ${getGradientColor(normalizedTemplate.category)} relative overflow-hidden`}
+				className={`h-32 bg-gradient-to-r ${getGradientColor(normalizedTemplate.category || "")} relative overflow-hidden`}
 			>
 				{/* Patrón arquitectónico */}
 				<div className="absolute inset-0 opacity-20">
@@ -374,7 +404,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 
 			{/* Sombra proyectada elegante */}
 			<div
-				className={`absolute inset-0 bg-gradient-to-r ${getGradientColor(normalizedTemplate.category)} rounded-2xl -z-10 blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500 transform group-hover:scale-110`}
+				className={`absolute inset-0 bg-gradient-to-r ${getGradientColor(normalizedTemplate.category || "")} rounded-2xl -z-10 blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500 transform group-hover:scale-110`}
 			/>
 		</div>
 	);

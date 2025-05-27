@@ -31,6 +31,30 @@ interface TemplateCardProps {
 	compact?: boolean;
 }
 
+// Helper para asegurar que un valor sea un número válido
+const ensureNumber = (value: unknown, defaultValue: number = 0): number => {
+	if (typeof value === "number" && !isNaN(value)) {
+		return value;
+	}
+	if (typeof value === "string") {
+		const parsed = parseFloat(value);
+		return !isNaN(parsed) ? parsed : defaultValue;
+	}
+	return defaultValue;
+};
+
+// Helper para asegurar que un valor sea un float con 2 decimales
+const ensureFloat = (value: unknown, defaultValue: number = 0): number => {
+	const numValue = ensureNumber(value, defaultValue);
+	return parseFloat(numValue.toFixed(2));
+};
+
+// Helper para formatear rating de manera segura
+const formatRating = (rating: unknown): string => {
+	const numRating = ensureFloat(rating, 0.0);
+	return numRating.toFixed(2);
+};
+
 // Mapeo de categorías a iconos
 const getCategoryIcon = (category: string, type?: string) => {
 	switch (category?.toLowerCase() || type?.toLowerCase()) {
@@ -65,6 +89,33 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 	showPreviewButton = true,
 	compact = false,
 }) => {
+	// Normalizar datos del template para evitar errores
+	const normalizedTemplate = {
+		...template,
+		// Convertir rating de string a número de manera segura
+		rating: ensureFloat(template.averageRating || template.rating, 0.0),
+		usageCount: ensureNumber(template.usageCount, 0),
+		verified: Boolean(
+			template.verified || template.isVerified
+		),
+		necReference: template.necReference || "NEC",
+		profession: template.targetProfession || template.profession || "",
+		estimatedTime: template.estimatedTime || "10-15 min",
+		requirements: Array.isArray(template.requirements)
+			? template.requirements
+			: [],
+		tags: Array.isArray(template.tags) ? template.tags : [],
+		isFavorite: Boolean(template.isFavorite),
+		isNew: Boolean(template.isNew),
+		trending: Boolean(template.trending),
+		popular: Boolean(template.popular),
+		category: template.category,
+		type: template.type,
+		difficulty: template.difficulty || "intermediate",
+		icon: template.icon,
+		color: template.color,
+	};
+
 	const getDifficultyConfig = (difficulty: string) => {
 		switch (difficulty) {
 			case "basic":
@@ -91,23 +142,24 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 	};
 
 	const getTrendingIcon = () => {
-		if (template.trending) {
+		if (normalizedTemplate.trending) {
 			return <ArrowTrendingUpIcon className="h-4 w-4 text-orange-500" />;
 		}
-		if (
-			template.popular ||
-			(template.usage_count && template.usage_count > 100)
-		) {
+		if (normalizedTemplate.popular || normalizedTemplate.usageCount > 100) {
 			return <FireIcon className="h-4 w-4 text-red-500" />;
 		}
 		return null;
 	};
 
-	const difficultyConfig = getDifficultyConfig(template.difficulty);
+	const difficultyConfig = getDifficultyConfig(normalizedTemplate.difficulty);
 
 	// Obtener el icono correcto basado en la categoría/tipo
 	const IconComponent =
-		template.icon || getCategoryIcon(template.category, template.type);
+		normalizedTemplate.icon ||
+		getCategoryIcon(
+			normalizedTemplate.category || "",
+			normalizedTemplate.type || ""
+		);
 
 	// Color de gradiente basado en categoría
 	const getGradientColor = (category: string) => {
@@ -128,7 +180,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 			case "geotechnical":
 				return "from-stone-600 to-stone-500";
 			default:
-				return template.color || "from-primary-600 to-secondary-500";
+				return normalizedTemplate.color || "from-primary-600 to-secondary-500";
 		}
 	};
 
@@ -139,7 +191,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 		>
 			{/* Header con gradiente y patrones */}
 			<div
-				className={`h-32 bg-gradient-to-r ${getGradientColor(template.category)} relative overflow-hidden`}
+				className={`h-32 bg-gradient-to-r ${getGradientColor(normalizedTemplate.category || "")} relative overflow-hidden`}
 			>
 				{/* Patrón arquitectónico */}
 				<div className="absolute inset-0 opacity-20">
@@ -150,7 +202,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 					>
 						<defs>
 							<pattern
-								id={`pattern-${template.id}`}
+								id={`pattern-${normalizedTemplate.id}`}
 								x="0"
 								y="0"
 								width="20"
@@ -168,7 +220,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 						<rect
 							width="100"
 							height="100"
-							fill={`url(#pattern-${template.id})`}
+							fill={`url(#pattern-${normalizedTemplate.id})`}
 						/>
 					</svg>
 				</div>
@@ -182,12 +234,12 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 
 				{/* Indicadores superiores */}
 				<div className="absolute top-4 left-4 flex items-center gap-2">
-					{(template.verified || template.is_verified) && (
+					{normalizedTemplate.verified && (
 						<div className="p-1.5 bg-white/20 backdrop-blur-sm rounded-full">
 							<CheckBadgeIcon className="h-4 w-4 text-white" />
 						</div>
 					)}
-					{template.isNew && (
+					{normalizedTemplate.isNew && (
 						<span className="px-2 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">
 							NUEVO
 						</span>
@@ -207,7 +259,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 					}}
 					className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all duration-200 transform hover:scale-110"
 				>
-					{template.isFavorite ? (
+					{normalizedTemplate.isFavorite ? (
 						<HeartSolidIcon className="h-4 w-4 text-red-400" />
 					) : (
 						<HeartIcon className="h-4 w-4 text-white" />
@@ -229,10 +281,10 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 				{/* Título y descripción */}
 				<div className="mb-4">
 					<h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors duration-200 line-clamp-1">
-						{template.name}
+						{normalizedTemplate.name}
 					</h3>
 					<p className="text-gray-600 text-sm leading-relaxed line-clamp-2">
-						{template.description}
+						{normalizedTemplate.description}
 					</p>
 				</div>
 
@@ -240,63 +292,35 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 				<div className="grid grid-cols-2 gap-3 mb-4 text-xs text-gray-500">
 					<div className="flex items-center gap-1">
 						<BookOpenIcon className="h-3 w-3 text-primary-600" />
-						<span className="truncate">{template.necReference || "NEC"}</span>
+						<span className="truncate">{normalizedTemplate.necReference}</span>
 					</div>
 					<div className="flex items-center gap-1">
 						<ClockIcon className="h-3 w-3 text-green-600" />
-						<span>{template.estimatedTime}</span>
+						<span>{normalizedTemplate.estimatedTime}</span>
 					</div>
 					<div className="flex items-center gap-1">
 						<StarIcon className="h-3 w-3 text-yellow-500" />
 						<span>
-							{template.rating?.toFixed(1) || "0.0"} ({template.usageCount || 0}
-							)
+							{formatRating(normalizedTemplate.rating)} (
+							{normalizedTemplate.usageCount})
 						</span>
 					</div>
 					<div className="flex items-center gap-1">
 						<UserGroupIcon className="h-3 w-3 text-gray-500" />
-						<span>{template.profession?.length || 0} esp.</span>
+						<span>{normalizedTemplate.profession?.length || 0} esp.</span>
 					</div>
 				</div>
 
-				{/* Requerimientos principales */}
-				{!compact &&
-					template.requirements &&
-					template.requirements.length > 0 && (
-						<div className="mb-4">
-							<p className="text-xs font-medium text-gray-700 mb-2">
-								Datos requeridos:
-							</p>
-							<div className="flex flex-wrap gap-1">
-								{template.requirements.slice(0, 2).map((req, idx) => (
-									<span
-										key={idx}
-										className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md truncate max-w-[120px]"
-										title={req}
-									>
-										{req}
-									</span>
-								))}
-								{template.requirements.length > 2 && (
-									<span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-md">
-										+{template.requirements.length - 2}
-									</span>
-								)}
-							</div>
-						</div>
-					)}
-
 				{/* Requerimientos principales - Solo mostrar si existen */}
 				{!compact &&
-					template.requirements &&
-					Array.isArray(template.requirements) &&
-					template.requirements.length > 0 && (
+					normalizedTemplate.requirements &&
+					normalizedTemplate.requirements.length > 0 && (
 						<div className="mb-4">
 							<p className="text-xs font-medium text-gray-700 mb-2">
 								Datos requeridos:
 							</p>
 							<div className="flex flex-wrap gap-1">
-								{template.requirements.slice(0, 2).map((req, idx) => (
+								{normalizedTemplate.requirements.slice(0, 2).map((req, idx) => (
 									<span
 										key={idx}
 										className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md truncate max-w-[120px]"
@@ -305,9 +329,9 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 										{req}
 									</span>
 								))}
-								{template.requirements.length > 2 && (
+								{normalizedTemplate.requirements.length > 2 && (
 									<span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-md">
-										+{template.requirements.length - 2}
+										+{normalizedTemplate.requirements.length - 2}
 									</span>
 								)}
 							</div>
@@ -315,27 +339,25 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 					)}
 
 				{/* Tags - Solo mostrar si existen */}
-				{template.tags &&
-					Array.isArray(template.tags) &&
-					template.tags.length > 0 && (
-						<div className="mb-6">
-							<div className="flex flex-wrap gap-1">
-								{template.tags.slice(0, 3).map((tag, idx) => (
-									<span
-										key={idx}
-										className="px-2 py-1 bg-primary-50 text-primary-600 text-xs rounded-md font-medium"
-									>
-										#{tag}
-									</span>
-								))}
-								{template.tags.length > 3 && (
-									<span className="px-2 py-1 bg-gray-50 text-gray-500 text-xs rounded-md">
-										+{template.tags.length - 3}
-									</span>
-								)}
-							</div>
+				{normalizedTemplate.tags && normalizedTemplate.tags.length > 0 && (
+					<div className="mb-6">
+						<div className="flex flex-wrap gap-1">
+							{normalizedTemplate.tags.slice(0, 3).map((tag, idx) => (
+								<span
+									key={idx}
+									className="px-2 py-1 bg-primary-50 text-primary-600 text-xs rounded-md font-medium"
+								>
+									#{tag}
+								</span>
+							))}
+							{normalizedTemplate.tags.length > 3 && (
+								<span className="px-2 py-1 bg-gray-50 text-gray-500 text-xs rounded-md">
+									+{normalizedTemplate.tags.length - 3}
+								</span>
+							)}
 						</div>
-					)}
+					</div>
+				)}
 
 				{/* Botones de acción */}
 				<div className="space-y-2">
@@ -369,7 +391,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 
 			{/* Sombra proyectada elegante */}
 			<div
-				className={`absolute inset-0 bg-gradient-to-r ${getGradientColor(template.category)} rounded-2xl -z-10 blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500 transform group-hover:scale-110`}
+				className={`absolute inset-0 bg-gradient-to-r ${getGradientColor(normalizedTemplate.category || "")} rounded-2xl -z-10 blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500 transform group-hover:scale-110`}
 			/>
 		</div>
 	);

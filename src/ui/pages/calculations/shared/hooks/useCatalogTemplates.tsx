@@ -11,7 +11,7 @@ import type {
 	UseCatalogSearchReturn,
 	TemplateCategory,
 } from "../types/template.types";
-import {TEMPLATE_CATEGORIES} from "../types/template.types";
+import { TEMPLATE_CATEGORIES } from "../types/template.types";
 import {useAuth} from "../../../../context/AuthContext";
 
 // ==================== HOOK PRINCIPAL ====================
@@ -32,16 +32,14 @@ export const useCatalogTemplates = (
 
 			const result = await templateApplicationService.getTemplates({
 				showOnlyVerified: options.onlyVerified ?? true,
-				showOnlyFeatured: false,
+				showOnlyFeatured: true,
 				limit: 100,
 			});
 
 			if (result.data) {
 				// ✅ CARGAR FAVORITOS SI HAY USUARIO
 				if (user) {
-					const favorites = await templateApplicationService.getUserFavorites(
-						user.id
-					);
+					const favorites = await templateApplicationService.getUserFavorites(user.id);
 					const favoriteIds = new Set(favorites.map((f) => f.id));
 
 					const templatesWithFavorites = result.data.map((template) => ({
@@ -102,15 +100,12 @@ export const useCatalogTemplates = (
 	const categoriesWithCounts = useMemo(() => {
 		return TEMPLATE_CATEGORIES.map((category) => ({
 			...category,
-			count: templates.filter(
-				(t) => t.type === category.id || t.category === category.id
-			).length,
+			count: templates.filter((t) => t.type === category.id || t.category === category.id).length,
 			subcategories: category.subcategories?.map((sub) => ({
 				...sub,
-				count: templates.filter(
-					(t) =>
-						(t.type === category.id || t.category === category.id) &&
-						(t.subcategory === sub.id || t.type === sub.id)
+				count: templates.filter((t) => 
+					(t.type === category.id || t.category === category.id) && 
+					(t.subcategory === sub.id || t.type === sub.id)
 				).length,
 			})),
 		}));
@@ -123,10 +118,7 @@ export const useCatalogTemplates = (
 			verifiedCount: templates.filter((t) => t.isVerified || t.verified).length,
 			avgRating:
 				templates.length > 0
-					? templates.reduce(
-							(sum, t) => sum + (t.averageRating || t.rating || 0),
-							0
-						) / templates.length
+					? templates.reduce((sum, t) => sum + (t.averageRating || t.rating || 0), 0) / templates.length
 					: 0,
 			totalUsage: templates.reduce((sum, t) => sum + (t.usageCount || 0), 0),
 			trendingCount: templates.filter((t) => t.trending).length,
@@ -160,12 +152,9 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 	// Hook principal para obtener templates
 	const {templates: allTemplates} = useCatalogTemplates({autoLoad: true});
 
-	const updateFilter = useCallback(
-		(key: keyof TemplateFilters, value: unknown) => {
-			setActiveFilters((prev) => ({...prev, [key]: value}));
-		},
-		[]
-	);
+	const updateFilter = useCallback((key: keyof TemplateFilters, value: unknown) => {
+		setActiveFilters((prev) => ({...prev, [key]: value}));
+	}, []);
 
 	const clearFilters = useCallback(() => {
 		setSearchTerm("");
@@ -189,18 +178,14 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 		// Filtrar por categoría
 		if (activeFilters.category) {
 			filtered = filtered.filter(
-				(template) =>
-					template.type === activeFilters.category ||
-					template.category === activeFilters.category
+				(template) => template.type === activeFilters.category || template.category === activeFilters.category
 			);
 		}
 
 		// Filtrar por subcategoría
 		if (activeFilters.subcategory) {
 			filtered = filtered.filter(
-				(template) =>
-					template.subcategory === activeFilters.subcategory ||
-					template.type === activeFilters.subcategory
+				(template) => template.subcategory === activeFilters.subcategory || template.type === activeFilters.subcategory
 			);
 		}
 
@@ -218,16 +203,13 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 
 		// Filtrar solo verificados
 		if (activeFilters.showOnlyVerified) {
-			filtered = filtered.filter(
-				(template) => template.isVerified || template.verified
-			);
+			filtered = filtered.filter((template) => template.isVerified || template.verified);
 		}
 
 		// Filtrar solo destacados
 		if (activeFilters.showOnlyFeatured) {
 			filtered = filtered.filter(
-				(template) =>
-					template.trending || template.popular || template.isFeatured
+				(template) => template.trending || template.popular || template.isFeatured
 			);
 		}
 
@@ -237,11 +219,7 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 				filtered.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
 				break;
 			case "rating":
-				filtered.sort(
-					(a, b) =>
-						(b.averageRating || b.rating || 0) -
-						(a.averageRating || a.rating || 0)
-				);
+				filtered.sort((a, b) => (b.averageRating || b.rating || 0) - (a.averageRating || a.rating || 0));
 				break;
 			case "trending":
 				filtered.sort((a, b) => {

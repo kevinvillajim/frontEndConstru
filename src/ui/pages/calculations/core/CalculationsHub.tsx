@@ -75,45 +75,45 @@ const CalculationsHub: React.FC = () => {
 		},
 	];
 
-	useEffect(() => {
-		// Cargar datos iniciales con manejo de errores mejorado
-		const loadInitialData = async () => {
-			try {
-				// Usar Promise.allSettled para que los errores no bloqueen otras cargas
-				const results = await Promise.allSettled([
-					fetchTemplates({searchTerm: ""}).catch((err) => {
-						console.warn("⚠️ Templates endpoint failed:", err.message);
-						return [];
-					}),
-					fetchSavedCalculations().catch((err) => {
-						console.warn("⚠️ Saved calculations endpoint failed:", err.message);
-						return [];
-					}),
-				]);
+	// useEffect(() => {
+	// 	// Cargar datos iniciales con manejo de errores mejorado
+	// 	const loadInitialData = async () => {
+	// 		try {
+	// 			// Usar Promise.allSettled para que los errores no bloqueen otras cargas
+	// 			const results = await Promise.allSettled([
+	// 				fetchTemplates({searchTerm: ""}).catch((err) => {
+	// 					console.warn("⚠️ Templates endpoint failed:", err.message);
+	// 					return [];
+	// 				}),
+	// 				fetchSavedCalculations().catch((err) => {
+	// 					console.warn("⚠️ Saved calculations endpoint failed:", err.message);
+	// 					return [];
+	// 				}),
+	// 			]);
 
-				// Log resultados para debugging
-				results.forEach((result, index) => {
-					const operation = index === 0 ? "Templates" : "Saved Calculations";
-					if (result.status === "rejected") {
-						console.warn(`${operation} loading failed:`, result.reason);
-					} else {
-						console.log(`✅ ${operation} loaded successfully`);
-					}
-				});
+	// 			// Log resultados para debugging
+	// 			results.forEach((result, index) => {
+	// 				const operation = index === 0 ? "Templates" : "Saved Calculations";
+	// 				if (result.status === "rejected") {
+	// 					console.warn(`${operation} loading failed:`, result.reason);
+	// 				} else {
+	// 					console.log(`✅ ${operation} loaded successfully`);
+	// 				}
+	// 			});
 
-				// Cargar recomendaciones por separado para no bloquear la interfaz
-				// Usar setTimeout para asegurar que no bloquee el render inicial
-				setTimeout(() => {
-					loadRecommendations();
-				}, 100);
-			} catch (error) {
-				console.error("Error in loadInitialData:", error);
-				// No establecer error crítico para problemas de carga inicial
-			}
-		};
+	// 			// Cargar recomendaciones por separado para no bloquear la interfaz
+	// 			// Usar setTimeout para asegurar que no bloquee el render inicial
+	// 			setTimeout(() => {
+	// 				loadRecommendations();
+	// 			}, 100);
+	// 		} catch (error) {
+	// 			console.error("Error in loadInitialData:", error);
+	// 			// No establecer error crítico para problemas de carga inicial
+	// 		}
+	// 	};
 
-		loadInitialData();
-	}, [fetchTemplates, fetchSavedCalculations]);
+	// 	loadInitialData();
+	// }, [fetchTemplates, fetchSavedCalculations]);
 
 	useEffect(() => {
 		// Actualizar estadísticas rápidas cuando cambien los datos
