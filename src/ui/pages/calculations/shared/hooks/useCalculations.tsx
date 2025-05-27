@@ -3,11 +3,33 @@ import {useState, useCallback} from "react";
 import type {
 	CalculationTemplate,
 	CalculationResult,
-	CalculationsFilters,
-	RecommendationContext,
-	SaveCalculationRequest,
-} from "../types/calculation.types";
+	BackendCalculationResult,
+	TemplateFilters,
+	BackendCalculationTemplate,
+	mapBackendTemplate,
+} from "../types/template.types";
 import endpoints from "../../../../../utils/endpoints";
+
+interface CalculationsFilters {
+	category?: string;
+	profession?: string;
+	difficulty?: string;
+	searchTerm?: string;
+}
+
+interface RecommendationContext {
+	templateId?: string;
+	projectId?: string;
+	limit?: number;
+}
+
+interface SaveCalculationRequest {
+	id: string;
+	name: string;
+	notes?: string;
+	usedInProject?: boolean;
+	projectId?: string;
+}
 
 export const useCalculations = () => {
 	const [templates, setTemplates] = useState<CalculationTemplate[]>([]);
@@ -17,7 +39,7 @@ export const useCalculations = () => {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	// Obtener plantillas disponibles
+	// Obtener plantillas disponibles con tipado correcto
 	const fetchTemplates = useCallback(async (filters?: CalculationsFilters) => {
 		setLoading(true);
 		setError(null);
@@ -31,6 +53,10 @@ export const useCalculations = () => {
 				queryParams.append("searchTerm", filters.searchTerm);
 			if (filters?.difficulty)
 				queryParams.append("difficulty", filters.difficulty);
+
+			// Solo plantillas activas y verificadas
+			queryParams.append("isActive", "true");
+			queryParams.append("isVerified", "true");
 
 			const response = await fetch(
 				`${endpoints.calculations.templates.list}?${queryParams}`,
@@ -50,8 +76,17 @@ export const useCalculations = () => {
 			}
 
 			const data = await response.json();
-			setTemplates(data.data.templates || []);
-			return data.data.templates || [];
+
+			if (data.success && data.data?.templates) {
+				// Mapear las plantillas del backend al formato esperado
+				const mappedTemplates = data.data.templates.map(
+					(template: BackendCalculationTemplate) => mapBackendTemplate(template)
+				);
+				setTemplates(mappedTemplates);
+				return mappedTemplates;
+			}
+
+			throw new Error("Formato de respuesta inválido");
 		} catch (err) {
 			const errorMessage =
 				err instanceof Error ? err.message : "Error desconocido";
@@ -63,13 +98,13 @@ export const useCalculations = () => {
 		}
 	}, []);
 
-	// Ejecutar un cálculo
+	// Ejecutar un cálculo usando la API real
 	const executeCalculation = useCallback(
 		async (
 			templateId: string,
 			parameters: Record<string, any>,
 			projectId?: string
-		) => {
+		): Promise<CalculationResult> => {
 			setLoading(true);
 			setError(null);
 
@@ -88,13 +123,43 @@ export const useCalculations = () => {
 				});
 
 				if (!response.ok) {
+					const errorData = await response.json().catch(() => ({}));
 					throw new Error(
-						`Error al ejecutar cálculo: ${response.status} ${response.statusText}`
+						errorData.message ||
+							`Error al ejecutar cálculo: ${response.status} ${response.statusText}`
 					);
 				}
 
 				const data = await response.json();
-				return data.data;
+
+				if (!data.success) {
+					throw new Error(data.message || "Error en la ejecución del cálculo");
+				}
+
+				// Mapear el resultado del backend al formato esperado
+				const backendResult: BackendCalculationResult = data.data;
+				const result: CalculationResult = {
+					id: backendResult.id,
+					calculationTemplateId: backendResult.calculationTemplateId,
+					templateName: "", // Se puede obtener del template si es necesario
+					projectId: backendResult.projectId,
+					userId: backendResult.userId || "current-user",
+					inputParameters: backendResult.inputParameters,
+					results: backendResult.results,
+					isSaved: backendResult.isSaved,
+					name: backendResult.name,
+					notes: backendResult.notes,
+					executionTimeMs: backendResult.executionTimeMs,
+					wasSuccessful: backendResult.wasSuccessful,
+					errorMessage: backendResult.errorMessage,
+					usedInProject: backendResult.usedInProject,
+					ledToMaterialOrder: backendResult.ledToMaterialOrder,
+					ledToBudget: backendResult.ledToBudget,
+					createdAt: backendResult.createdAt,
+					updatedAt: backendResult.updatedAt,
+				};
+
+				return result;
 			} catch (err) {
 				const errorMessage =
 					err instanceof Error ? err.message : "Error al ejecutar cálculo";
@@ -110,7 +175,7 @@ export const useCalculations = () => {
 
 	// Guardar resultado de cálculo
 	const saveCalculationResult = useCallback(
-		async (result: SaveCalculationRequest) => {
+		async (result: SaveCalculationRequest): Promise<CalculationResult> => {
 			setLoading(true);
 			setError(null);
 
@@ -125,17 +190,26 @@ export const useCalculations = () => {
 				});
 
 				if (!response.ok) {
+					const errorData = await response.json().catch(() => ({}));
 					throw new Error(
-						`Error al guardar resultado: ${response.status} ${response.statusText}`
+						errorData.message ||
+							`Error al guardar resultado: ${response.status} ${response.statusText}`
 					);
 				}
 
 				const data = await response.json();
 
-				// Actualizar la lista local de cálculos guardados
-				setSavedCalculations((prev) => [...prev, data.data]);
+				if (!data.success) {
+					throw new Error(data.message || "Error al guardar el resultado");
+				}
 
-				return data.data;
+				// Mapear el resultado guardado
+				const savedResult: CalculationResult = data.data;
+
+				// Actualizar la lista local de cálculos guardados
+				setSavedCalculations((prev) => [savedResult, ...prev]);
+
+				return savedResult;
 			} catch (err) {
 				const errorMessage =
 					err instanceof Error ? err.message : "Error al guardar resultado";
@@ -155,65 +229,7 @@ export const useCalculations = () => {
 		setError(null);
 
 		try {
-			// NOTA: El endpoint /api/calculations/saved NO EXISTE en la documentación de la API
-			// Esto es una implementación temporal hasta que se agregue al backend
-
-			// Opción 1: Intentar usar un endpoint que puede existir
-			// Opción 2: Usar datos mock temporales
-			// Opción 3: Simplemente devolver array vacío sin hacer llamada
-
-			// Por ahora, usamos datos mock para evitar el error
-			console.warn(
-				"⚠️ Endpoint /api/calculations/saved no implementado. Usando datos mock."
-			);
-
-			// Simulamos datos de ejemplo
-			const mockCalculations: CalculationResult[] = [
-				{
-					id: "mock-1",
-					templateId: "template-1",
-					name: "Cálculo de Demanda Eléctrica - Casa Modelo A",
-					parameters: {area: 120, tipo: "residencial"},
-					results: {
-						mainResult: {
-							label: "Demanda Total",
-							value: "15.2",
-							unit: "kW",
-						},
-						breakdown: [
-							{label: "Iluminación", value: "2.4", unit: "kW"},
-							{label: "Tomacorrientes", value: "8.8", unit: "kW"},
-							{label: "Equipos especiales", value: "4.0", unit: "kW"},
-						],
-						recommendations: [
-							{
-								type: "info",
-								title: "Cumple con NEC",
-								description:
-									"El cálculo cumple con las normativas ecuatorianas",
-							},
-						],
-						compliance: {
-							isCompliant: true,
-							necReference: "NEC-2018 Sección 220",
-							notes: ["Cálculo verificado según normativa vigente"],
-						},
-					},
-					createdAt: "2024-03-15T10:30:00Z",
-					lastModified: "2024-03-15T10:30:00Z",
-					usedInProject: true,
-					projectId: "project-1",
-				},
-			];
-
-			// Simular delay de red
-			await new Promise((resolve) => setTimeout(resolve, 500));
-
-			setSavedCalculations(mockCalculations);
-			return mockCalculations;
-
-			/* 
-			// Código para cuando el endpoint esté implementado:
+			// Primero intentar con el endpoint que puede existir en el futuro
 			const response = await fetch(endpoints.calculations.savedCalculations, {
 				method: "GET",
 				credentials: "include",
@@ -222,26 +238,30 @@ export const useCalculations = () => {
 				},
 			});
 
-			if (!response.ok) {
-				throw new Error(`Error al obtener cálculos guardados: ${response.status} ${response.statusText}`);
+			if (response.ok) {
+				const data = await response.json();
+				if (data.success && data.data) {
+					const calculations = data.data.map(
+						(calc: BackendCalculationResult) => ({
+							...calc,
+							templateName: calc.templateName || "Plantilla",
+							userId: calc.userId || "current-user",
+						})
+					);
+					setSavedCalculations(calculations);
+					return calculations;
+				}
 			}
 
-			const data = await response.json();
-			const calculations = data.data || [];
-			setSavedCalculations(calculations);
-			return calculations;
-			*/
+			// Si el endpoint no existe, devolver array vacío sin error
+			console.warn(
+				"Endpoint de cálculos guardados no disponible. Funcionalidad pendiente de implementación."
+			);
+			setSavedCalculations([]);
+			return [];
 		} catch (err) {
-			const errorMessage =
-				err instanceof Error
-					? err.message
-					: "Error al obtener cálculos guardados";
-			console.error("Error fetching saved calculations:", err);
-
+			console.warn("Error obteniendo cálculos guardados:", err);
 			// No establecer error para endpoints no implementados
-			// setError(errorMessage);
-
-			// Devolver array vacío en caso de error
 			setSavedCalculations([]);
 			return [];
 		} finally {
@@ -251,7 +271,7 @@ export const useCalculations = () => {
 
 	// Obtener recomendaciones de plantillas
 	const getRecommendations = useCallback(
-		async (context?: RecommendationContext) => {
+		async (context?: RecommendationContext): Promise<CalculationTemplate[]> => {
 			try {
 				const queryParams = new URLSearchParams();
 				if (context?.templateId)
@@ -261,16 +281,16 @@ export const useCalculations = () => {
 				if (context?.limit)
 					queryParams.append("limit", context.limit.toString());
 
-				// Usar el endpoint correcto de recomendaciones
-				const url = `/api/recommendations/templates?${queryParams}`;
-
-				const response = await fetch(url, {
-					method: "GET",
-					credentials: "include",
-					headers: {
-						"Content-Type": "application/json",
-					},
-				});
+				const response = await fetch(
+					`${endpoints.calculations.recommendations}?${queryParams}`,
+					{
+						method: "GET",
+						credentials: "include",
+						headers: {
+							"Content-Type": "application/json",
+						},
+					}
+				);
 
 				if (!response.ok) {
 					console.warn(
@@ -280,7 +300,14 @@ export const useCalculations = () => {
 				}
 
 				const data = await response.json();
-				return data.data || [];
+
+				if (data.success && data.data) {
+					return data.data.map((template: BackendCalculationTemplate) =>
+						mapBackendTemplate(template)
+					);
+				}
+
+				return [];
 			} catch (err) {
 				console.error("Error getting recommendations:", err);
 				return [];
@@ -290,71 +317,120 @@ export const useCalculations = () => {
 	);
 
 	// Obtener plantilla específica
-	const getTemplate = useCallback(async (templateId: string) => {
-		try {
-			const response = await fetch(
-				endpoints.calculations.templates.getById(templateId),
-				{
-					method: "GET",
-					credentials: "include",
-					headers: {
-						"Content-Type": "application/json",
-					},
-				}
-			);
-
-			if (!response.ok) {
-				throw new Error(
-					`Error al obtener plantilla: ${response.status} ${response.statusText}`
+	const getTemplate = useCallback(
+		async (templateId: string): Promise<CalculationTemplate | null> => {
+			try {
+				const response = await fetch(
+					endpoints.calculations.templates.getById(templateId),
+					{
+						method: "GET",
+						credentials: "include",
+						headers: {
+							"Content-Type": "application/json",
+						},
+					}
 				);
-			}
 
-			const data = await response.json();
-			return data.data;
-		} catch (err) {
-			console.error("Error getting template:", err);
-			return null;
-		}
-	}, []);
+				if (!response.ok) {
+					throw new Error(
+						`Error al obtener plantilla: ${response.status} ${response.statusText}`
+					);
+				}
+
+				const data = await response.json();
+
+				if (data.success && data.data) {
+					return mapBackendTemplate(data.data);
+				}
+
+				return null;
+			} catch (err) {
+				console.error("Error getting template:", err);
+				return null;
+			}
+		},
+		[]
+	);
 
 	// Marcar/desmarcar como favorito
-	const toggleFavorite = useCallback(async (templateId: string) => {
-		try {
-			// Este endpoint no está definido en la documentación
-			// Necesitarás agregarlo al backend
-			const response = await fetch(
-				`/api/calculations/templates/${templateId}/favorite`,
-				{
-					method: "POST",
-					credentials: "include",
-					headers: {
-						"Content-Type": "application/json",
-					},
-				}
-			);
-
-			if (!response.ok) {
-				console.warn(
-					`Error al cambiar favorito: ${response.status} ${response.statusText}`
+	const toggleFavorite = useCallback(
+		async (templateId: string): Promise<boolean> => {
+			try {
+				const response = await fetch(
+					endpoints.calculations.templates.toggleFavorite(templateId),
+					{
+						method: "POST",
+						credentials: "include",
+						headers: {
+							"Content-Type": "application/json",
+						},
+					}
 				);
+
+				if (!response.ok) {
+					console.warn(
+						`Error al cambiar favorito: ${response.status} ${response.statusText}`
+					);
+					return false;
+				}
+
+				const data = await response.json();
+
+				if (data.success && data.data) {
+					const newIsFavorite = data.data.isFavorite;
+
+					// Actualizar estado local
+					setTemplates((prev) =>
+						prev.map((template) =>
+							template.id === templateId
+								? {...template, isFavorite: newIsFavorite}
+								: template
+						)
+					);
+
+					return newIsFavorite;
+				}
+
+				return false;
+			} catch (err) {
+				console.error("Error toggling favorite:", err);
 				return false;
 			}
+		},
+		[]
+	);
 
-			// Actualizar estado local
-			setTemplates((prev) =>
-				prev.map((template) =>
-					template.id === templateId
-						? {...template, isFavorite: !template.isFavorite}
-						: template
-				)
-			);
+	// Obtener vista previa de una plantilla
+	const getTemplatePreview = useCallback(
+		async (templateId: string): Promise<any> => {
+			try {
+				const response = await fetch(
+					endpoints.calculations.templates.preview(templateId),
+					{
+						method: "GET",
+						credentials: "include",
+						headers: {
+							"Content-Type": "application/json",
+						},
+					}
+				);
 
-			return true;
-		} catch (err) {
-			console.error("Error toggling favorite:", err);
-			return false;
-		}
-	}, []);
+				if (!response.ok) {
+					console.warn(
+						`Error al obtener vista previa: ${response.status} ${response.statusText}`
+					);
+					return null;
+				}
+
+				const data = await response.json();
+				return data.success ? data.data : null;
+			} catch (err) {
+				console.error("Error getting template preview:", err);
+				return null;
+			}
+		},
+		[]
+	);
 
 	return {
 		// Estado
@@ -373,6 +449,7 @@ export const useCalculations = () => {
 		// Acciones adicionales
 		getTemplate,
 		toggleFavorite,
+		getTemplatePreview,
 
 		// Helpers
 		clearError: () => setError(null),

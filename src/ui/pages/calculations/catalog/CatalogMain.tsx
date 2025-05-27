@@ -1,25 +1,26 @@
-// src/ui/pages/calculations/catalog/CatalogPage.tsx
+// src/ui/pages/calculations/catalog/CatalogMain.tsx
 import React from "react";
 import {useNavigate} from "react-router-dom";
 import CalculationsCatalog from "./CalculationsCatalog";
 import type {CalculationTemplate} from "../shared/types/template.types";
 
 /**
- * Wrapper para CalculationsCatalog que maneja la navegación
+ * Wrapper para CalculationsCatalog que maneja la navegación programática
  * Separa la lógica de navegación del componente de presentación
  */
-const CatalogPage: React.FC = () => {
+const CatalogMain: React.FC = () => {
 	const navigate = useNavigate();
 
 	const handleTemplateSelect = (template: CalculationTemplate) => {
-		// Navegar a la interfaz de cálculo con el ID de la plantilla
+		// Navegar usando la estructura de rutas definida
 		navigate(`/calculations/catalog/template/${template.id}`);
 	};
 
 	const handlePreviewTemplate = (template: CalculationTemplate) => {
-		// Aquí podrías implementar lógica adicional para preview
-		// Por ahora, reutilizamos la misma lógica de selección
+		// Para preview, podrías implementar un modal en el futuro
+		// Por ahora, navegar a la interfaz completa de cálculo
 		console.log("Previewing template:", template.name);
+		navigate(`/calculations/catalog/template/${template.id}`);
 	};
 
 	return (
@@ -30,4 +31,4 @@ const CatalogPage: React.FC = () => {
 	);
 };
 
-export default CatalogPage;
+export default CatalogMain;

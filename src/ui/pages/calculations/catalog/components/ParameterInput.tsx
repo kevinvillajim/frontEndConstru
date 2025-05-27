@@ -3,10 +3,29 @@ import {
 	LightBulbIcon,
 	ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-import type {TemplateParameter} from "../../shared/types/template.types";
+
+// Tipo de parámetro real del backend
+interface BackendParameter {
+	id: string;
+	name: string;
+	description: string;
+	dataType: "number" | "string" | "enum" | "boolean";
+	scope: "input" | "output";
+	displayOrder: number;
+	isRequired: boolean;
+	defaultValue?: string | null;
+	minValue?: number | null;
+	maxValue?: number | null;
+	regexPattern?: string | null;
+	unitOfMeasure?: string | null;
+	allowedValues?: string | null; // JSON array como string
+	helpText?: string;
+	dependsOnParameters?: string | null;
+	formula?: string | null;
+}
 
 interface ParameterInputProps {
-	parameter: TemplateParameter;
+	parameter: BackendParameter;
 	value: any;
 	onChange: (value: any) => void;
 	error?: string;
@@ -23,12 +42,22 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 	// Estado para controlar si el campo ha sido tocado (para mostrar errores)
 	const [touched, setTouched] = useState(false);
 
+	// Parsear allowedValues si existe
+	const getAllowedValues = useCallback(() => {
+		if (!parameter.allowedValues) return null;
+		try {
+			return JSON.parse(parameter.allowedValues);
+		} catch {
+			return null;
+		}
+	}, [parameter.allowedValues]);
+
 	// Manejar cambios de input de manera simple
 	const handleChange = useCallback(
 		(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
 			const newValue = event.target.value;
 
-			if (parameter.type === "number") {
+			if (parameter.dataType === "number") {
 				// Para números, enviar el valor como string si no está vacío, sino undefined
 				if (newValue === "") {
 					onChange(undefined);
@@ -46,7 +75,7 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 				onChange(newValue);
 			}
 		},
-		[parameter.type, onChange]
+		[parameter.dataType, onChange]
 	);
 
 	// Manejar checkbox
@@ -62,7 +91,7 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 		setTouched(true);
 
 		// Si es un número y el valor actual no es válido, limpiarlo
-		if (parameter.type === "number" && typeof value === "string") {
+		if (parameter.dataType === "number" && typeof value === "string") {
 			const num = parseFloat(value);
 			if (isNaN(num)) {
 				onChange(undefined);
@@ -70,7 +99,7 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 				onChange(num);
 			}
 		}
-	}, [parameter.type, value, onChange]);
+	}, [parameter.dataType, value, onChange]);
 
 	// Solo mostrar error si el campo ha sido tocado
 	const shouldShowError = error && touched;
@@ -79,17 +108,26 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 	const displayValue =
 		value === undefined || value === null ? "" : String(value);
 
+	// Obtener label desde description o name
+	const label = parameter.description || parameter.name;
+
+	// Obtener opciones válidas
+	const allowedValues = getAllowedValues();
+
 	return (
 		<div className="space-y-2">
 			<label className="block text-sm font-medium text-gray-700">
-				{parameter.label}
-				{parameter.required && <span className="text-red-500 ml-1">*</span>}
-				{parameter.unit && (
-					<span className="text-gray-500 font-normal"> ({parameter.unit})</span>
+				{label}
+				{parameter.isRequired && <span className="text-red-500 ml-1">*</span>}
+				{parameter.unitOfMeasure && (
+					<span className="text-gray-500 font-normal">
+						{" "}
+						({parameter.unitOfMeasure})
+					</span>
 				)}
 			</label>
 
-			{parameter.type === "select" ? (
+			{parameter.dataType === "enum" ? (
 				<select
 					value={displayValue}
 					onChange={handleChange}
@@ -99,13 +137,16 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 					}`}
 				>
 					<option value="">Seleccionar...</option>
-					{parameter.options?.map((option) => (
-						<option key={option} value={option}>
-							{option} {parameter.unit && `${parameter.unit}`}
-						</option>
-					))}
+					{allowedValues &&
+						Array.isArray(allowedValues) &&
+						allowedValues.map((option) => (
+							<option key={option} value={option}>
+								{option}{" "}
+								{parameter.unitOfMeasure && `${parameter.unitOfMeasure}`}
+							</option>
+						))}
 				</select>
-			) : parameter.type === "boolean" ? (
+			) : parameter.dataType === "boolean" ? (
 				<div className="flex items-center">
 					<input
 						type="checkbox"
@@ -114,29 +155,30 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 						className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
 					/>
 					<span className="ml-2 text-sm text-gray-700">
-						{parameter.tooltip || "Activar opción"}
+						{parameter.helpText || "Activar opción"}
 					</span>
 				</div>
 			) : (
 				<input
-					type={parameter.type === "number" ? "number" : "text"}
+					type={parameter.dataType === "number" ? "number" : "text"}
 					value={displayValue}
 					onChange={handleChange}
 					onBlur={handleBlur}
-					placeholder={parameter.placeholder}
-					min={parameter.min}
-					max={parameter.max}
-					step={parameter.type === "number" ? "any" : undefined}
+					placeholder={parameter.defaultValue || ""}
+					min={parameter.minValue || undefined}
+					max={parameter.maxValue || undefined}
+					step={parameter.dataType === "number" ? "any" : undefined}
+					pattern={parameter.regexPattern || undefined}
 					className={`w-full px-4 py-3 border rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
 						shouldShowError ? "border-red-500" : "border-gray-300"
 					}`}
 				/>
 			)}
 
-			{parameter.tooltip && (
+			{parameter.helpText && (
 				<div className="flex items-start gap-2 text-xs text-gray-500">
 					<LightBulbIcon className="h-4 w-4 mt-0.5 text-yellow-500 flex-shrink-0" />
-					<span>{parameter.tooltip}</span>
+					<span>{parameter.helpText}</span>
 				</div>
 			)}
 
@@ -155,16 +197,25 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 			)}
 
 			{/* Indicador de rango para números */}
-			{parameter.type === "number" &&
-				(parameter.min !== undefined || parameter.max !== undefined) && (
+			{parameter.dataType === "number" &&
+				(parameter.minValue !== undefined ||
+					parameter.maxValue !== undefined) && (
 					<div className="text-xs text-gray-500">
-						{parameter.min !== undefined && parameter.max !== undefined
-							? `Rango: ${parameter.min} - ${parameter.max}`
-							: parameter.min !== undefined
-								? `Mínimo: ${parameter.min}`
-								: `Máximo: ${parameter.max}`}
+						{parameter.minValue !== undefined &&
+						parameter.maxValue !== undefined
+							? `Rango: ${parameter.minValue} - ${parameter.maxValue}`
+							: parameter.minValue !== undefined
+								? `Mínimo: ${parameter.minValue}`
+								: `Máximo: ${parameter.maxValue}`}
 					</div>
 				)}
+
+			{/* Mostrar valor por defecto si existe */}
+			{parameter.defaultValue && !value && (
+				<div className="text-xs text-gray-500">
+					Valor por defecto: {parameter.defaultValue}
+				</div>
+			)}
 		</div>
 	);
 };

@@ -2,7 +2,7 @@
 
 import {useState, useEffect, useCallback, useMemo, useRef} from "react";
 import {templateApplicationService} from "../../../../../core/application/ServiceFactory";
-import {CalculationTemplate} from "../../../../../core/domain/models/calculations/CalculationTemplate";
+import type {CalculationTemplate} from "../../../../../core/domain/models/calculations/CalculationTemplate";
 import type {
 	TemplateFilters as DomainTemplateFilters,
 	PaginatedResult,

@@ -200,7 +200,7 @@ export class CalculationTemplateEntity implements CalculationTemplate {
 		if (value !== undefined && value !== null && value !== "") {
 			switch (param.type) {
 				case "number":
-					const numValue = Number(value);
+					{ const numValue = Number(value);
 					if (isNaN(numValue)) {
 						errors.push({
 							field: paramName,
@@ -223,7 +223,7 @@ export class CalculationTemplateEntity implements CalculationTemplate {
 							});
 						}
 					}
-					break;
+					break; }
 
 				case "text":
 					if (param.validation?.pattern) {
