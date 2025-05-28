@@ -33,7 +33,7 @@ interface CalculationsCatalogProps {
 }
 
 const SORT_OPTIONS: {
-	value: UITemplateFilters["sortBy"];
+	value: SortOption;
 	label: string;
 	icon: React.ComponentType<any>;
 }[] = [
@@ -111,7 +111,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 	const currentStats = useMemo(() => {
 		return {
 			verifiedCount: stats.verifiedCount,
-			avgRating: stats.avgRating,
+			avgRating: Number(stats.avgRating.toFixed(1)),
 			totalUsage: stats.totalUsage,
 		};
 	}, [stats]);
@@ -214,7 +214,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 								</div>
 								<div className="flex items-center gap-1">
 									<StarIcon className="h-4 w-4 text-yellow-500" />
-									<span>{currentStats.avgRating.toFixed(1)} promedio</span>
+									<span>{currentStats.avgRating} promedio</span>
 								</div>
 								<div className="flex items-center gap-1">
 									<CalculatorIcon className="h-4 w-4 text-primary-600" />
@@ -399,9 +399,9 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 				/>
 			)}
 
-			{/* Debug: Mostrar datos cargados */}
+			{/* Debug: Mostrar datos cargados (solo en desarrollo) */}
 			{process.env.NODE_ENV === "development" && (
-				<div className="fixed bottom-4 right-4 bg-black text-white p-2 rounded text-xs max-w-xs">
+				<div className="fixed bottom-4 right-4 bg-black text-white p-2 rounded text-xs max-w-xs z-50">
 					<div>Stats Total: {stats.total}</div>
 					<div>Filtered: {filteredTemplates.length}</div>
 					<div>Loading: {isLoading.toString()}</div>

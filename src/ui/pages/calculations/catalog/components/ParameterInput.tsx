@@ -140,11 +140,22 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 						{(parameter.min !== undefined || parameter.max !== undefined) && (
 							<div className="text-xs text-gray-500 flex items-center justify-between">
 								<span>
-									{parameter.min !== undefined && parameter.max !== undefined
-										? `Rango: ${parameter.min} - ${parameter.max}`
-										: parameter.min !== undefined
-											? `Mínimo: ${parameter.min}`
-											: `Máximo: ${parameter.max}`}
+									{(() => {
+										const hasMin =
+											parameter.min !== undefined && parameter.min !== null;
+										const hasMax =
+											parameter.max !== undefined && parameter.max !== null;
+
+										if (hasMin && hasMax) {
+											return `Rango: ${parameter.min} - ${parameter.max}`;
+										} else if (hasMin && !hasMax) {
+											return `Mínimo: ${parameter.min}`;
+										} else if (!hasMin && hasMax) {
+											return `Máximo: ${parameter.max}`;
+										} else {
+											return ""; // No debería llegar aquí por la condición del if
+										}
+									})()}
 								</span>
 								{parameter.unit && (
 									<span className="font-medium text-primary-600">

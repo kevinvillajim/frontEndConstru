@@ -1,6 +1,6 @@
 // src/ui/pages/calculations/shared/hooks/useCatalogTemplates.tsx
 
-import {useState, useEffect, useCallback, useMemo} from "react";
+import {useState, useEffect, useCallback, useMemo, useRef} from "react";
 import {templateApplicationService} from "../../../../../core/application/ServiceFactory";
 import type {
 	CalculationTemplate,
@@ -11,7 +11,7 @@ import type {
 	UseCatalogSearchReturn,
 	TemplateCategory,
 } from "../types/template.types";
-import { TEMPLATE_CATEGORIES } from "../types/template.types";
+import {TEMPLATE_CATEGORIES} from "../types/template.types";
 import {useAuth} from "../../../../context/AuthContext";
 
 // ==================== HOOK PRINCIPAL ====================
@@ -23,10 +23,14 @@ export const useCatalogTemplates = (
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+	const loadingRef = useRef(false); // Agregar la referencia que faltaba
 
 	// Cargar templates
 	const refreshTemplates = useCallback(async () => {
+		if (loadingRef.current) return; // Prevenir múltiples cargas simultáneas
+
 		try {
+			loadingRef.current = true;
 			setIsLoading(true);
 			setError(null);
 
@@ -39,15 +43,25 @@ export const useCatalogTemplates = (
 			if (result.data) {
 				// ✅ CARGAR FAVORITOS SI HAY USUARIO
 				if (user) {
-					const favorites = await templateApplicationService.getUserFavorites(user.id);
-					const favoriteIds = new Set(favorites.map((f) => f.id));
+					try {
+						const favorites = await templateApplicationService.getUserFavorites(
+							user.id
+						);
+						const favoriteIds = new Set(favorites.map((f) => f.id));
 
-					const templatesWithFavorites = result.data.map((template) => ({
-						...template,
-						isFavorite: favoriteIds.has(template.id),
-					}));
+						const templatesWithFavorites = result.data.map((template) => ({
+							...template,
+							isFavorite: favoriteIds.has(template.id),
+						}));
 
-					setTemplates(templatesWithFavorites);
+						setTemplates(templatesWithFavorites);
+					} catch (favoriteError) {
+						console.warn(
+							"Error loading favorites, continuing without them:",
+							favoriteError
+						);
+						setTemplates(result.data);
+					}
 				} else {
 					setTemplates(result.data);
 				}
@@ -56,6 +70,7 @@ export const useCatalogTemplates = (
 			console.error("Error loading templates:", err);
 			setError("Error cargando plantillas");
 		} finally {
+			loadingRef.current = false;
 			setIsLoading(false);
 		}
 	}, [options.onlyVerified, user]);
@@ -100,12 +115,23 @@ export const useCatalogTemplates = (
 	const categoriesWithCounts = useMemo(() => {
 		return TEMPLATE_CATEGORIES.map((category) => ({
 			...category,
-			count: templates.filter((t) => t.type === category.id || t.category === category.id).length,
+			count: templates.filter(
+				(t) =>
+					t.type === category.id ||
+					t.category === category.id ||
+					(t.type && t.type.toLowerCase() === category.id.toLowerCase()) ||
+					(t.category && t.category.toLowerCase() === category.id.toLowerCase())
+			).length,
 			subcategories: category.subcategories?.map((sub) => ({
 				...sub,
-				count: templates.filter((t) => 
-					(t.type === category.id || t.category === category.id) && 
-					(t.subcategory === sub.id || t.type === sub.id)
+				count: templates.filter(
+					(t) =>
+						((t.type === category.id || t.category === category.id) &&
+							(t.subcategory === sub.id || t.type === sub.id)) ||
+						(t.type &&
+							t.type.toLowerCase() === category.id.toLowerCase() &&
+							t.subcategory &&
+							t.subcategory.toLowerCase() === sub.id.toLowerCase())
 				).length,
 			})),
 		}));
@@ -118,7 +144,10 @@ export const useCatalogTemplates = (
 			verifiedCount: templates.filter((t) => t.isVerified || t.verified).length,
 			avgRating:
 				templates.length > 0
-					? templates.reduce((sum, t) => sum + (t.averageRating || t.rating || 0), 0) / templates.length
+					? templates.reduce(
+							(sum, t) => sum + (t.averageRating || t.rating || 0),
+							0
+						) / templates.length
 					: 0,
 			totalUsage: templates.reduce((sum, t) => sum + (t.usageCount || 0), 0),
 			trendingCount: templates.filter((t) => t.trending).length,
@@ -152,9 +181,12 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 	// Hook principal para obtener templates
 	const {templates: allTemplates} = useCatalogTemplates({autoLoad: true});
 
-	const updateFilter = useCallback((key: keyof TemplateFilters, value: unknown) => {
-		setActiveFilters((prev) => ({...prev, [key]: value}));
-	}, []);
+	const updateFilter = useCallback(
+		(key: keyof TemplateFilters, value: unknown) => {
+			setActiveFilters((prev) => ({...prev, [key]: value}));
+		},
+		[]
+	);
 
 	const clearFilters = useCallback(() => {
 		setSearchTerm("");
@@ -168,24 +200,43 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 
 		// Filtrar por búsqueda
 		if (searchTerm) {
+			const searchLower = searchTerm.toLowerCase();
 			filtered = filtered.filter(
 				(template) =>
-					template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					template.description.toLowerCase().includes(searchTerm.toLowerCase())
+					template.name.toLowerCase().includes(searchLower) ||
+					template.description.toLowerCase().includes(searchLower) ||
+					(template.necReference &&
+						template.necReference.toLowerCase().includes(searchLower)) ||
+					(template.tags &&
+						template.tags.some((tag) =>
+							tag.toLowerCase().includes(searchLower)
+						))
 			);
 		}
 
 		// Filtrar por categoría
 		if (activeFilters.category) {
+			const categoryLower = activeFilters.category.toLowerCase();
 			filtered = filtered.filter(
-				(template) => template.type === activeFilters.category || template.category === activeFilters.category
+				(template) =>
+					template.type === activeFilters.category ||
+					template.category === activeFilters.category ||
+					(template.type && template.type.toLowerCase() === categoryLower) ||
+					(template.category &&
+						template.category.toLowerCase() === categoryLower)
 			);
 		}
 
 		// Filtrar por subcategoría
 		if (activeFilters.subcategory) {
+			const subcategoryLower = activeFilters.subcategory.toLowerCase();
 			filtered = filtered.filter(
-				(template) => template.subcategory === activeFilters.subcategory || template.type === activeFilters.subcategory
+				(template) =>
+					template.subcategory === activeFilters.subcategory ||
+					template.type === activeFilters.subcategory ||
+					(template.subcategory &&
+						template.subcategory.toLowerCase() === subcategoryLower) ||
+					(template.type && template.type.toLowerCase() === subcategoryLower)
 			);
 		}
 
@@ -203,13 +254,16 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 
 		// Filtrar solo verificados
 		if (activeFilters.showOnlyVerified) {
-			filtered = filtered.filter((template) => template.isVerified || template.verified);
+			filtered = filtered.filter(
+				(template) => template.isVerified || template.verified
+			);
 		}
 
 		// Filtrar solo destacados
 		if (activeFilters.showOnlyFeatured) {
 			filtered = filtered.filter(
-				(template) => template.trending || template.popular || template.isFeatured
+				(template) =>
+					template.trending || template.popular || template.isFeatured
 			);
 		}
 
@@ -219,7 +273,11 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 				filtered.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
 				break;
 			case "rating":
-				filtered.sort((a, b) => (b.averageRating || b.rating || 0) - (a.averageRating || a.rating || 0));
+				filtered.sort((a, b) => {
+					const aRating = a.averageRating || a.rating || 0;
+					const bRating = b.averageRating || b.rating || 0;
+					return bRating - aRating;
+				});
 				break;
 			case "trending":
 				filtered.sort((a, b) => {
@@ -229,11 +287,11 @@ export const useCatalogSearch = (): UseCatalogSearchReturn => {
 				});
 				break;
 			case "recent":
-				filtered.sort(
-					(a, b) =>
-						new Date(b.updatedAt || b.lastUpdated || 0).getTime() -
-						new Date(a.updatedAt || a.lastUpdated || 0).getTime()
-				);
+				filtered.sort((a, b) => {
+					const aDate = new Date(a.updatedAt || a.lastUpdated || 0).getTime();
+					const bDate = new Date(b.updatedAt || b.lastUpdated || 0).getTime();
+					return bDate - aDate;
+				});
 				break;
 			case "name":
 				filtered.sort((a, b) => a.name.localeCompare(b.name));

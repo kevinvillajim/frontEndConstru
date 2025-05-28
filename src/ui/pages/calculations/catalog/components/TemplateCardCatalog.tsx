@@ -52,12 +52,13 @@ const ensureFloat = (value: unknown, defaultValue: number = 0): number => {
 // Helper para formatear rating de manera segura
 const formatRating = (rating: unknown): string => {
 	const numRating = ensureFloat(rating, 0.0);
-	return numRating.toFixed(2);
+	return numRating.toFixed(1);
 };
 
 // Mapeo de categorías a iconos
 const getCategoryIcon = (category: string, type?: string) => {
-	switch (category?.toLowerCase() || type?.toLowerCase()) {
+	const categoryKey = category?.toLowerCase() || type?.toLowerCase();
+	switch (categoryKey) {
 		case "structural":
 		case "foundation":
 			return BuildingOffice2Icon;
@@ -95,11 +96,13 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 		// Convertir rating de string a número de manera segura
 		rating: ensureFloat(template.averageRating || template.rating, 0.0),
 		usageCount: ensureNumber(template.usageCount, 0),
-		verified: Boolean(
-			template.verified || template.isVerified
-		),
-		necReference: template.necReference || "NEC",
-		profession: template.targetProfession || template.profession || "",
+		verified: Boolean(template.verified || template.isVerified),
+		necReference: template.necReference || template.nec_reference || "NEC",
+		profession: Array.isArray(template.profession)
+			? template.profession
+			: template.targetProfession
+				? [template.targetProfession]
+				: template.targetProfessions || [],
 		estimatedTime: template.estimatedTime || "10-15 min",
 		requirements: Array.isArray(template.requirements)
 			? template.requirements
@@ -109,11 +112,13 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 		isNew: Boolean(template.isNew),
 		trending: Boolean(template.trending),
 		popular: Boolean(template.popular),
-		category: template.category,
-		type: template.type,
+		category: template.category || template.type,
+		type: template.type || template.category,
 		difficulty: template.difficulty || "intermediate",
 		icon: template.icon,
 		color: template.color,
+		name: template.name || "Plantilla sin nombre",
+		description: template.description || "Sin descripción disponible",
 	};
 
 	const getDifficultyConfig = (difficulty: string) => {
