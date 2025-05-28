@@ -414,13 +414,18 @@ export class ApiUserFavoritesRepository implements UserFavoritesRepository {
 
 	async removeFavorite(userId: string, templateId: string): Promise<void> {
 		try {
-			await this.apiClient.delete(
-				`/calculations/templates/${templateId}/favorite`
+			// Usar POST en lugar de DELETE porque el backend solo tiene toggle
+			const response = await this.apiClient.post(
+				`/calculations/templates/${templateId}/favorite`,
+				{userId}
 			);
+
+			if (!response.data.success) {
+				throw new Error(response.data.message || "Error removing favorite");
+			}
 		} catch (error) {
 			console.error("Error removing favorite:", error);
-			// Fallback a localStorage
-			this.removeLocalStorageFavorite(userId, templateId);
+			throw error;
 		}
 	}
 
