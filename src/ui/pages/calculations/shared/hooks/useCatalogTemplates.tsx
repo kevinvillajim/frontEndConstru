@@ -5,16 +5,14 @@ import {templateApplicationService} from "../../../../../core/application/Servic
 import type {
 	CalculationTemplate,
 	TemplateFilters,
-	SortOption,
 	CatalogStats,
 	UseCatalogTemplatesOptions,
-	UseCatalogSearchReturn,
 	TemplateCategory,
 } from "../types/template.types";
 import {TEMPLATE_CATEGORIES} from "../types/template.types";
 import {useAuth} from "../../../../context/AuthContext";
 
-// ==================== HOOK PRINCIPAL ====================
+// ==================== HOOK PRINCIPAL SIMPLIFICADO ====================
 export const useCatalogTemplates = (
 	options: UseCatalogTemplatesOptions = {}
 ) => {
@@ -23,16 +21,18 @@ export const useCatalogTemplates = (
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-	const loadingRef = useRef(false); // Agregar la referencia que faltaba
+	const loadingRef = useRef(false);
 
 	// Cargar templates
 	const refreshTemplates = useCallback(async () => {
-		if (loadingRef.current) return; // Prevenir múltiples cargas simultáneas
+		if (loadingRef.current) return;
 
 		try {
 			loadingRef.current = true;
 			setIsLoading(true);
 			setError(null);
+
+			console.log("🔄 Loading templates...");
 
 			const result = await templateApplicationService.getTemplates({
 				showOnlyVerified: options.onlyVerified ?? true,
@@ -41,13 +41,17 @@ export const useCatalogTemplates = (
 			});
 
 			if (result.data) {
+				console.log(`📦 Loaded ${result.data.length} templates`);
+
 				// ✅ CARGAR FAVORITOS SI HAY USUARIO
 				if (user) {
 					try {
+						console.log("❤️ Loading favorites for user:", user.id);
 						const favorites = await templateApplicationService.getUserFavorites(
 							user.id
 						);
 						const favoriteIds = new Set(favorites.map((f) => f.id));
+						console.log("❤️ Found favorites:", Array.from(favoriteIds));
 
 						const templatesWithFavorites = result.data.map((template) => ({
 							...template,
@@ -55,19 +59,23 @@ export const useCatalogTemplates = (
 						}));
 
 						setTemplates(templatesWithFavorites);
+						console.log(
+							`✅ Templates loaded with favorites: ${templatesWithFavorites.filter((t) => t.isFavorite).length} favorites`
+						);
 					} catch (favoriteError) {
 						console.warn(
-							"Error loading favorites, continuing without them:",
+							"⚠️ Error loading favorites, continuing without them:",
 							favoriteError
 						);
 						setTemplates(result.data);
 					}
 				} else {
+					console.log("👤 No user, loading templates without favorites");
 					setTemplates(result.data);
 				}
 			}
 		} catch (err) {
-			console.error("Error loading templates:", err);
+			console.error("❌ Error loading templates:", err);
 			setError("Error cargando plantillas");
 		} finally {
 			loadingRef.current = false;
@@ -75,33 +83,84 @@ export const useCatalogTemplates = (
 		}
 	}, [options.onlyVerified, user]);
 
-	// Toggle favorite
+	// ✅ Toggle favorite con logging detallado
 	const toggleFavorite = useCallback(
 		async (templateId: string) => {
 			if (!user) {
-				console.warn("User not authenticated, cannot toggle favorite");
-				return;
+				console.warn("👤 User not authenticated, cannot toggle favorite");
+				return false;
 			}
 
-			try {
-				const newIsFavorite = await templateApplicationService.toggleFavorite(
-					user.id,
-					templateId
-				);
+			console.log(`❤️ Toggling favorite for template: ${templateId}`);
 
-				// Actualizar estado local
-				setTemplates((prev) =>
-					prev.map((template) =>
+			// Encontrar template actual
+			const currentTemplate = templates.find((t) => t.id === templateId);
+			if (!currentTemplate) {
+				console.error(
+					`❌ Template ${templateId} not found in current templates`
+				);
+				return false;
+			}
+
+			const oldIsFavorite = currentTemplate.isFavorite;
+			const newIsFavorite = !oldIsFavorite;
+
+			console.log(
+				`❤️ Template ${templateId}: ${oldIsFavorite} -> ${newIsFavorite}`
+			);
+
+			// ✅ Actualización inmediata del estado para feedback visual
+			setTemplates((prevTemplates) => {
+				const updated = prevTemplates.map((template) =>
+					template.id === templateId
+						? {...template, isFavorite: newIsFavorite}
+						: template
+				);
+				console.log(
+					`🔄 Updated templates state. Favorites count: ${updated.filter((t) => t.isFavorite).length}`
+				);
+				return updated;
+			});
+
+			try {
+				// Llamar al servicio
+				const actualNewIsFavorite =
+					await templateApplicationService.toggleFavorite(user.id, templateId);
+
+				console.log(`✅ Server responded: isFavorite = ${actualNewIsFavorite}`);
+
+				// Verificar si el resultado del servidor es diferente al optimista
+				if (actualNewIsFavorite !== newIsFavorite) {
+					console.log(
+						`🔄 Server result differs from optimistic update, correcting...`
+					);
+					setTemplates((prevTemplates) =>
+						prevTemplates.map((template) =>
+							template.id === templateId
+								? {...template, isFavorite: actualNewIsFavorite}
+								: template
+						)
+					);
+				}
+
+				return actualNewIsFavorite;
+			} catch (error) {
+				console.error("❌ Error toggling favorite:", error);
+
+				// Revertir cambio optimista en caso de error
+				console.log(`🔄 Reverting optimistic update due to error`);
+				setTemplates((prevTemplates) =>
+					prevTemplates.map((template) =>
 						template.id === templateId
-							? {...template, isFavorite: newIsFavorite}
+							? {...template, isFavorite: oldIsFavorite}
 							: template
 					)
 				);
-			} catch (error) {
-				console.error("Error toggling favorite:", error);
+
+				throw error;
 			}
 		},
-		[user]
+		[user, templates]
 	);
 
 	// Cargar al inicializar
@@ -139,7 +198,7 @@ export const useCatalogTemplates = (
 
 	// Calcular estadísticas
 	const stats = useMemo((): CatalogStats => {
-		return {
+		const result = {
 			total: templates.length,
 			verifiedCount: templates.filter((t) => t.isVerified || t.verified).length,
 			avgRating:
@@ -153,9 +212,25 @@ export const useCatalogTemplates = (
 			trendingCount: templates.filter((t) => t.trending).length,
 			popularCount: templates.filter((t) => t.popular).length,
 		};
+
+		console.log("📊 Stats calculated:", result);
+		return result;
 	}, [templates]);
 
 	const clearError = useCallback(() => setError(null), []);
+
+	// Log del estado actual (solo en desarrollo)
+	useEffect(() => {
+		if (process.env.NODE_ENV === "development") {
+			console.log("🏗️ useCatalogTemplates state:", {
+				templatesCount: templates.length,
+				favoritesCount: templates.filter((t) => t.isFavorite).length,
+				isLoading,
+				error,
+				userId: user?.id,
+			});
+		}
+	}, [templates, isLoading, error, user]);
 
 	return {
 		templates,
@@ -170,158 +245,8 @@ export const useCatalogTemplates = (
 	};
 };
 
-// ==================== HOOK DE BÚSQUEDA ====================
-export const useCatalogSearch = (): UseCatalogSearchReturn => {
-	const [searchTerm, setSearchTerm] = useState("");
-	const [sortBy, setSortBy] = useState<SortOption>("popular");
-	const [activeFilters, setActiveFilters] = useState<TemplateFilters>({
-		showOnlyVerified: true,
-	});
+// ==================== HOOK DE BÚSQUEDA REMOVIDO ====================
+// Ya no necesitamos useCatalogSearch como hook separado
+// La lógica de filtrado se movió directamente a CalculationsCatalog
 
-	// Hook principal para obtener templates
-	const {templates: allTemplates} = useCatalogTemplates({autoLoad: true});
 
-	const updateFilter = useCallback(
-		(key: keyof TemplateFilters, value: unknown) => {
-			setActiveFilters((prev) => ({...prev, [key]: value}));
-		},
-		[]
-	);
-
-	const clearFilters = useCallback(() => {
-		setSearchTerm("");
-		setSortBy("popular");
-		setActiveFilters({showOnlyVerified: true});
-	}, []);
-
-	// Aplicar filtros y búsqueda
-	const templates = useMemo(() => {
-		let filtered = allTemplates;
-
-		// Filtrar por búsqueda
-		if (searchTerm) {
-			const searchLower = searchTerm.toLowerCase();
-			filtered = filtered.filter(
-				(template) =>
-					template.name.toLowerCase().includes(searchLower) ||
-					template.description.toLowerCase().includes(searchLower) ||
-					(template.necReference &&
-						template.necReference.toLowerCase().includes(searchLower)) ||
-					(template.tags &&
-						template.tags.some((tag) =>
-							tag.toLowerCase().includes(searchLower)
-						))
-			);
-		}
-
-		// Filtrar por categoría
-		if (activeFilters.category) {
-			const categoryLower = activeFilters.category.toLowerCase();
-			filtered = filtered.filter(
-				(template) =>
-					template.type === activeFilters.category ||
-					template.category === activeFilters.category ||
-					(template.type && template.type.toLowerCase() === categoryLower) ||
-					(template.category &&
-						template.category.toLowerCase() === categoryLower)
-			);
-		}
-
-		// Filtrar por subcategoría
-		if (activeFilters.subcategory) {
-			const subcategoryLower = activeFilters.subcategory.toLowerCase();
-			filtered = filtered.filter(
-				(template) =>
-					template.subcategory === activeFilters.subcategory ||
-					template.type === activeFilters.subcategory ||
-					(template.subcategory &&
-						template.subcategory.toLowerCase() === subcategoryLower) ||
-					(template.type && template.type.toLowerCase() === subcategoryLower)
-			);
-		}
-
-		// Filtrar por dificultad
-		if (activeFilters.difficulty) {
-			filtered = filtered.filter(
-				(template) => template.difficulty === activeFilters.difficulty
-			);
-		}
-
-		// Filtrar solo favoritos
-		if (activeFilters.showOnlyFavorites) {
-			filtered = filtered.filter((template) => template.isFavorite);
-		}
-
-		// Filtrar solo verificados
-		if (activeFilters.showOnlyVerified) {
-			filtered = filtered.filter(
-				(template) => template.isVerified || template.verified
-			);
-		}
-
-		// Filtrar solo destacados
-		if (activeFilters.showOnlyFeatured) {
-			filtered = filtered.filter(
-				(template) =>
-					template.trending || template.popular || template.isFeatured
-			);
-		}
-
-		// Ordenar
-		switch (sortBy) {
-			case "popular":
-				filtered.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
-				break;
-			case "rating":
-				filtered.sort((a, b) => {
-					const aRating = a.averageRating || a.rating || 0;
-					const bRating = b.averageRating || b.rating || 0;
-					return bRating - aRating;
-				});
-				break;
-			case "trending":
-				filtered.sort((a, b) => {
-					if (b.trending && !a.trending) return 1;
-					if (!b.trending && a.trending) return -1;
-					return (b.usageCount || 0) - (a.usageCount || 0);
-				});
-				break;
-			case "recent":
-				filtered.sort((a, b) => {
-					const aDate = new Date(a.updatedAt || a.lastUpdated || 0).getTime();
-					const bDate = new Date(b.updatedAt || b.lastUpdated || 0).getTime();
-					return bDate - aDate;
-				});
-				break;
-			case "name":
-				filtered.sort((a, b) => a.name.localeCompare(b.name));
-				break;
-		}
-
-		return filtered;
-	}, [allTemplates, searchTerm, activeFilters, sortBy]);
-
-	const hasActiveFilters = useMemo(() => {
-		return (
-			searchTerm !== "" ||
-			activeFilters.category !== undefined ||
-			activeFilters.subcategory !== undefined ||
-			activeFilters.difficulty !== undefined ||
-			activeFilters.showOnlyFavorites === true ||
-			activeFilters.showOnlyFeatured === true ||
-			activeFilters.showOnlyVerified !== true
-		); // Solo cuenta como filtro activo si no está en true (default)
-	}, [searchTerm, activeFilters]);
-
-	return {
-		searchTerm,
-		activeFilters,
-		sortBy,
-		templates,
-		setSearchTerm,
-		setSortBy,
-		updateFilter,
-		clearFilters,
-		hasActiveFilters,
-	};
-};

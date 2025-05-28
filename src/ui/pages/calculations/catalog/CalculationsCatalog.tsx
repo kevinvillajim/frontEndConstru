@@ -16,11 +16,8 @@ import {TemplateCard} from "./components/TemplateCardCatalog";
 import {CategoryFilter} from "./components/CategoryFilter";
 import {TemplatePreview} from "./components/TemplatePreview";
 
-// Usar los hooks especializados
-import {
-	useCatalogTemplates,
-	useCatalogSearch,
-} from "../shared/hooks/useCatalogTemplates";
+// Usar solo el hook principal
+import {useCatalogTemplates} from "../shared/hooks/useCatalogTemplates";
 import type {
 	CalculationTemplate as UITemplate,
 	TemplateFilters as UITemplateFilters,
@@ -57,10 +54,16 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 		null
 	);
 
-	// ==================== HOOKS ESPECIALIZADOS ====================
+	// Estados de búsqueda y filtros (movidos aquí desde useCatalogSearch)
+	const [searchTerm, setSearchTerm] = useState("");
+	const [sortBy, setSortBy] = useState<SortOption>("popular");
+	const [activeFilters, setActiveFilters] = useState<UITemplateFilters>({
+		showOnlyVerified: true,
+	});
 
-	// Hook principal del catálogo
+	// ==================== HOOK PRINCIPAL (ÚNICA INSTANCIA) ====================
 	const {
+		templates: allTemplates,
 		categories,
 		isLoading,
 		error,
@@ -71,41 +74,154 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 		setCurrentUserId,
 	} = useCatalogTemplates({
 		autoLoad: true,
-		includePersonal: false, // Solo plantillas públicas en catálogo
+		includePersonal: false,
 		onlyVerified: true,
 	});
 
-	// Hook de búsqueda
-	const {
-		searchTerm,
-		activeFilters,
-		sortBy,
-		templates: filteredTemplates,
-		setSearchTerm,
-		setSortBy,
-		updateFilter,
-		clearFilters,
-		hasActiveFilters,
-	} = useCatalogSearch();
-
 	// ==================== CONFIGURACIÓN DE USUARIO ====================
 	useEffect(() => {
-		// TODO: Obtener del contexto de autenticación real
 		const mockUserId = localStorage.getItem("current_user_id") || "user_123";
 		setCurrentUserId(mockUserId);
 	}, [setCurrentUserId]);
 
-	// ==================== FILTRADO POR CATEGORÍA ====================
+	// ==================== FILTROS Y BÚSQUEDA (MOVIDO AQUÍ) ====================
+	const updateFilter = (key: keyof UITemplateFilters, value: unknown) => {
+		setActiveFilters((prev) => ({...prev, [key]: value}));
+	};
 
-	// Aplicar filtros de categoría a los filtros activos
-	useEffect(() => {
-		if (selectedCategory !== activeFilters.category) {
-			updateFilter("category", selectedCategory);
+	const clearFilters = () => {
+		setSearchTerm("");
+		setSortBy("popular");
+		setActiveFilters({showOnlyVerified: true});
+		setSelectedCategory(null);
+		setSelectedSubcategory(null);
+	};
+
+	// ✅ Filtrado directo usando el estado único
+	const filteredTemplates = useMemo(() => {
+		let filtered = [...allTemplates];
+
+		// Filtrar por búsqueda
+		if (searchTerm) {
+			const searchLower = searchTerm.toLowerCase();
+			filtered = filtered.filter(
+				(template) =>
+					template.name.toLowerCase().includes(searchLower) ||
+					template.description.toLowerCase().includes(searchLower) ||
+					(template.necReference &&
+						template.necReference.toLowerCase().includes(searchLower)) ||
+					(template.tags &&
+						template.tags.some((tag) =>
+							tag.toLowerCase().includes(searchLower)
+						))
+			);
 		}
-		if (selectedSubcategory !== activeFilters.subcategory) {
-			updateFilter("subcategory", selectedSubcategory);
+
+		// Filtrar por categoría
+		if (selectedCategory) {
+			const categoryLower = selectedCategory.toLowerCase();
+			filtered = filtered.filter(
+				(template) =>
+					template.type === selectedCategory ||
+					template.category === selectedCategory ||
+					(template.type && template.type.toLowerCase() === categoryLower) ||
+					(template.category &&
+						template.category.toLowerCase() === categoryLower)
+			);
 		}
-	}, [selectedCategory, selectedSubcategory, activeFilters, updateFilter]);
+
+		// Filtrar por subcategoría
+		if (selectedSubcategory) {
+			const subcategoryLower = selectedSubcategory.toLowerCase();
+			filtered = filtered.filter(
+				(template) =>
+					template.subcategory === selectedSubcategory ||
+					template.type === selectedSubcategory ||
+					(template.subcategory &&
+						template.subcategory.toLowerCase() === subcategoryLower) ||
+					(template.type && template.type.toLowerCase() === subcategoryLower)
+			);
+		}
+
+		// Filtrar por dificultad
+		if (activeFilters.difficulty) {
+			filtered = filtered.filter(
+				(template) => template.difficulty === activeFilters.difficulty
+			);
+		}
+
+		// Filtrar solo favoritos
+		if (activeFilters.showOnlyFavorites) {
+			filtered = filtered.filter((template) => template.isFavorite);
+		}
+
+		// Filtrar solo verificados
+		if (activeFilters.showOnlyVerified) {
+			filtered = filtered.filter(
+				(template) => template.isVerified || template.verified
+			);
+		}
+
+		// Filtrar solo destacados
+		if (activeFilters.showOnlyFeatured) {
+			filtered = filtered.filter(
+				(template) =>
+					template.trending || template.popular || template.isFeatured
+			);
+		}
+
+		// Ordenar
+		switch (sortBy) {
+			case "popular":
+				filtered.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
+				break;
+			case "rating":
+				filtered.sort((a, b) => {
+					const aRating = a.averageRating || a.rating || 0;
+					const bRating = b.averageRating || b.rating || 0;
+					return bRating - aRating;
+				});
+				break;
+			case "trending":
+				filtered.sort((a, b) => {
+					if (b.trending && !a.trending) return 1;
+					if (!b.trending && a.trending) return -1;
+					return (b.usageCount || 0) - (a.usageCount || 0);
+				});
+				break;
+			case "recent":
+				filtered.sort((a, b) => {
+					const aDate = new Date(a.updatedAt || a.lastUpdated || 0).getTime();
+					const bDate = new Date(b.updatedAt || b.lastUpdated || 0).getTime();
+					return bDate - aDate;
+				});
+				break;
+			case "name":
+				filtered.sort((a, b) => a.name.localeCompare(b.name));
+				break;
+		}
+
+		return filtered;
+	}, [
+		allTemplates,
+		searchTerm,
+		selectedCategory,
+		selectedSubcategory,
+		activeFilters,
+		sortBy,
+	]);
+
+	const hasActiveFilters = useMemo(() => {
+		return (
+			searchTerm !== "" ||
+			selectedCategory !== null ||
+			selectedSubcategory !== null ||
+			activeFilters.difficulty !== undefined ||
+			activeFilters.showOnlyFavorites === true ||
+			activeFilters.showOnlyFeatured === true ||
+			activeFilters.showOnlyVerified !== true
+		);
+	}, [searchTerm, selectedCategory, selectedSubcategory, activeFilters]);
 
 	// ==================== ESTADÍSTICAS COMPUTADAS ====================
 	const currentStats = useMemo(() => {
@@ -119,7 +235,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 	// ==================== HANDLERS ====================
 	const handleCategoryChange = (categoryId: string | null) => {
 		setSelectedCategory(categoryId);
-		setSelectedSubcategory(null); // Reset subcategory when category changes
+		setSelectedSubcategory(null);
 	};
 
 	const handleSubcategoryChange = (subcategoryId: string | null) => {
@@ -136,18 +252,14 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 		onTemplateSelect(template);
 	};
 
+	// ✅ Toggle favoritos simplificado usando directamente el hook
 	const handleToggleFavorite = async (templateId: string) => {
 		try {
 			await toggleFavorite(templateId);
+			console.log("Toggle favorite completed for:", templateId);
 		} catch (error) {
 			console.error("Error al cambiar favorito:", error);
 		}
-	};
-
-	const handleClearAllFilters = () => {
-		clearFilters();
-		setSelectedCategory(null);
-		setSelectedSubcategory(null);
 	};
 
 	const handleQuickFilter = (filterType: string, value: boolean) => {
@@ -340,7 +452,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 
 								{hasActiveFilters && (
 									<button
-										onClick={handleClearAllFilters}
+										onClick={clearFilters}
 										className="text-primary-600 hover:text-primary-700 text-sm font-medium"
 									>
 										Limpiar filtros
@@ -378,7 +490,7 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 										: "No hay plantillas disponibles para los filtros seleccionados"}
 								</p>
 								<button
-									onClick={handleClearAllFilters}
+									onClick={clearFilters}
 									className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-colors duration-200"
 								>
 									Limpiar Filtros
@@ -399,34 +511,16 @@ const CalculationsCatalog: React.FC<CalculationsCatalogProps> = ({
 				/>
 			)}
 
-			{/* Debug: Mostrar datos cargados (solo en desarrollo) */}
+			{/* Debug info */}
 			{process.env.NODE_ENV === "development" && (
 				<div className="fixed bottom-4 right-4 bg-black text-white p-2 rounded text-xs max-w-xs z-50">
-					<div>Stats Total: {stats.total}</div>
+					<div>Total: {allTemplates.length}</div>
 					<div>Filtered: {filteredTemplates.length}</div>
-					<div>Loading: {isLoading.toString()}</div>
-					<div>Has Filters: {hasActiveFilters.toString()}</div>
+					<div>
+						Favorites: {allTemplates.filter((t) => t.isFavorite).length}
+					</div>
 				</div>
 			)}
-
-			{/* Estilos adicionales */}
-			<style>{`
-				@keyframes fadeIn {
-					from {
-						opacity: 0;
-						transform: translateY(20px);
-					}
-					to {
-						opacity: 1;
-						transform: translateY(0);
-					}
-				}
-				
-				.animate-fade-in {
-					animation: fadeIn 0.6s ease-out forwards;
-					opacity: 0;
-				}
-			`}</style>
 		</div>
 	);
 };

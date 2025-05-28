@@ -43,15 +43,9 @@ const ensureNumber = (value: unknown, defaultValue: number = 0): number => {
 	return defaultValue;
 };
 
-// Helper para asegurar que un valor sea un float con 2 decimales
-const ensureFloat = (value: unknown, defaultValue: number = 0): number => {
-	const numValue = ensureNumber(value, defaultValue);
-	return parseFloat(numValue.toFixed(2));
-};
-
 // Helper para formatear rating de manera segura
 const formatRating = (rating: unknown): string => {
-	const numRating = ensureFloat(rating, 0.0);
+	const numRating = ensureNumber(rating, 0.0);
 	return numRating.toFixed(1);
 };
 
@@ -90,11 +84,10 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 	showPreviewButton = true,
 	compact = false,
 }) => {
-	// Normalizar datos del template para evitar errores
+	// Normalizar datos del template
 	const normalizedTemplate = {
 		...template,
-		// Convertir rating de string a número de manera segura
-		rating: ensureFloat(template.averageRating || template.rating, 0.0),
+		rating: ensureNumber(template.averageRating || template.rating, 0.0),
 		usageCount: ensureNumber(template.usageCount, 0),
 		verified: Boolean(template.verified || template.isVerified),
 		necReference: template.necReference || template.nec_reference || "NEC",
@@ -108,6 +101,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 			? template.requirements
 			: [],
 		tags: Array.isArray(template.tags) ? template.tags : [],
+		// ✅ Usar el estado exacto que viene del template
 		isFavorite: Boolean(template.isFavorite),
 		isNew: Boolean(template.isNew),
 		trending: Boolean(template.trending),
@@ -115,11 +109,16 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 		category: template.category || template.type,
 		type: template.type || template.category,
 		difficulty: template.difficulty || "intermediate",
-		icon: template.icon,
-		color: template.color,
 		name: template.name || "Plantilla sin nombre",
 		description: template.description || "Sin descripción disponible",
 	};
+
+	// Log para debugging (solo en desarrollo)
+	if (process.env.NODE_ENV === "development") {
+		console.log(
+			`🏷️ TemplateCard ${template.id}: isFavorite = ${normalizedTemplate.isFavorite}`
+		);
+	}
 
 	const getDifficultyConfig = (difficulty: string) => {
 		switch (difficulty) {
@@ -157,14 +156,10 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 	};
 
 	const difficultyConfig = getDifficultyConfig(normalizedTemplate.difficulty);
-
-	// Obtener el icono correcto basado en la categoría/tipo
-	const IconComponent =
-		normalizedTemplate.icon ||
-		getCategoryIcon(
-			normalizedTemplate.category || "",
-			normalizedTemplate.type || ""
-		);
+	const IconComponent = getCategoryIcon(
+		normalizedTemplate.category || "",
+		normalizedTemplate.type || ""
+	);
 
 	// Color de gradiente basado en categoría
 	const getGradientColor = (category: string) => {
@@ -185,8 +180,18 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 			case "geotechnical":
 				return "from-stone-600 to-stone-500";
 			default:
-				return normalizedTemplate.color || "from-primary-600 to-secondary-500";
+				return "from-primary-600 to-secondary-500";
 		}
+	};
+
+	// ✅ Handler simplificado
+	const handleFavoriteClick = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		e.preventDefault();
+		console.log(
+			`❤️ Favorite clicked for ${template.id}, current state: ${normalizedTemplate.isFavorite}`
+		);
+		onToggleFavorite();
 	};
 
 	return (
@@ -194,11 +199,11 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 			className="group bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-500 transform hover:-translate-y-2 overflow-hidden animate-fade-in"
 			style={{animationDelay: `${animationDelay}s`}}
 		>
-			{/* Header con gradiente y patrones */}
+			{/* Header con gradiente */}
 			<div
 				className={`h-32 bg-gradient-to-r ${getGradientColor(normalizedTemplate.category || "")} relative overflow-hidden`}
 			>
-				{/* Patrón arquitectónico */}
+				{/* Patrón de fondo */}
 				<div className="absolute inset-0 opacity-20">
 					<svg
 						className="w-full h-full"
@@ -256,16 +261,18 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 					)}
 				</div>
 
-				{/* Botón de favorito */}
+				{/* ✅ Botón de favorito simplificado */}
 				<button
-					onClick={(e) => {
-						e.stopPropagation();
-						onToggleFavorite();
-					}}
-					className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-all duration-200 transform hover:scale-110"
+					onClick={handleFavoriteClick}
+					className="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 hover:scale-110 transition-all duration-200"
+					title={
+						normalizedTemplate.isFavorite
+							? "Quitar de favoritos"
+							: "Agregar a favoritos"
+					}
 				>
 					{normalizedTemplate.isFavorite ? (
-						<HeartSolidIcon className="h-4 w-4 text-red-400" />
+						<HeartSolidIcon className="h-4 w-4 text-red-500" />
 					) : (
 						<HeartIcon className="h-4 w-4 text-white" />
 					)}
@@ -316,33 +323,6 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 					</div>
 				</div>
 
-				{/* Requerimientos principales - Solo mostrar si existen */}
-				{!compact &&
-					normalizedTemplate.requirements &&
-					normalizedTemplate.requirements.length > 0 && (
-						<div className="mb-4">
-							<p className="text-xs font-medium text-gray-700 mb-2">
-								Datos requeridos:
-							</p>
-							<div className="flex flex-wrap gap-1">
-								{normalizedTemplate.requirements.slice(0, 2).map((req, idx) => (
-									<span
-										key={idx}
-										className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-md truncate max-w-[120px]"
-										title={req}
-									>
-										{req}
-									</span>
-								))}
-								{normalizedTemplate.requirements.length > 2 && (
-									<span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-md">
-										+{normalizedTemplate.requirements.length - 2}
-									</span>
-								)}
-							</div>
-						</div>
-					)}
-
 				{/* Tags - Solo mostrar si existen */}
 				{normalizedTemplate.tags && normalizedTemplate.tags.length > 0 && (
 					<div className="mb-6">
@@ -366,7 +346,6 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 
 				{/* Botones de acción */}
 				<div className="space-y-2">
-					{/* Botón principal */}
 					<button
 						onClick={onSelect}
 						className="w-full bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 text-white py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center gap-2 font-medium"
@@ -375,7 +354,6 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 						<span>Usar Plantilla</span>
 					</button>
 
-					{/* Botón de vista previa */}
 					{showPreviewButton && onPreview && (
 						<button
 							onClick={(e) => {
@@ -391,10 +369,8 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 				</div>
 			</div>
 
-			{/* Efecto de hover */}
+			{/* Efectos de hover */}
 			<div className="absolute inset-0 bg-gradient-to-r from-primary-600/5 to-secondary-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-			{/* Sombra proyectada elegante */}
 			<div
 				className={`absolute inset-0 bg-gradient-to-r ${getGradientColor(normalizedTemplate.category || "")} rounded-2xl -z-10 blur-xl opacity-0 group-hover:opacity-20 transition-all duration-500 transform group-hover:scale-110`}
 			/>
