@@ -16,7 +16,6 @@ C:.
 |   tsconfig.node.json
 |   vite.config.ts
 |   
-|               
 +---public
 |       vite.svg
 |       
@@ -115,6 +114,7 @@ C:.
     |   |               ToggleButton.tsx
     |   |               
     |   +---config
+    |   |       materialCalculationsConfig.ts
     |   |       projectTemplatesConfig.ts
     |   |       settingsConfig.ts
     |   |       
@@ -192,16 +192,36 @@ C:.
     |   |   |   |       CalculationsLayout.tsx
     |   |   |   |       CalculationsRouter.tsx
     |   |   |   |       
+    |   |   |   +---materials
+    |   |   |   |   |   index.ts
+    |   |   |   |   |   MaterialCalculationComparison.tsx
+    |   |   |   |   |   MaterialCalculationInterface.tsx
+    |   |   |   |   |   MaterialCalculationsHub.tsx
+    |   |   |   |   |   MaterialCalculationsMain.tsx
+    |   |   |   |   |   MaterialCalculationsRouter.tsx
+    |   |   |   |   |   MaterialCatalog.tsx
+    |   |   |   |   |   MaterialResultsHistory.tsx
+    |   |   |   |   |   MaterialTemplatesManager.tsx
+    |   |   |   |   |   MaterialTrendingAnalytics.tsx
+    |   |   |   |   |   
+    |   |   |   |   \---components
+    |   |   |   |           SharedComponents.tsx
+    |   |   |   |           
     |   |   |   +---shared
     |   |   |   |   +---hooks
     |   |   |   |   |       useCalculations.tsx
     |   |   |   |   |       useCatalogTemplates.tsx
     |   |   |   |   |       useComparison.tsx
+    |   |   |   |   |       useMaterialCalculations.tsx
     |   |   |   |   |       useTemplates.tsx
     |   |   |   |   |       
-    |   |   |   |   \---types
-    |   |   |   |           calculation.types.ts
-    |   |   |   |           template.types.ts
+    |   |   |   |   +---types
+    |   |   |   |   |       calculation.types.ts
+    |   |   |   |   |       material.types.ts
+    |   |   |   |   |       template.types.ts
+    |   |   |   |   |       
+    |   |   |   |   \---utils
+    |   |   |   |           materialCalculationHelpers.ts
     |   |   |   |           
     |   |   |   \---templates
     |   |   |       |   MyTemplates.tsx

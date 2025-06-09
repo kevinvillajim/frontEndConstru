@@ -28,7 +28,7 @@ const navigationItems = [
 		icon: CalculatorIcon,
 		submenu: [
 			{name: "Cálculos Técnicos", to: "/calculations"},
-			{name: "Estimación de Materiales", to: "/calculadoras/materiales"},
+			{name: "Estimación de Materiales", to: "/calculations/materials"},
 			{name: "Presupuestos", to: "/calculadoras/presupuestos"},
 			{name: "Cronogramas", to: "/calculadoras/cronogramas"},
 		],

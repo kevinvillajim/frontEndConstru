@@ -1,5 +1,7 @@
 // src/ui/config/materialCalculationsConfig.ts
-// Configuración específica para el módulo de materiales
+// Configuración completa para el módulo de cálculos de materiales
+
+import type {MaterialCalculationType} from "../pages/calculations/shared/types/material.types";
 
 export const MATERIAL_CALCULATIONS_CONFIG = {
 	// Configuración de la aplicación
@@ -9,6 +11,8 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 		description: "Sistema profesional de cálculo de materiales de construcción",
 		supportEmail: "soporte@constru.ec",
 		documentationUrl: "/docs/material-calculations",
+		maxConcurrentCalculations: 5,
+		enableOfflineMode: false,
 	},
 
 	// Configuración de API
@@ -22,6 +26,13 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 			trending: "/trending",
 			results: "/results",
 			analytics: "/analytics",
+			featured: "/templates/featured",
+			byType: "/templates/by-type",
+			preview: "/templates/:id/preview",
+		},
+		headers: {
+			"Content-Type": "application/json",
+			Accept: "application/json",
 		},
 	},
 
@@ -35,6 +46,18 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 		cardHoverScale: 1.02,
 		maxToastDuration: 5000,
 		autoSaveInterval: 30000, // 30 segundos
+		pagination: {
+			defaultLimit: 20,
+			maxLimit: 100,
+			showSizeSelector: true,
+			showPageInfo: true,
+		},
+		layout: {
+			sidebarWidth: 280,
+			headerHeight: 64,
+			footerHeight: 60,
+			contentMaxWidth: "7xl",
+		},
 	},
 
 	// Configuración de validación
@@ -46,17 +69,43 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 		maxParameterName: 50,
 		maxTemplateNameLength: 100,
 		minTemplateNameLength: 5,
-		allowedFileTypes: ["js", "json", "csv"],
+		allowedFileTypes: ["js", "json", "csv", "xlsx"],
 		maxFileSize: 5 * 1024 * 1024, // 5MB
+		parameterValidation: {
+			number: {
+				min: -Infinity,
+				max: Infinity,
+				precision: 10,
+			},
+			string: {
+				minLength: 0,
+				maxLength: 255,
+			},
+			array: {
+				maxItems: 50,
+			},
+		},
 	},
 
 	// Configuración de exportación
 	export: {
-		supportedFormats: ["pdf", "excel", "csv", "json"],
+		supportedFormats: ["pdf", "excel", "csv", "json"] as const,
 		maxExportItems: 100,
-		defaultFormat: "pdf",
+		defaultFormat: "pdf" as const,
 		includeCharts: true,
 		includeMetadata: true,
+		compressionEnabled: true,
+		templateOptions: {
+			pdf: {
+				orientation: "portrait",
+				format: "A4",
+				margin: 20,
+			},
+			excel: {
+				sheetName: "Resultados de Materiales",
+				includeFormulas: false,
+			},
+		},
 	},
 
 	// Configuración de gamificación
@@ -67,11 +116,19 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 		pointsPerTemplateShared: 25,
 		pointsPerTemplateRated: 5,
 		pointsPerFavorite: 2,
+		pointsPerComparison: 15,
 		badges: {
-			firstCalculation: {points: 10, name: "Primera Vez"},
-			powerUser: {points: 500, name: "Usuario Avanzado"},
-			templateMaster: {points: 200, name: "Maestro de Plantillas"},
-			collaborator: {points: 100, name: "Colaborador"},
+			firstCalculation: {points: 10, name: "Primera Vez", icon: "🎯"},
+			powerUser: {points: 500, name: "Usuario Avanzado", icon: "⚡"},
+			templateMaster: {points: 200, name: "Maestro de Plantillas", icon: "🏆"},
+			collaborator: {points: 100, name: "Colaborador", icon: "🤝"},
+			precisionist: {points: 150, name: "Precisión", icon: "🎯"},
+			explorer: {points: 75, name: "Explorador", icon: "🗺️"},
+		},
+		leaderboard: {
+			enabled: true,
+			updateInterval: 3600000, // 1 hora
+			maxEntries: 100,
 		},
 	},
 
@@ -82,6 +139,8 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 		analyticsCacheDuration: 900000, // 15 minutos
 		userDataCacheDuration: 180000, // 3 minutos
 		maxCacheSize: 50 * 1024 * 1024, // 50MB
+		enableServiceWorker: true,
+		offlineSupport: false,
 	},
 
 	// Configuración de features
@@ -95,6 +154,10 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 		enableOfflineMode: false,
 		enableRealtimeUpdates: false,
 		enableMobileOptimization: true,
+		enableAdvancedSearch: true,
+		enableBulkOperations: true,
+		enableVersionControl: false,
+		enableAuditLog: true,
 	},
 
 	// Configuración de notificaciones
@@ -106,66 +169,91 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 		autoHideSuccess: true,
 		autoHideError: false,
 		position: "top-right" as const,
-	},
-
-	// Configuración de analytics y tracking
-	analytics: {
-		trackUserInteractions: true,
-		trackCalculationTime: true,
-		trackErrorRates: true,
-		trackFeatureUsage: true,
-		sendUsageStatistics: false, // Privacidad del usuario
-		trackingBatchSize: 10,
-		trackingFlushInterval: 60000, // 1 minuto
+		maxNotifications: 5,
+		defaultDuration: 5000,
+		enableSound: false,
+		enableBrowserNotifications: true,
 	},
 
 	// Configuración regional
 	regional: {
-		defaultCurrency: "USD",
-		defaultRegion: "ecuador",
-		supportedRegions: ["costa", "sierra", "oriente"],
-		defaultUnits: {
-			length: "m",
-			area: "m²",
-			volume: "m³",
-			weight: "kg",
-			currency: "USD",
-		},
+		supportedRegions: ["costa", "sierra", "oriente"] as const,
+		defaultRegion: "sierra" as const,
 		wasteFactors: {
 			costa: {
-				ladrillo: 0.08,
-				cemento: 0.05,
-				ceramico: 0.12,
+				STEEL_STRUCTURES: 0.05,
+				CERAMIC_FINISHES: 0.1,
+				CONCRETE_FOUNDATIONS: 0.08,
+				ELECTRICAL_INSTALLATIONS: 0.06,
+				MELAMINE_FURNITURE: 0.12,
 			},
 			sierra: {
-				ladrillo: 0.05,
-				cemento: 0.03,
-				ceramico: 0.1,
+				STEEL_STRUCTURES: 0.04,
+				CERAMIC_FINISHES: 0.08,
+				CONCRETE_FOUNDATIONS: 0.06,
+				ELECTRICAL_INSTALLATIONS: 0.05,
+				MELAMINE_FURNITURE: 0.1,
 			},
 			oriente: {
-				ladrillo: 0.12,
-				cemento: 0.08,
-				ceramico: 0.15,
+				STEEL_STRUCTURES: 0.06,
+				CERAMIC_FINISHES: 0.12,
+				CONCRETE_FOUNDATIONS: 0.1,
+				ELECTRICAL_INSTALLATIONS: 0.08,
+				MELAMINE_FURNITURE: 0.15,
 			},
+		},
+		currencies: ["USD", "EUR"] as const,
+		defaultCurrency: "USD" as const,
+		locale: "es-EC",
+		timezone: "America/Guayaquil",
+	},
+
+	// Configuración de logging
+	logging: {
+		level: "info" as const,
+		enableConsoleLogging: true,
+		enableRemoteLogging: false,
+		enableUserAnalytics: true,
+		enablePerformanceMetrics: true,
+		enableErrorReporting: true,
+		sensitiveFields: ["password", "token", "apiKey", "secret"],
+	},
+
+	// Configuración de seguridad
+	security: {
+		enableCSRFProtection: true,
+		enableRateLimiting: true,
+		maxRequestsPerMinute: 100,
+		enableInputSanitization: true,
+		allowedDomains: ["localhost", "constru.ec", "*.constru.ec"],
+		contentSecurityPolicy: {
+			defaultSrc: ["'self'"],
+			scriptSrc: ["'self'", "'unsafe-eval'"],
+			styleSrc: ["'self'", "'unsafe-inline'"],
+			imgSrc: ["'self'", "data:", "https:"],
 		},
 	},
 
-	// Configuración de rendimiento
+	// Configuración de performance
 	performance: {
 		enableLazyLoading: true,
-		enableVirtualization: true,
-		maxConcurrentCalculations: 3,
-		calculationTimeout: 30000,
-		enableCompressionForExports: true,
-		optimizeImagesForMobile: true,
+		enableCodeSplitting: true,
+		enableImageOptimization: true,
+		enableGzipCompression: true,
+		maxBundleSize: 500 * 1024, // 500KB
+		enableServiceWorker: true,
+		preloadCriticalResources: true,
+		enableMemoryOptimization: true,
 	},
 
-	// Configuración de desarrollo
-	development: {
-		enableDebugMode: process.env.NODE_ENV === "development",
-		enableDevTools: process.env.NODE_ENV === "development",
-		showPerformanceMetrics: false,
-		enableMockData: process.env.NODE_ENV === "development",
+	// Configuración de debugging
+	debug: {
+		enabled: process.env.NODE_ENV === "development",
+		enableReduxDevTools: process.env.NODE_ENV === "development",
+		enableReactDevTools: process.env.NODE_ENV === "development",
+		enablePerformanceProfiler: false,
+		verboseLogging: process.env.NODE_ENV === "development",
+		showRenderTimes: false,
 		logLevel: process.env.NODE_ENV === "development" ? "debug" : "error",
 	},
 
@@ -177,11 +265,17 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 		keyboardNavigationEnabled: true,
 		focusIndicatorEnabled: true,
 		ariaLabelsEnabled: true,
+		enableVoiceNavigation: false,
+		fontSize: {
+			min: 12,
+			max: 24,
+			default: 14,
+		},
 	},
 
 	// Configuración de temas
 	themes: {
-		default: "light",
+		default: "light" as const,
 		supportsDarkMode: true,
 		autoDetectSystemTheme: true,
 		customColors: {
@@ -191,6 +285,28 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 			warning: "#F59E0B",
 			error: "#EF4444",
 			info: "#3B82F6",
+		},
+		materialTypeColors: {
+			STEEL_STRUCTURES: {
+				light: "#64748B",
+				dark: "#94A3B8",
+			},
+			CERAMIC_FINISHES: {
+				light: "#059669",
+				dark: "#10B981",
+			},
+			CONCRETE_FOUNDATIONS: {
+				light: "#78716C",
+				dark: "#A8A29E",
+			},
+			ELECTRICAL_INSTALLATIONS: {
+				light: "#D97706",
+				dark: "#F59E0B",
+			},
+			MELAMINE_FURNITURE: {
+				light: "#EA580C",
+				dark: "#FB923C",
+			},
 		},
 	},
 
@@ -202,6 +318,41 @@ export const MATERIAL_CALCULATIONS_CONFIG = {
 		maxParametersPerTemplate: 20,
 		maxCalculationsPerDay: 100,
 		maxExportsPerDay: 10,
+		maxFavoritesPerUser: 100,
+		maxSearchResultsPerPage: 50,
+		maxFileUploadsPerDay: 20,
+		maxConcurrentExecutions: 3,
+	},
+
+	// Configuración de search
+	search: {
+		enableFuzzySearch: true,
+		minSearchLength: 2,
+		maxSearchResults: 50,
+		searchDebounceMs: 300,
+		enableSearchHighlighting: true,
+		searchFields: ["name", "description", "tags", "type", "targetProfessions"],
+		searchWeights: {
+			name: 3,
+			description: 2,
+			tags: 2,
+			type: 1,
+			targetProfessions: 1,
+		},
+	},
+
+	// Configuración de analytics
+	analytics: {
+		enableUserTracking: true,
+		enablePerformanceTracking: true,
+		enableErrorTracking: true,
+		enableFeatureUsageTracking: true,
+		sampleRate: 0.1, // 10% de muestreo
+		enableHeatmaps: false,
+		enableSessionRecording: false,
+		trackingTimeout: 30000,
+		batchSize: 10,
+		flushInterval: 60000, // 1 minuto
 	},
 } as const;
 
@@ -212,33 +363,142 @@ export type SupportedRegion =
 	(typeof MATERIAL_CALCULATIONS_CONFIG.regional.supportedRegions)[number];
 export type SupportedFormat =
 	(typeof MATERIAL_CALCULATIONS_CONFIG.export.supportedFormats)[number];
+export type SupportedCurrency =
+	(typeof MATERIAL_CALCULATIONS_CONFIG.regional.currencies)[number];
+export type ThemeMode = typeof MATERIAL_CALCULATIONS_CONFIG.themes.default;
+export type LogLevel = typeof MATERIAL_CALCULATIONS_CONFIG.debug.logLevel;
 
-// Helper para acceder a configuración de features
+// Helper functions para acceder a configuración
+
 export const isFeatureEnabled = (feature: FeatureFlags): boolean => {
 	return MATERIAL_CALCULATIONS_CONFIG.features[feature];
 };
 
-// Helper para obtener configuración regional
 export const getRegionalConfig = (region: SupportedRegion) => {
 	return (
 		MATERIAL_CALCULATIONS_CONFIG.regional.wasteFactors[region] ||
 		MATERIAL_CALCULATIONS_CONFIG.regional.wasteFactors.sierra
-	); // fallback
+	);
 };
 
-// Helper para obtener límites
 export const getLimit = (
 	limitType: keyof typeof MATERIAL_CALCULATIONS_CONFIG.limits
 ): number => {
 	return MATERIAL_CALCULATIONS_CONFIG.limits[limitType];
 };
 
-// Helper para configuración de API
 export const getApiConfig = () => {
 	return MATERIAL_CALCULATIONS_CONFIG.api;
 };
 
-// Helper para configuración de UI
 export const getUIConfig = () => {
 	return MATERIAL_CALCULATIONS_CONFIG.ui;
 };
+
+export const getWasteFactor = (
+	region: SupportedRegion,
+	materialType: MaterialCalculationType
+): number => {
+	return (
+		MATERIAL_CALCULATIONS_CONFIG.regional.wasteFactors[region]?.[
+			materialType
+		] || 0.08
+	);
+};
+
+export const getThemeColors = (
+	materialType: MaterialCalculationType,
+	theme: ThemeMode = "light"
+) => {
+	return (
+		MATERIAL_CALCULATIONS_CONFIG.themes.materialTypeColors[materialType]?.[
+			theme
+		] || MATERIAL_CALCULATIONS_CONFIG.themes.customColors.primary
+	);
+};
+
+export const getSearchConfig = () => {
+	return MATERIAL_CALCULATIONS_CONFIG.search;
+};
+
+export const getExportFormats = (): SupportedFormat[] => {
+	return [...MATERIAL_CALCULATIONS_CONFIG.export.supportedFormats];
+};
+
+export const getSupportedCurrencies = (): SupportedCurrency[] => {
+	return [...MATERIAL_CALCULATIONS_CONFIG.regional.currencies];
+};
+
+export const getSupportedRegions = (): SupportedRegion[] => {
+	return [...MATERIAL_CALCULATIONS_CONFIG.regional.supportedRegions];
+};
+
+export const getNotificationConfig = () => {
+	return MATERIAL_CALCULATIONS_CONFIG.notifications;
+};
+
+export const getCacheConfig = () => {
+	return MATERIAL_CALCULATIONS_CONFIG.cache;
+};
+
+export const getSecurityConfig = () => {
+	return MATERIAL_CALCULATIONS_CONFIG.security;
+};
+
+export const getPerformanceConfig = () => {
+	return MATERIAL_CALCULATIONS_CONFIG.performance;
+};
+
+export const getAccessibilityConfig = () => {
+	return MATERIAL_CALCULATIONS_CONFIG.accessibility;
+};
+
+export const getAnalyticsConfig = () => {
+	return MATERIAL_CALCULATIONS_CONFIG.analytics;
+};
+
+export const getValidationRules = () => {
+	return MATERIAL_CALCULATIONS_CONFIG.validation;
+};
+
+export const getGamificationConfig = () => {
+	return MATERIAL_CALCULATIONS_CONFIG.gamification;
+};
+
+// Función para validar configuración en desarrollo
+export const validateConfig = (): boolean => {
+	if (process.env.NODE_ENV !== "development") {
+		return true;
+	}
+
+	const errors: string[] = [];
+
+	// Validar límites
+	if (MATERIAL_CALCULATIONS_CONFIG.limits.maxTemplatesPerUser <= 0) {
+		errors.push("maxTemplatesPerUser debe ser mayor a 0");
+	}
+
+	// Validar API
+	if (!MATERIAL_CALCULATIONS_CONFIG.api.baseUrl) {
+		errors.push("API baseUrl es requerida");
+	}
+
+	// Validar exportación
+	if (MATERIAL_CALCULATIONS_CONFIG.export.supportedFormats.length === 0) {
+		errors.push("Debe haber al menos un formato de exportación soportado");
+	}
+
+	if (errors.length > 0) {
+		console.error("Errores de configuración:", errors);
+		return false;
+	}
+
+	return true;
+};
+
+// Inicializar validación en desarrollo
+if (process.env.NODE_ENV === "development") {
+	validateConfig();
+}
+
+export default MATERIAL_CALCULATIONS_CONFIG;

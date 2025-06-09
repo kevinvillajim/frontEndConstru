@@ -1,554 +1,586 @@
 // src/ui/pages/calculations/materials/MaterialResultsHistory.tsx
-
 import React, {useState, useEffect} from "react";
+import {useNavigate, useParams} from "react-router-dom";
 import {
-	MaterialCalculationType,
-	MATERIAL_CATEGORIES,
-	MATERIAL_UI_CONFIG,
-} from "../shared/types/material.types";
-import type {MaterialCalculationResult} from "../shared/types/material.types"
+	MagnifyingGlassIcon,
+	ClockIcon,
+	DocumentTextIcon,
+	TrashIcon,
+	ArrowDownTrayIcon,
+	EyeIcon,
+	DocumentDuplicateIcon,
+	ChartBarIcon,
+	CalendarIcon,
+	CurrencyDollarIcon,
+	BeakerIcon,
+	FunnelIcon,
+	CheckCircleIcon,
+	ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline";
 import {useMaterialResults} from "../shared/hooks/useMaterialCalculations";
+import type {MaterialCalculationResult} from "../shared/types/material.types";
 
-interface MaterialResultsHistoryProps {
-	onResultSelect: (result: MaterialCalculationResult) => void;
-	onTemplateSelect: (templateId: string) => void;
-}
+const FILTER_OPTIONS = {
+	timeRange: [
+		{id: "today", name: "Hoy"},
+		{id: "week", name: "Esta semana"},
+		{id: "month", name: "Este mes"},
+		{id: "quarter", name: "Últimos 3 meses"},
+		{id: "year", name: "Este año"},
+		{id: "all", name: "Todo el tiempo"},
+	],
+	status: [
+		{id: "all", name: "Todos"},
+		{id: "successful", name: "Exitosos"},
+		{id: "failed", name: "Con errores"},
+	],
+	sortBy: [
+		{id: "recent", name: "Más recientes"},
+		{id: "oldest", name: "Más antiguos"},
+		{id: "template", name: "Por plantilla"},
+		{id: "cost", name: "Por costo"},
+	],
+};
 
-const MaterialResultsHistory: React.FC<MaterialResultsHistoryProps> = ({
-	onResultSelect,
-	onTemplateSelect,
-}) => {
-	const [filters, setFilters] = useState({
-		templateType: undefined as "official" | "user" | undefined,
-		materialType: undefined as MaterialCalculationType | undefined,
-		dateFrom: undefined as Date | undefined,
-		dateTo: undefined as Date | undefined,
-		isSaved: undefined as boolean | undefined,
-		searchTerm: "",
-	});
+const MaterialResultsHistory: React.FC = () => {
+	const navigate = useNavigate();
+	const {resultId} = useParams<{resultId?: string}>();
+	const {results, loading, error, fetchResults, deleteResult} =
+		useMaterialResults();
 
-	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-	const [sortBy, setSortBy] = useState<"date" | "name" | "cost">("date");
-	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-
-	const {
-		// results,
-		loading,
-		// error,
-		// fetchUserResults,
-		// toggleSaveResult,
-		// toggleShareResult,
-	} = useMaterialResults();
-
-	// Datos de ejemplo para demostración
-	const [mockResults, setMockResults] = useState<MaterialCalculationResult[]>([
-		{
-			id: "1",
-			templateId: "t1",
-			templateName: "Pared de Ladrillo King Kong",
-			templateType: MaterialCalculationType.WALLS_MASONRY,
-			inputParameters: {largo: 5, alto: 3, espesor: 0.15},
-			results: {
-				cantidadLadrillos: 600,
-				cemento: 15.5,
-				arena: 0.48,
-				areaNeta: 15,
-			},
-			materialQuantities: [
-				{
-					materialType: "Ladrillo King Kong",
-					quantity: 600,
-					unit: "unidades",
-					unitCost: 0.35,
-					totalCost: 210,
-				},
-				{
-					materialType: "Cemento",
-					quantity: 15.5,
-					unit: "kg",
-					unitCost: 0.18,
-					totalCost: 2.79,
-				},
-				{
-					materialType: "Arena fina",
-					quantity: 0.48,
-					unit: "m³",
-					unitCost: 25,
-					totalCost: 12,
-				},
-			],
-			totalCost: 224.79,
-			executionTime: 150,
-			wasSuccessful: true,
-			createdAt: "2024-01-15T10:30:00Z",
-			userId: "user1",
-			isSaved: true,
-			isShared: false,
-			notes: "Cálculo para sala principal",
-		},
-		{
-			id: "2",
-			templateId: "t2",
-			templateName: "Escalera de Hormigón 12 Peldaños",
-			templateType: MaterialCalculationType.STAIRS,
-			inputParameters: {huella: 30, contrahuella: 18, ancho: 120},
-			results: {
-				volumenHormigon: 2.35,
-				acero: 28.5,
-				encofrado: 15.2,
-				peldanos: 12,
-			},
-			materialQuantities: [
-				{
-					materialType: "Hormigón f'c=210",
-					quantity: 2.35,
-					unit: "m³",
-					unitCost: 120,
-					totalCost: 282,
-				},
-				{
-					materialType: "Acero de refuerzo",
-					quantity: 28.5,
-					unit: "kg",
-					unitCost: 1.85,
-					totalCost: 52.73,
-				},
-				{
-					materialType: "Encofrado",
-					quantity: 15.2,
-					unit: "m²",
-					unitCost: 12,
-					totalCost: 182.4,
-				},
-			],
-			totalCost: 517.13,
-			executionTime: 180,
-			wasSuccessful: true,
-			createdAt: "2024-01-14T15:20:00Z",
-			userId: "user1",
-			isSaved: false,
-			isShared: true,
-			notes: "Escalera acceso segundo piso",
-		},
-		{
-			id: "3",
-			templateId: "t3",
-			templateName: "Piso Cerámico 60x60cm",
-			templateType: MaterialCalculationType.CERAMIC_FINISHES,
-			inputParameters: {area: 25, dimensionPieza: "60x60", patron: "recto"},
-			results: {
-				cantidadPiezas: 72,
-				adhesivo: 8.5,
-				fragüe: 2.1,
-				areaTotal: 25,
-			},
-			materialQuantities: [
-				{
-					materialType: "Cerámico 60x60cm",
-					quantity: 72,
-					unit: "piezas",
-					unitCost: 4.5,
-					totalCost: 324,
-				},
-				{
-					materialType: "Adhesivo cerámico",
-					quantity: 8.5,
-					unit: "kg",
-					unitCost: 1.2,
-					totalCost: 10.2,
-				},
-				{
-					materialType: "Fragüe",
-					quantity: 2.1,
-					unit: "kg",
-					unitCost: 2.8,
-					totalCost: 5.88,
-				},
-			],
-			totalCost: 340.08,
-			executionTime: 120,
-			wasSuccessful: true,
-			createdAt: "2024-01-12T09:45:00Z",
-			userId: "user1",
-			isSaved: true,
-			isShared: false,
-			notes: "Piso para área social",
-		},
-	]);
+	const [searchTerm, setSearchTerm] = useState("");
+	const [selectedTimeRange, setSelectedTimeRange] = useState("month");
+	const [selectedStatus, setSelectedStatus] = useState("all");
+	const [sortBy, setSortBy] = useState("recent");
+	const [showFilters, setShowFilters] = useState(false);
+	const [selectedResult, setSelectedResult] =
+		useState<MaterialCalculationResult | null>(null);
+	const [filteredResults, setFilteredResults] = useState<
+		MaterialCalculationResult[]
+	>([]);
 
 	useEffect(() => {
-		// En implementación real, cargar desde API
-		// fetchUserResults(filters);
-	}, [filters]);
+		fetchResults({
+			limit: 50,
+		});
+	}, [fetchResults]);
 
-	const filteredResults = mockResults.filter((result) => {
-		if (filters.templateType && result.templateType !== filters.templateType)
-			return false;
-		if (filters.materialType && result.templateType !== filters.materialType)
-			return false;
-		if (filters.isSaved !== undefined && result.isSaved !== filters.isSaved)
-			return false;
-		if (filters.searchTerm) {
-			const searchLower = filters.searchTerm.toLowerCase();
-			return (
-				result.templateName.toLowerCase().includes(searchLower) ||
-				result.notes?.toLowerCase().includes(searchLower)
+	useEffect(() => {
+		let filtered = [...results];
+
+		// Filtrar por búsqueda
+		if (searchTerm) {
+			filtered = filtered.filter(
+				(result) =>
+					result.templateName
+						.toLowerCase()
+						.includes(searchTerm.toLowerCase()) ||
+					result.notes?.toLowerCase().includes(searchTerm.toLowerCase())
 			);
 		}
-		return true;
-	});
 
-	const sortedResults = [...filteredResults].sort((a, b) => {
-		let comparison = 0;
-
-		switch (sortBy) {
-			case "date":
-				comparison =
-					new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-				break;
-			case "name":
-				comparison = a.templateName.localeCompare(b.templateName);
-				break;
-			case "cost":
-				comparison = (a.totalCost || 0) - (b.totalCost || 0);
-				break;
+		// Filtrar por estado
+		if (selectedStatus !== "all") {
+			filtered = filtered.filter((result) =>
+				selectedStatus === "successful"
+					? result.wasSuccessful
+					: !result.wasSuccessful
+			);
 		}
 
-		return sortOrder === "desc" ? -comparison : comparison;
-	});
+		// Filtrar por rango de tiempo
+		if (selectedTimeRange !== "all") {
+			const now = new Date();
+			const timeRanges = {
+				today: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+				week: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+				month: new Date(now.getFullYear(), now.getMonth(), 1),
+				quarter: new Date(now.getFullYear(), now.getMonth() - 3, 1),
+				year: new Date(now.getFullYear(), 0, 1),
+			};
 
-	const handleToggleSave = async (resultId: string, isSaved: boolean) => {
-		setMockResults((prev) =>
-			prev.map((r) => (r.id === resultId ? {...r, isSaved} : r))
-		);
-		// await toggleSaveResult(resultId, isSaved);
-	};
+			const cutoffDate =
+				timeRanges[selectedTimeRange as keyof typeof timeRanges];
+			if (cutoffDate) {
+				filtered = filtered.filter(
+					(result) => new Date(result.createdAt) >= cutoffDate
+				);
+			}
+		}
 
-	const handleDeleteResult = (resultId: string) => {
-		if (confirm("¿Estás seguro de que quieres eliminar este resultado?")) {
-			setMockResults((prev) => prev.filter((r) => r.id !== resultId));
+		// Ordenar
+		filtered.sort((a, b) => {
+			switch (sortBy) {
+				case "recent":
+					return (
+						new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+					);
+				case "oldest":
+					return (
+						new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+					);
+				case "template":
+					return a.templateName.localeCompare(b.templateName);
+				case "cost":
+					return (b.totalEstimatedCost || 0) - (a.totalEstimatedCost || 0);
+				default:
+					return 0;
+			}
+		});
+
+		setFilteredResults(filtered);
+	}, [results, searchTerm, selectedTimeRange, selectedStatus, sortBy]);
+
+	// Si hay un resultId en la URL, mostrar ese resultado específico
+	useEffect(() => {
+		if (resultId && results.length > 0) {
+			const result = results.find((r) => r.id === resultId);
+			setSelectedResult(result || null);
+		}
+	}, [resultId, results]);
+
+	const handleDeleteResult = async (id: string) => {
+		if (
+			window.confirm("¿Estás seguro de que quieres eliminar este resultado?")
+		) {
+			const success = await deleteResult(id);
+			if (success && selectedResult?.id === id) {
+				setSelectedResult(null);
+				navigate("/calculations/materials/results");
+			}
 		}
 	};
 
-	const ResultCard: React.FC<{result: MaterialCalculationResult}> = ({
-		result,
-	}) => {
-		const categoryConfig = MATERIAL_CATEGORIES[result.templateType];
-
-		return (
-			<div
-				className={`
-        bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700
-        ${MATERIAL_UI_CONFIG.cardHover} ${MATERIAL_UI_CONFIG.defaultTransition}
-        cursor-pointer p-6 group
-      `}
-			>
-				{/* Header */}
-				<div className="flex items-start justify-between mb-4">
-					<div className="flex items-center space-x-3">
-						<div
-							className={`
-              w-12 h-12 rounded-lg flex items-center justify-center
-              ${categoryConfig.color} bg-opacity-20 group-hover:bg-opacity-30 transition-all
-            `}
-						>
-							<span className="text-2xl">{categoryConfig.icon}</span>
-						</div>
-						<div className="flex-1">
-							<h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-								{result.templateName}
-							</h3>
-							<div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-								<span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 dark:bg-gray-700">
-									{categoryConfig.name}
-								</span>
-								<span>•</span>
-								<span>{new Date(result.createdAt).toLocaleDateString()}</span>
-							</div>
-						</div>
-					</div>
-
-					<div className="flex items-center space-x-2">
-						<button
-							onClick={(e) => {
-								e.stopPropagation();
-								handleToggleSave(result.id, !result.isSaved);
-							}}
-							className={`p-2 rounded-lg transition-colors ${
-								result.isSaved
-									? "text-yellow-500 bg-yellow-100 dark:bg-yellow-900/20"
-									: "text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
-							}`}
-						>
-							<svg
-								className="w-5 h-5"
-								fill={result.isSaved ? "currentColor" : "none"}
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-								/>
-							</svg>
-						</button>
-
-						<div className="relative group">
-							<button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-								<svg
-									className="w-5 h-5"
-									fill="currentColor"
-									viewBox="0 0 20 20"
-								>
-									<path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-								</svg>
-							</button>
-
-							<div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-								<div className="py-2">
-									<button
-										onClick={() => onResultSelect(result)}
-										className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-									>
-										Ver Detalles
-									</button>
-									<button
-										onClick={() => onTemplateSelect(result.templateId)}
-										className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-									>
-										Usar Plantilla
-									</button>
-									<button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-										Duplicar Cálculo
-									</button>
-									<button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-										Exportar PDF
-									</button>
-									<hr className="my-1" />
-									<button
-										onClick={() => handleDeleteResult(result.id)}
-										className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-									>
-										Eliminar
-									</button>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				{/* Content */}
-				<div className="mb-4">
-					{result.notes && (
-						<p className="text-gray-600 dark:text-gray-300 text-sm mb-3 italic">
-							"{result.notes}"
-						</p>
-					)}
-
-					<div className="grid grid-cols-2 gap-3">
-						{Object.entries(result.results)
-							.slice(0, 4)
-							.map(([key, value]) => (
-								<div
-									key={key}
-									className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3"
-								>
-									<div className="text-xs text-gray-500 dark:text-gray-400 mb-1 truncate">
-										{key}
-									</div>
-									<div className="font-medium text-gray-900 dark:text-white">
-										{typeof value === "number" ? value.toLocaleString() : value}
-									</div>
-								</div>
-							))}
-					</div>
-				</div>
-
-				{/* Footer */}
-				<div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-					<div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-						<div className="flex items-center space-x-1">
-							<svg
-								className="w-4 h-4"
-								fill="none"
-								stroke="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									strokeWidth={2}
-									d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-								/>
-							</svg>
-							<span>{result.executionTime}ms</span>
-						</div>
-
-						<div className="flex items-center space-x-1">
-							<span
-								className={`w-2 h-2 rounded-full ${result.wasSuccessful ? "bg-green-500" : "bg-red-500"}`}
-							/>
-							<span>{result.wasSuccessful ? "Exitoso" : "Error"}</span>
-						</div>
-
-						{result.isShared && (
-							<div className="flex items-center space-x-1">
-								<svg
-									className="w-4 h-4"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										strokeWidth={2}
-										d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-									/>
-								</svg>
-								<span>Compartido</span>
-							</div>
-						)}
-					</div>
-
-					<div className="font-semibold text-green-600 dark:text-green-400">
-						{result.totalCost ? `$${result.totalCost.toFixed(2)}` : "N/A"}
-					</div>
-				</div>
-			</div>
-		);
+	const handleViewResult = (result: MaterialCalculationResult) => {
+		setSelectedResult(result);
+		navigate(`/calculations/materials/results/${result.id}`);
 	};
 
-	const FilterPanel: React.FC = () => (
-		<div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
-			<h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-				Filtros y Búsqueda
-			</h3>
+	const formatDate = (date: string | Date) => {
+		return new Intl.DateTimeFormat("es-EC", {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		}).format(new Date(date));
+	};
 
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-				<div>
-					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-						Buscar
-					</label>
-					<input
-						type="text"
-						value={filters.searchTerm}
-						onChange={(e) =>
-							setFilters((prev) => ({...prev, searchTerm: e.target.value}))
-						}
-						placeholder="Buscar por nombre o notas..."
-						className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-					/>
+	const formatCurrency = (amount: number, currency: string) => {
+		return new Intl.NumberFormat("es-EC", {
+			style: "currency",
+			currency: currency,
+		}).format(amount);
+	};
+
+	const renderFilters = () => (
+		<div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+			<div className="flex flex-col lg:flex-row gap-4">
+				{/* Búsqueda */}
+				<div className="flex-1">
+					<div className="relative">
+						<MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+						<input
+							type="text"
+							placeholder="Buscar en historial..."
+							value={searchTerm}
+							onChange={(e) => setSearchTerm(e.target.value)}
+							className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+						/>
+					</div>
 				</div>
 
-				<div>
-					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-						Categoría
-					</label>
+				{/* Controles */}
+				<div className="flex gap-3">
 					<select
-						value={filters.materialType || ""}
-						onChange={(e) =>
-							setFilters((prev) => ({
-								...prev,
-								materialType: (e.target.value as any) || undefined,
-							}))
-						}
-						className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+						value={selectedTimeRange}
+						onChange={(e) => setSelectedTimeRange(e.target.value)}
+						className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
 					>
-						<option value="">Todas las categorías</option>
-						{Object.values(MaterialCalculationType).map((type) => (
-							<option key={type} value={type}>
-								{MATERIAL_CATEGORIES[type].name}
+						{FILTER_OPTIONS.timeRange.map((option) => (
+							<option key={option.id} value={option.id}>
+								{option.name}
 							</option>
 						))}
 					</select>
-				</div>
 
-				<div>
-					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-						Estado
-					</label>
 					<select
-						value={
-							filters.isSaved === undefined
-								? ""
-								: filters.isSaved
-									? "saved"
-									: "unsaved"
-						}
-						onChange={(e) => {
-							const value = e.target.value;
-							setFilters((prev) => ({
-								...prev,
-								isSaved: value === "" ? undefined : value === "saved",
-							}));
-						}}
-						className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+						value={sortBy}
+						onChange={(e) => setSortBy(e.target.value)}
+						className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
 					>
-						<option value="">Todos</option>
-						<option value="saved">Guardados</option>
-						<option value="unsaved">No guardados</option>
+						{FILTER_OPTIONS.sortBy.map((option) => (
+							<option key={option.id} value={option.id}>
+								{option.name}
+							</option>
+						))}
 					</select>
-				</div>
 
-				<div>
-					<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-						Ordenar por
-					</label>
-					<div className="flex space-x-2">
-						<select
-							value={sortBy}
-							onChange={(e) => setSortBy(e.target.value as any)}
-							className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-						>
-							<option value="date">Fecha</option>
-							<option value="name">Nombre</option>
-							<option value="cost">Costo</option>
-						</select>
-						<button
-							onClick={() =>
-								setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-							}
-							className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-						>
-							{sortOrder === "asc" ? "↑" : "↓"}
-						</button>
+					<button
+						onClick={() => setShowFilters(!showFilters)}
+						className={`inline-flex items-center gap-2 px-4 py-3 border rounded-lg transition-colors ${
+							showFilters
+								? "border-primary-300 bg-primary-50 text-primary-700"
+								: "border-gray-300 text-gray-700 hover:bg-gray-50"
+						}`}
+					>
+						<FunnelIcon className="h-4 w-4" />
+						Filtros
+					</button>
+				</div>
+			</div>
+
+			{/* Filtros expandibles */}
+			{showFilters && (
+				<div className="mt-6 pt-6 border-t border-gray-200">
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-2">
+								Estado
+							</label>
+							<div className="space-y-2">
+								{FILTER_OPTIONS.status.map((status) => (
+									<label key={status.id} className="flex items-center">
+										<input
+											type="radio"
+											name="status"
+											value={status.id}
+											checked={selectedStatus === status.id}
+											onChange={(e) => setSelectedStatus(e.target.value)}
+											className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+										/>
+										<span className="ml-2 text-sm text-gray-700">
+											{status.name}
+										</span>
+									</label>
+								))}
+							</div>
+						</div>
+
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-2">
+								Rango de Costos
+							</label>
+							<div className="flex gap-2">
+								<input
+									type="number"
+									placeholder="Mín"
+									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+								/>
+								<input
+									type="number"
+									placeholder="Máx"
+									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+
+	const renderResultCard = (result: MaterialCalculationResult) => (
+		<div
+			key={result.id}
+			className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200 cursor-pointer"
+			onClick={() => handleViewResult(result)}
+		>
+			{/* Header */}
+			<div className="flex items-start justify-between mb-4">
+				<div className="flex-1">
+					<div className="flex items-center gap-2 mb-2">
+						<h3 className="font-semibold text-gray-900">
+							{result.templateName}
+						</h3>
+						{result.wasSuccessful ? (
+							<CheckCircleIcon className="h-5 w-5 text-green-600" />
+						) : (
+							<ExclamationTriangleIcon className="h-5 w-5 text-red-600" />
+						)}
+					</div>
+					<div className="flex items-center gap-4 text-sm text-gray-500">
+						<span className="flex items-center gap-1">
+							<CalendarIcon className="h-4 w-4" />
+							{formatDate(result.createdAt)}
+						</span>
+						<span className="flex items-center gap-1">
+							<ClockIcon className="h-4 w-4" />
+							{result.executionTime}ms
+						</span>
+						{result.totalEstimatedCost && (
+							<span className="flex items-center gap-1">
+								<CurrencyDollarIcon className="h-4 w-4" />
+								{formatCurrency(result.totalEstimatedCost, result.currency)}
+							</span>
+						)}
 					</div>
 				</div>
 			</div>
 
-			<div className="flex items-center justify-between">
-				<div className="text-sm text-gray-600 dark:text-gray-400">
-					{sortedResults.length} resultados encontrados
+			{/* Materials summary */}
+			<div className="mb-4">
+				<p className="text-sm text-gray-600 mb-2">
+					{result.materialQuantities.length} material
+					{result.materialQuantities.length !== 1 ? "es" : ""} calculado
+					{result.materialQuantities.length !== 1 ? "s" : ""}
+				</p>
+				<div className="flex flex-wrap gap-1">
+					{result.materialQuantities.slice(0, 3).map((material, index) => (
+						<span
+							key={index}
+							className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-600"
+						>
+							{material.name}
+						</span>
+					))}
+					{result.materialQuantities.length > 3 && (
+						<span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-600">
+							+{result.materialQuantities.length - 3} más
+						</span>
+					)}
+				</div>
+			</div>
+
+			{/* Actions */}
+			<div
+				className="flex items-center gap-2"
+				onClick={(e) => e.stopPropagation()}
+			>
+				<button
+					onClick={() => handleViewResult(result)}
+					className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
+				>
+					<EyeIcon className="h-4 w-4" />
+					Ver Detalles
+				</button>
+				<button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+					<DocumentDuplicateIcon className="h-4 w-4" />
+				</button>
+				<button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+					<ArrowDownTrayIcon className="h-4 w-4" />
+				</button>
+				<button
+					onClick={() => handleDeleteResult(result.id)}
+					className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+				>
+					<TrashIcon className="h-4 w-4" />
+				</button>
+			</div>
+		</div>
+	);
+
+	const renderResultDetail = () => {
+		if (!selectedResult) return null;
+
+		return (
+			<div className="bg-white rounded-xl border border-gray-200 p-6">
+				<div className="flex items-center justify-between mb-6">
+					<div>
+						<h2 className="text-xl font-bold text-gray-900">
+							{selectedResult.templateName}
+						</h2>
+						<p className="text-gray-600">
+							Resultado del {formatDate(selectedResult.createdAt)}
+						</p>
+					</div>
+					<button
+						onClick={() => {
+							setSelectedResult(null);
+							navigate("/calculations/materials/results");
+						}}
+						className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+					>
+						Cerrar
+					</button>
 				</div>
 
-				<div className="flex items-center space-x-3">
-					<span className="text-sm text-gray-600 dark:text-gray-400">
-						Vista:
-					</span>
-					<div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
-						<button
-							onClick={() => setViewMode("grid")}
-							className={`p-2 ${viewMode === "grid" ? "bg-blue-600 text-white" : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"} transition-colors`}
-						>
-							<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-								<path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-							</svg>
-						</button>
-						<button
-							onClick={() => setViewMode("list")}
-							className={`p-2 ${viewMode === "list" ? "bg-blue-600 text-white" : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"} transition-colors`}
-						>
-							<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-								<path
-									fillRule="evenodd"
-									d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
-									clipRule="evenodd"
-								/>
-							</svg>
-						</button>
+				{/* Metadata */}
+				<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+					<div className="bg-gray-50 rounded-lg p-4">
+						<p className="text-sm text-gray-600">Estado</p>
+						<div className="flex items-center gap-1 mt-1">
+							{selectedResult.wasSuccessful ? (
+								<CheckCircleIcon className="h-4 w-4 text-green-600" />
+							) : (
+								<ExclamationTriangleIcon className="h-4 w-4 text-red-600" />
+							)}
+							<span
+								className={`text-sm font-medium ${
+									selectedResult.wasSuccessful
+										? "text-green-700"
+										: "text-red-700"
+								}`}
+							>
+								{selectedResult.wasSuccessful ? "Exitoso" : "Error"}
+							</span>
+						</div>
+					</div>
+
+					<div className="bg-gray-50 rounded-lg p-4">
+						<p className="text-sm text-gray-600">Tiempo</p>
+						<p className="text-lg font-bold text-gray-900">
+							{selectedResult.executionTime}ms
+						</p>
+					</div>
+
+					<div className="bg-gray-50 rounded-lg p-4">
+						<p className="text-sm text-gray-600">Materiales</p>
+						<p className="text-lg font-bold text-gray-900">
+							{selectedResult.materialQuantities.length}
+						</p>
+					</div>
+
+					{selectedResult.totalEstimatedCost && (
+						<div className="bg-gray-50 rounded-lg p-4">
+							<p className="text-sm text-gray-600">Costo Total</p>
+							<p className="text-lg font-bold text-gray-900">
+								{formatCurrency(
+									selectedResult.totalEstimatedCost,
+									selectedResult.currency
+								)}
+							</p>
+						</div>
+					)}
+				</div>
+
+				{/* Materials */}
+				<div className="mb-6">
+					<h3 className="text-lg font-semibold text-gray-900 mb-4">
+						Materiales Calculados
+					</h3>
+					<div className="space-y-3">
+						{selectedResult.materialQuantities.map((material, index) => (
+							<div
+								key={index}
+								className="bg-gray-50 rounded-lg p-4 flex justify-between items-center"
+							>
+								<div>
+									<h4 className="font-medium text-gray-900">{material.name}</h4>
+									{material.description && (
+										<p className="text-sm text-gray-600">
+											{material.description}
+										</p>
+									)}
+								</div>
+								<div className="text-right">
+									<p className="font-bold text-gray-900">
+										{material.quantity} {material.unit}
+									</p>
+									{material.totalPrice && (
+										<p className="text-sm text-gray-600">
+											{formatCurrency(
+												material.totalPrice,
+												selectedResult.currency
+											)}
+										</p>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+
+				{/* Input Parameters */}
+				{Object.keys(selectedResult.inputParameters).length > 0 && (
+					<div className="mb-6">
+						<h3 className="text-lg font-semibold text-gray-900 mb-4">
+							Parámetros de Entrada
+						</h3>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							{Object.entries(selectedResult.inputParameters).map(
+								([key, value]) => (
+									<div key={key} className="bg-gray-50 rounded-lg p-4">
+										<p className="text-sm text-gray-600 capitalize">
+											{key.replace(/([A-Z])/g, " $1")}
+										</p>
+										<p className="font-medium text-gray-900">{String(value)}</p>
+									</div>
+								)
+							)}
+						</div>
+					</div>
+				)}
+
+				{/* Notes */}
+				{selectedResult.notes && (
+					<div>
+						<h3 className="text-lg font-semibold text-gray-900 mb-4">Notas</h3>
+						<div className="bg-gray-50 rounded-lg p-4">
+							<p className="text-gray-700">{selectedResult.notes}</p>
+						</div>
+					</div>
+				)}
+			</div>
+		);
+	};
+
+	const renderStatsCards = () => (
+		<div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+			<div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-xl p-6">
+				<div className="flex items-center">
+					<div className="flex-shrink-0">
+						<DocumentTextIcon className="h-8 w-8 text-primary-600" />
+					</div>
+					<div className="ml-4">
+						<p className="text-sm font-medium text-primary-700">Total</p>
+						<p className="text-2xl font-bold text-primary-900">
+							{results.length}
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-6">
+				<div className="flex items-center">
+					<div className="flex-shrink-0">
+						<CheckCircleIcon className="h-8 w-8 text-emerald-600" />
+					</div>
+					<div className="ml-4">
+						<p className="text-sm font-medium text-emerald-700">Exitosos</p>
+						<p className="text-2xl font-bold text-emerald-900">
+							{results.filter((r) => r.wasSuccessful).length}
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div className="bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-xl p-6">
+				<div className="flex items-center">
+					<div className="flex-shrink-0">
+						<ClockIcon className="h-8 w-8 text-amber-600" />
+					</div>
+					<div className="ml-4">
+						<p className="text-sm font-medium text-amber-700">Esta Semana</p>
+						<p className="text-2xl font-bold text-amber-900">
+							{
+								results.filter((r) => {
+									const week = new Date();
+									week.setDate(week.getDate() - 7);
+									return new Date(r.createdAt) >= week;
+								}).length
+							}
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6">
+				<div className="flex items-center">
+					<div className="flex-shrink-0">
+						<CurrencyDollarIcon className="h-8 w-8 text-purple-600" />
+					</div>
+					<div className="ml-4">
+						<p className="text-sm font-medium text-purple-700">Costo Total</p>
+						<p className="text-2xl font-bold text-purple-900">
+							{formatCurrency(
+								results.reduce(
+									(sum, r) => sum + (r.totalEstimatedCost || 0),
+									0
+								),
+								"USD"
+							)}
+						</p>
 					</div>
 				</div>
 			</div>
@@ -557,83 +589,61 @@ const MaterialResultsHistory: React.FC<MaterialResultsHistoryProps> = ({
 
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center py-20">
-				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+				<div className="flex items-center justify-center h-64">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+				</div>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+				<div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+					<p className="text-red-800">Error: {error}</p>
+					<button
+						onClick={() => fetchResults({})}
+						className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+					>
+						Reintentar
+					</button>
+				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-6">
-			{/* Header */}
-			<div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-							Historial de Resultados
-						</h1>
-						<p className="text-gray-600 dark:text-gray-300 mt-1">
-							Revisa y gestiona tus cálculos anteriores
-						</p>
-					</div>
+		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+			{!selectedResult && (
+				<>
+					{renderStatsCards()}
+					{renderFilters()}
+				</>
+			)}
 
-					<div className="flex items-center space-x-3">
-						<button className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-							Exportar Todo
-						</button>
-						<button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-							Nuevo Cálculo
-						</button>
-					</div>
-				</div>
-			</div>
-
-			<FilterPanel />
-
-			{/* Results */}
-			{sortedResults.length === 0 ? (
-				<div className="text-center py-20">
-					<div className="text-6xl mb-4">📊</div>
-					<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-						{filters.searchTerm ||
-						filters.materialType ||
-						filters.isSaved !== undefined
-							? "No se encontraron resultados"
-							: "No tienes cálculos aún"}
-					</h3>
-					<p className="text-gray-600 dark:text-gray-300 mb-6">
-						{filters.searchTerm ||
-						filters.materialType ||
-						filters.isSaved !== undefined
-							? "Intenta ajustar los filtros de búsqueda"
-							: "Realiza tu primer cálculo para ver el historial aquí"}
-					</p>
-
-					{!filters.searchTerm &&
-						!filters.materialType &&
-						filters.isSaved === undefined && (
-							<button
-								onClick={() => onTemplateSelect("")}
-								className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-							>
-								Comenzar Primer Cálculo
-							</button>
-						)}
-				</div>
+			{selectedResult ? (
+				renderResultDetail()
 			) : (
-				<div
-					className={`
-          ${
-						viewMode === "grid"
-							? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-							: "space-y-4"
-					}
-        `}
-				>
-					{sortedResults.map((result) => (
-						<ResultCard key={result.id} result={result} />
-					))}
-				</div>
+				<>
+					{filteredResults.length === 0 ? (
+						<div className="text-center py-12">
+							<BeakerIcon className="mx-auto h-12 w-12 text-gray-400" />
+							<h3 className="mt-4 text-lg font-medium text-gray-900">
+								No hay resultados
+							</h3>
+							<p className="mt-2 text-gray-600">
+								{searchTerm
+									? "No se encontraron resultados con esos criterios"
+									: "Aún no tienes cálculos guardados"}
+							</p>
+						</div>
+					) : (
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+							{filteredResults.map(renderResultCard)}
+						</div>
+					)}
+				</>
 			)}
 		</div>
 	);

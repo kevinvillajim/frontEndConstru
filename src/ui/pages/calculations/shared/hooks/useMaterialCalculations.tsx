@@ -1,5 +1,4 @@
 // src/ui/pages/calculations/shared/hooks/useMaterialCalculations.tsx
-
 import {useState, useCallback} from "react";
 import type {
 	MaterialCalculationTemplate,
@@ -12,6 +11,7 @@ import type {
 
 const API_BASE = "/api/material-calculations";
 
+// Hook para plantillas de materiales
 export const useMaterialTemplates = () => {
 	const [templates, setTemplates] = useState<MaterialCalculationTemplate[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -46,7 +46,12 @@ export const useMaterialTemplates = () => {
 				if (filters?.sortOrder)
 					queryParams.append("sortOrder", filters.sortOrder);
 
-				const response = await fetch(`${API_BASE}/templates?${queryParams}`);
+				const response = await fetch(`${API_BASE}/templates?${queryParams}`, {
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+						"Content-Type": "application/json",
+					},
+				});
 
 				if (!response.ok) {
 					throw new Error("Error al cargar plantillas de materiales");
@@ -55,8 +60,15 @@ export const useMaterialTemplates = () => {
 				const data = await response.json();
 
 				if (data.success) {
-					setTemplates(data.data.templates);
-					setPagination(data.data.pagination);
+					setTemplates(data.data.templates || []);
+					setPagination(
+						data.data.pagination || {
+							total: 0,
+							page: 1,
+							limit: 20,
+							pages: 0,
+						}
+					);
 				} else {
 					throw new Error(data.message || "Error desconocido");
 				}
@@ -73,7 +85,12 @@ export const useMaterialTemplates = () => {
 	const fetchTemplateById = useCallback(
 		async (id: string): Promise<MaterialCalculationTemplate | null> => {
 			try {
-				const response = await fetch(`${API_BASE}/templates/${id}`);
+				const response = await fetch(`${API_BASE}/templates/${id}`, {
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+						"Content-Type": "application/json",
+					},
+				});
 
 				if (!response.ok) {
 					throw new Error("Plantilla no encontrada");
@@ -92,7 +109,12 @@ export const useMaterialTemplates = () => {
 	const getFeaturedTemplates = useCallback(async () => {
 		setLoading(true);
 		try {
-			const response = await fetch(`${API_BASE}/templates/featured`);
+			const response = await fetch(`${API_BASE}/templates/featured`, {
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+					"Content-Type": "application/json",
+				},
+			});
 			const data = await response.json();
 
 			if (data.success) {
@@ -102,16 +124,22 @@ export const useMaterialTemplates = () => {
 		} catch (err) {
 			setError("Error al cargar plantillas destacadas");
 			return [];
-			console.log(err);
 		} finally {
 			setLoading(false);
 		}
 	}, []);
 
 	const getTemplatesByType = useCallback(
-		async (type: MaterialCalculationType) => {
+		async (
+			type: MaterialCalculationType
+		): Promise<MaterialCalculationTemplate[]> => {
 			try {
-				const response = await fetch(`${API_BASE}/templates/by-type/${type}`);
+				const response = await fetch(`${API_BASE}/templates/by-type/${type}`, {
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+						"Content-Type": "application/json",
+					},
+				});
 				const data = await response.json();
 
 				return data.success ? data.data : [];
@@ -123,6 +151,26 @@ export const useMaterialTemplates = () => {
 		[]
 	);
 
+	const getTemplatePreview = useCallback(async (templateId: string) => {
+		try {
+			const response = await fetch(
+				`${API_BASE}/templates/${templateId}/preview`,
+				{
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+						"Content-Type": "application/json",
+					},
+				}
+			);
+			const data = await response.json();
+
+			return data.success ? data.data : null;
+		} catch (err) {
+			console.error("Error al obtener preview:", err);
+			return null;
+		}
+	}, []);
+
 	return {
 		templates,
 		loading,
@@ -132,9 +180,11 @@ export const useMaterialTemplates = () => {
 		fetchTemplateById,
 		getFeaturedTemplates,
 		getTemplatesByType,
+		getTemplatePreview,
 	};
 };
 
+// Hook para ejecución de cálculos
 export const useMaterialCalculationExecution = () => {
 	const [executing, setExecuting] = useState(false);
 	const [result, setResult] = useState<MaterialCalculationResult | null>(null);
@@ -180,18 +230,9 @@ export const useMaterialCalculationExecution = () => {
 		[]
 	);
 
-	const getTemplatePreview = useCallback(async (templateId: string) => {
-		try {
-			const response = await fetch(
-				`${API_BASE}/templates/${templateId}/preview`
-			);
-			const data = await response.json();
-
-			return data.success ? data.data : null;
-		} catch (err) {
-			console.error("Error al cargar vista previa:", err);
-			return null;
-		}
+	const clearResult = useCallback(() => {
+		setResult(null);
+		setError(null);
 	}, []);
 
 	return {
@@ -199,12 +240,11 @@ export const useMaterialCalculationExecution = () => {
 		result,
 		error,
 		executeCalculation,
-		getTemplatePreview,
-		clearResult: () => setResult(null),
-		clearError: () => setError(null),
+		clearResult,
 	};
 };
 
+// Hook para trending y analytics
 export const useMaterialTrending = () => {
 	const [trending, setTrending] = useState<MaterialTrendingTemplate[]>([]);
 	const [loading, setLoading] = useState(false);
@@ -213,7 +253,6 @@ export const useMaterialTrending = () => {
 	const fetchTrending = useCallback(
 		async (
 			period: "daily" | "weekly" | "monthly" | "yearly" = "weekly",
-			materialType?: MaterialCalculationType,
 			limit: number = 10
 		) => {
 			setLoading(true);
@@ -225,11 +264,12 @@ export const useMaterialTrending = () => {
 					limit: limit.toString(),
 				});
 
-				if (materialType) {
-					queryParams.append("materialType", materialType);
-				}
-
-				const response = await fetch(`${API_BASE}/trending?${queryParams}`);
+				const response = await fetch(`${API_BASE}/trending?${queryParams}`, {
+					headers: {
+						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+						"Content-Type": "application/json",
+					},
+				});
 
 				if (!response.ok) {
 					throw new Error("Error al cargar tendencias");
@@ -239,13 +279,12 @@ export const useMaterialTrending = () => {
 
 				if (data.success) {
 					setTrending(data.data);
-					return data.data;
 				} else {
 					throw new Error(data.message || "Error desconocido");
 				}
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Error desconocido");
-				return [];
+				setTrending([]);
 			} finally {
 				setLoading(false);
 			}
@@ -253,27 +292,66 @@ export const useMaterialTrending = () => {
 		[]
 	);
 
+	const getAnalyticsOverview = useCallback(
+		async (period: string = "monthly") => {
+			try {
+				const response = await fetch(
+					`${API_BASE}/analytics/overview?period=${period}`,
+					{
+						headers: {
+							Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+							"Content-Type": "application/json",
+						},
+					}
+				);
+				const data = await response.json();
+
+				return data.success ? data.data : null;
+			} catch (err) {
+				console.error("Error al obtener analytics:", err);
+				return null;
+			}
+		},
+		[]
+	);
+
+	const getAnalyticsByType = useCallback(async () => {
+		try {
+			const response = await fetch(`${API_BASE}/analytics/by-type`, {
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+					"Content-Type": "application/json",
+				},
+			});
+			const data = await response.json();
+
+			return data.success ? data.data : null;
+		} catch (err) {
+			console.error("Error al obtener analytics por tipo:", err);
+			return null;
+		}
+	}, []);
+
 	return {
 		trending,
 		loading,
 		error,
 		fetchTrending,
+		getAnalyticsOverview,
+		getAnalyticsByType,
 	};
 };
 
+// Hook para resultados y historial
 export const useMaterialResults = () => {
 	const [results, setResults] = useState<MaterialCalculationResult[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchUserResults = useCallback(
+	const fetchResults = useCallback(
 		async (filters?: {
-			templateType?: "official" | "user";
-			materialType?: MaterialCalculationType;
-			dateFrom?: Date;
-			dateTo?: Date;
-			isSaved?: boolean;
-			page?: number;
+			projectId?: string;
+			templateId?: string;
 			limit?: number;
 		}) => {
 			setLoading(true);
@@ -281,24 +359,17 @@ export const useMaterialResults = () => {
 
 			try {
 				const queryParams = new URLSearchParams();
-
-				if (filters?.templateType)
-					queryParams.append("templateType", filters.templateType);
-				if (filters?.materialType)
-					queryParams.append("materialType", filters.materialType);
-				if (filters?.dateFrom)
-					queryParams.append("dateFrom", filters.dateFrom.toISOString());
-				if (filters?.dateTo)
-					queryParams.append("dateTo", filters.dateTo.toISOString());
-				if (filters?.isSaved !== undefined)
-					queryParams.append("isSaved", filters.isSaved.toString());
-				if (filters?.page) queryParams.append("page", filters.page.toString());
+				if (filters?.projectId)
+					queryParams.append("projectId", filters.projectId);
+				if (filters?.templateId)
+					queryParams.append("templateId", filters.templateId);
 				if (filters?.limit)
 					queryParams.append("limit", filters.limit.toString());
 
 				const response = await fetch(`${API_BASE}/results?${queryParams}`, {
 					headers: {
 						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+						"Content-Type": "application/json",
 					},
 				});
 
@@ -309,17 +380,13 @@ export const useMaterialResults = () => {
 				const data = await response.json();
 
 				if (data.success) {
-					setResults(data.data.results);
-					return data.data;
+					setResults(data.data.results || []);
 				} else {
 					throw new Error(data.message || "Error desconocido");
 				}
 			} catch (err) {
 				setError(err instanceof Error ? err.message : "Error desconocido");
-				return {
-					results: [],
-					pagination: {total: 0, page: 1, limit: 20, pages: 0},
-				};
+				setResults([]);
 			} finally {
 				setLoading(false);
 			}
@@ -327,130 +394,49 @@ export const useMaterialResults = () => {
 		[]
 	);
 
-	const toggleSaveResult = useCallback(
-		async (resultId: string, isSaved: boolean) => {
-			try {
-				const response = await fetch(`${API_BASE}/results/${resultId}/save`, {
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-					},
-					body: JSON.stringify({isSaved}),
-				});
+	const deleteResult = useCallback(async (resultId: string) => {
+		try {
+			const response = await fetch(`${API_BASE}/results/${resultId}`, {
+				method: "DELETE",
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+					"Content-Type": "application/json",
+				},
+			});
 
-				if (!response.ok) {
-					throw new Error("Error al actualizar resultado");
-				}
-
-				const data = await response.json();
-				return data.success;
-			} catch (err) {
-				console.error("Error al guardar resultado:", err);
-				return false;
+			if (!response.ok) {
+				throw new Error("Error al eliminar resultado");
 			}
-		},
-		[]
-	);
 
-	const toggleShareResult = useCallback(
-		async (resultId: string, isShared: boolean) => {
-			try {
-				const response = await fetch(`${API_BASE}/results/${resultId}/share`, {
-					method: "PUT",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-					},
-					body: JSON.stringify({isShared}),
-				});
-
-				if (!response.ok) {
-					throw new Error("Error al compartir resultado");
-				}
-
-				const data = await response.json();
-				return data.success;
-			} catch (err) {
-				console.error("Error al compartir resultado:", err);
-				return false;
-			}
-		},
-		[]
-	);
+			// Actualizar la lista local
+			setResults((prev) => prev.filter((result) => result.id !== resultId));
+			return true;
+		} catch (err) {
+			console.error("Error al eliminar resultado:", err);
+			return false;
+		}
+	}, []);
 
 	return {
 		results,
 		loading,
 		error,
-		fetchUserResults,
-		toggleSaveResult,
-		toggleShareResult,
+		fetchResults,
+		deleteResult,
 	};
 };
 
-export const useMaterialAnalytics = () => {
-	interface AnalyticsData {
-		// Define the structure of your analytics data here
-		// Example:
-		totalUsers: number;
-		totalCalculations: number;
-		period: string;
-	}
-
-	const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	const fetchAnalyticsOverview = useCallback(
-		async (period: string = "monthly") => {
-			setLoading(true);
-			setError(null);
-
-			try {
-				const response = await fetch(
-					`${API_BASE}/analytics/overview?period=${period}`
-				);
-
-				if (!response.ok) {
-					throw new Error("Error al cargar analytics");
-				}
-
-				const data = await response.json();
-
-				if (data.success) {
-					setAnalytics(data.data);
-					return data.data;
-				} else {
-					throw new Error(data.message || "Error desconocido");
-				}
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Error desconocido");
-				return null;
-			} finally {
-				setLoading(false);
-			}
-		},
-		[]
-	);
-
-	const fetchAnalyticsByType = useCallback(async () => {
-		try {
-			const response = await fetch(`${API_BASE}/analytics/by-type`);
-			const data = await response.json();
-
-			return data.success ? data.data : null;
-		} catch (err) {
-			console.error("Error al cargar analytics por tipo:", err);
-			return null;
-		}
-	}, []);
+// Hook combinado para facilitar el uso
+export const useMaterialCalculations = () => {
+	const templates = useMaterialTemplates();
+	const execution = useMaterialCalculationExecution();
+	const trending = useMaterialTrending();
+	const results = useMaterialResults();
 
 	return {
-		analytics,
-		loading,
-		error,
-		fetchAnalyticsOverview,
-		fetchAnalyticsByType,
+		templates,
+		execution,
+		trending,
+		results,
 	};
 };

@@ -1,472 +1,101 @@
 // src/ui/pages/calculations/materials/MaterialCalculationsRouter.tsx
+import React from "react";
+import {Routes, Route, Navigate} from "react-router-dom";
 
-import React, {useState} from "react";
-import type {
-	MaterialCalculationTemplate,
-	MaterialCalculationResult,
-} from "../shared/types/material.types";
-import MaterialCalculationsHub from "./MaterialCalculationsHub";
-import MaterialCatalog from "./MaterialCatalog";
+// Componentes principales
+import MaterialCalculationsMain from "./MaterialCalculationsMain";
 import MaterialCalculationInterface from "./MaterialCalculationInterface";
 import MaterialTemplatesManager from "./MaterialTemplatesManager";
-import MaterialTrendingAnalytics from "./MaterialTrendingAnalytics";
+import MaterialCatalog from "./MaterialCatalog";
 import MaterialResultsHistory from "./MaterialResultsHistory";
-
 import MaterialCalculationComparison from "./MaterialCalculationComparison";
+import MaterialTrendingAnalytics from "./MaterialTrendingAnalytics";
 
-type ViewState =
-	| {type: "hub"}
-	| {type: "catalog"; selectedCategory?: string}
-	| {type: "calculator"; template: MaterialCalculationTemplate}
-	| {type: "result"; result: MaterialCalculationResult}
-	| {type: "templates"}
-	| {type: "trending"}
-	| {type: "results"}
-	| {type: "comparison"}
-	| {type: "settings"};
+// Componente temporal para crear plantillas (se debería crear después)
+const MaterialTemplateEditor: React.FC = () => {
+	return (
+		<div className="max-w-4xl mx-auto px-4 py-8">
+			<div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+				<h2 className="text-2xl font-bold text-gray-900 mb-4">
+					Editor de Plantillas de Materiales
+				</h2>
+				<p className="text-gray-600 mb-6">
+					Esta funcionalidad está en desarrollo. Próximamente podrás crear y
+					editar plantillas personalizadas para cálculos de materiales.
+				</p>
+				<div className="space-y-4">
+					<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+						<h3 className="font-medium text-blue-900 mb-2">
+							Características que incluirá:
+						</h3>
+						<ul className="text-sm text-blue-800 space-y-1">
+							<li>• Editor visual de parámetros</li>
+							<li>• Validación de fórmulas JavaScript</li>
+							<li>• Preview en tiempo real</li>
+							<li>• Gestión de unidades de medida</li>
+							<li>• Sistema de versionado</li>
+						</ul>
+					</div>
+				</div>
+				<button
+					onClick={() => window.history.back()}
+					className="mt-6 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+				>
+					Volver
+				</button>
+			</div>
+		</div>
+	);
+};
 
 const MaterialCalculationsRouter: React.FC = () => {
-	const [viewState, setViewState] = useState<ViewState>({type: "hub"});
-	const [navigationHistory, setNavigationHistory] = useState<ViewState[]>([]);
-
-	const navigate = (newState: ViewState, addToHistory: boolean = true) => {
-		if (addToHistory) {
-			setNavigationHistory((prev) => [...prev, viewState]);
-		}
-		setViewState(newState);
-	};
-
-	const goBack = () => {
-		if (navigationHistory.length > 0) {
-			const previousState = navigationHistory[navigationHistory.length - 1];
-			setNavigationHistory((prev) => prev.slice(0, -1));
-			setViewState(previousState);
-		} else {
-			setViewState({type: "hub"});
-		}
-	};
-
-	const handleTemplateSelect = (template: MaterialCalculationTemplate) => {
-		navigate({type: "calculator", template});
-	};
-
-	const handleCalculationResult = (result: MaterialCalculationResult) => {
-		navigate({type: "result", result});
-	};
-
-	const handleTemplateSelectById = (templateId: string) => {
-		// En una implementación real, aquí cargarías la plantilla por ID
-		console.log("Loading template:", templateId);
-		// navigate({ type: 'calculator', template: loadedTemplate });
-	};
-
-	const BreadcrumbNavigation: React.FC = () => {
-		const getBreadcrumbs = (): {label: string; onClick?: () => void}[] => {
-			const breadcrumbs = [
-				{
-					label: "Cálculos de Materiales",
-					onClick: () => navigate({type: "hub"}, false),
-				},
-			];
-
-			switch (viewState.type) {
-				case "catalog":
-					breadcrumbs.push({label: "Catálogo de Plantillas"});
-					break;
-				case "calculator":
-					breadcrumbs.push(
-						{
-							label: "Catálogo",
-							onClick: () => navigate({type: "catalog"}, false),
-						},
-						{label: viewState.template.name}
-					);
-					break;
-				case "result":
-					breadcrumbs.push({label: "Resultado del Cálculo"});
-					break;
-				case "templates":
-					breadcrumbs.push({label: "Mis Plantillas"});
-					break;
-				case "trending":
-					breadcrumbs.push({label: "Tendencias y Analytics"});
-					break;
-				case "results":
-					breadcrumbs.push({label: "Historial de Resultados"});
-					break;
-				case "comparison":
-					breadcrumbs.push({label: "Comparador de Cálculos"});
-					break;
-				case "settings":
-					breadcrumbs.push({label: "Configuración"});
-					break;
-			}
-
-			return breadcrumbs;
-		};
-
-		const breadcrumbs = getBreadcrumbs();
-
-		if (breadcrumbs.length <= 1) return null;
-
-		return (
-			<nav className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-6">
-				{breadcrumbs.map((crumb, index) => (
-					<React.Fragment key={index}>
-						{index > 0 && (
-							<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-								<path
-									fillRule="evenodd"
-									d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-									clipRule="evenodd"
-								/>
-							</svg>
-						)}
-						<button
-							onClick={crumb.onClick}
-							className={`
-                ${
-									crumb.onClick
-										? "hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer"
-										: "text-gray-900 dark:text-white font-medium cursor-default"
-								}
-              `}
-						>
-							{crumb.label}
-						</button>
-					</React.Fragment>
-				))}
-			</nav>
-		);
-	};
-
-	const QuickActionBar: React.FC = () => {
-		if (viewState.type === "hub") return null;
-
-		const getQuickActions = () => {
-			switch (viewState.type) {
-				case "catalog":
-					return [
-						{
-							label: "Crear Plantilla",
-							icon: "📝",
-							onClick: () => navigate({type: "templates"}),
-							color: "bg-blue-600 hover:bg-blue-700",
-						},
-						{
-							label: "Ver Tendencias",
-							icon: "📈",
-							onClick: () => navigate({type: "trending"}),
-							color: "bg-purple-600 hover:bg-purple-700",
-						},
-					];
-				case "calculator":
-					return [
-						{
-							label: "Ver Resultados",
-							icon: "📊",
-							onClick: () => navigate({type: "results"}),
-							color: "bg-green-600 hover:bg-green-700",
-						},
-					];
-				case "result":
-					return [
-						{
-							label: "Nuevo Cálculo",
-							icon: "🧮",
-							onClick: () => navigate({type: "catalog"}),
-							color: "bg-blue-600 hover:bg-blue-700",
-						},
-						{
-							label: "Ver Historial",
-							icon: "📚",
-							onClick: () => navigate({type: "results"}),
-							color: "bg-gray-600 hover:bg-gray-700",
-						},
-					];
-				default:
-					return [];
-			}
-		};
-
-		const actions = getQuickActions();
-		if (actions.length === 0) return null;
-
-		return (
-			<div className="flex items-center space-x-3 mb-6">
-				{actions.map((action, index) => (
-					<button
-						key={index}
-						onClick={action.onClick}
-						className={`
-              px-4 py-2 ${action.color} text-white rounded-lg text-sm font-medium
-              transition-colors flex items-center space-x-2
-            `}
-					>
-						<span>{action.icon}</span>
-						<span>{action.label}</span>
-					</button>
-				))}
-			</div>
-		);
-	};
-
-	const renderView = () => {
-		switch (viewState.type) {
-			case "hub":
-				return (
-					<MaterialCalculationsHub
-						onNavigate={navigate}
-						onTemplateSelect={handleTemplateSelect}
-					/>
-				);
-
-			case "catalog":
-				return (
-					<MaterialCatalog
-						onTemplateSelect={handleTemplateSelect}
-						selectedCategory={viewState.selectedCategory}
-					/>
-				);
-
-			case "calculator":
-				return (
-					<MaterialCalculationInterface
-						template={viewState.template}
-						onResult={handleCalculationResult}
-						onBack={goBack}
-					/>
-				);
-
-			case "result":
-				return (
-					<MaterialResultDisplay
-						result={viewState.result}
-						onNewCalculation={() => navigate({type: "catalog"})}
-						onViewHistory={() => navigate({type: "results"})}
-					/>
-				);
-
-			case "templates":
-				return (
-					<MaterialTemplatesManager onTemplateSelect={handleTemplateSelect} />
-				);
-
-			case "trending":
-				return (
-					<MaterialTrendingAnalytics
-						onTemplateSelect={handleTemplateSelectById}
-					/>
-				);
-
-			case "results":
-				return (
-					<MaterialResultsHistory
-						onResultSelect={(result) => navigate({type: "result", result})}
-						onTemplateSelect={handleTemplateSelectById}
-					/>
-				);
-
-			case "comparison":
-				return (
-					<MaterialCalculationComparison
-						onNewComparison={() => navigate({type: "comparison"})}
-					/>
-				);
-
-			case "settings":
-				return <MaterialCalculationSettings onBack={goBack} />;
-
-			default:
-				return <div>Vista no encontrada</div>;
-		}
-	};
-
 	return (
-		<div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-			<div className="max-w-7xl mx-auto px-4 py-6">
-				<BreadcrumbNavigation />
-				<QuickActionBar />
-				{renderView()}
-			</div>
-		</div>
-	);
-};
+		<Routes>
+			{/* Ruta principal - Hub de materiales */}
+			<Route index element={<MaterialCalculationsMain />} />
 
-// Componente para mostrar resultados (simplificado)
-const MaterialResultDisplay: React.FC<{
-	result: MaterialCalculationResult;
-	onNewCalculation: () => void;
-	onViewHistory: () => void;
-}> = ({result, onNewCalculation, onViewHistory}) => {
-	return (
-		<div className="space-y-6">
-			<div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-				<h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-					Resultado del Cálculo
-				</h2>
-				<p className="text-gray-600 dark:text-gray-300 mb-6">
-					{result.templateName}
-				</p>
+			{/* Catálogo de plantillas públicas */}
+			<Route path="catalog" element={<MaterialCatalog />} />
 
-				{/* Mostrar resultados aquí */}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-					{Object.entries(result.results).map(([key, value]) => (
-						<div
-							key={key}
-							className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
-						>
-							<div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-								{key}
-							</div>
-							<div className="text-xl font-semibold text-gray-900 dark:text-white">
-								{typeof value === "number" ? value.toLocaleString() : value}
-							</div>
-						</div>
-					))}
-				</div>
+			{/* Interfaz de cálculo específica */}
+			<Route
+				path="interface/:templateId"
+				element={<MaterialCalculationInterface />}
+			/>
 
-				<div className="flex space-x-4">
-					<button
-						onClick={onNewCalculation}
-						className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-					>
-						Nuevo Cálculo
-					</button>
-					<button
-						onClick={onViewHistory}
-						className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-					>
-						Ver Historial
-					</button>
-				</div>
-			</div>
-		</div>
-	);
-};
+			{/* Gestión de plantillas personales */}
+			<Route path="templates" element={<MaterialTemplatesManager />} />
+			<Route path="templates/create" element={<MaterialTemplateEditor />} />
+			<Route
+				path="templates/edit/:templateId"
+				element={<MaterialTemplateEditor />}
+			/>
+			<Route
+				path="templates/duplicate/:templateId"
+				element={<MaterialTemplateEditor />}
+			/>
 
-// Componente de configuración (simplificado)
-const MaterialCalculationSettings: React.FC<{
-	onBack: () => void;
-}> = ({onBack}) => {
-	return (
-		<div className="space-y-6">
-			<div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-				<div className="flex items-center space-x-4 mb-6">
-					<button
-						onClick={onBack}
-						className="p-2 text-gray-500 hover:text-gray-700 transition-colors"
-					>
-						<svg
-							className="w-6 h-6"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M15 19l-7-7 7-7"
-							/>
-						</svg>
-					</button>
-					<h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-						Configuración de Cálculos
-					</h2>
-				</div>
+			{/* Historial de resultados */}
+			<Route path="results" element={<MaterialResultsHistory />} />
+			<Route path="results/:resultId" element={<MaterialResultsHistory />} />
 
-				<div className="space-y-6">
-					<div>
-						<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-							Preferencias de Cálculo
-						</h3>
-						<div className="space-y-4">
-							<label className="flex items-center space-x-3">
-								<input
-									type="checkbox"
-									className="w-5 h-5 text-blue-600 rounded"
-								/>
-								<span className="text-gray-700 dark:text-gray-300">
-									Incluir factor de desperdicio por defecto
-								</span>
-							</label>
-							<label className="flex items-center space-x-3">
-								<input
-									type="checkbox"
-									className="w-5 h-5 text-blue-600 rounded"
-								/>
-								<span className="text-gray-700 dark:text-gray-300">
-									Guardar resultados automáticamente
-								</span>
-							</label>
-							<label className="flex items-center space-x-3">
-								<input
-									type="checkbox"
-									className="w-5 h-5 text-blue-600 rounded"
-								/>
-								<span className="text-gray-700 dark:text-gray-300">
-									Mostrar vista previa antes de calcular
-								</span>
-							</label>
-						</div>
-					</div>
+			{/* Comparación de cálculos */}
+			<Route path="comparison" element={<MaterialCalculationComparison />} />
+			<Route
+				path="comparison/:comparisonId"
+				element={<MaterialCalculationComparison />}
+			/>
 
-					<div>
-						<h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-							Unidades por Defecto
-						</h3>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<div>
-								<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-									Longitud
-								</label>
-								<select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
-									<option>Metros (m)</option>
-									<option>Centímetros (cm)</option>
-									<option>Pies (ft)</option>
-								</select>
-							</div>
-							<div>
-								<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-									Área
-								</label>
-								<select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
-									<option>Metros cuadrados (m²)</option>
-									<option>Pies cuadrados (ft²)</option>
-								</select>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	);
-};
+			{/* Analytics y tendencias */}
+			<Route path="trending" element={<MaterialTrendingAnalytics />} />
+			<Route path="analytics" element={<MaterialTrendingAnalytics />} />
 
-// Componente de historial (simplificado)
-const MaterialResultsHistory: React.FC<{
-	onResultSelect: (result: MaterialCalculationResult) => void;
-	onTemplateSelect: (templateId: string) => void;
-}> = ({onResultSelect, onTemplateSelect}) => {
-	return (
-		<div className="space-y-6">
-			<div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-				<h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-					Historial de Resultados
-				</h2>
-
-				<div className="text-center py-20">
-					<div className="text-6xl mb-4">📊</div>
-					<h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-						Historial de Cálculos
-					</h3>
-					<p className="text-gray-600 dark:text-gray-300">
-						Aquí aparecerán tus cálculos anteriores
-					</p>
-				</div>
-			</div>
-		</div>
+			{/* Redirección por defecto */}
+			<Route
+				path="*"
+				element={<Navigate to="/calculations/materials" replace />}
+			/>
+		</Routes>
 	);
 };
 
