@@ -1,6 +1,7 @@
 Listado de rutas de carpetas
 El n�mero de serie del volumen es 7C1B-BCDF
 C:.
+|   .env
 |   .gitignore
 |   eslint.config.js
 |   estructura_carpetas.txt
@@ -14,6 +15,10 @@ C:.
 |   tsconfig.json
 |   tsconfig.node.json
 |   vite.config.ts
+|   
+|               
++---public
+|       vite.svg
 |       
 \---src
     |   App.css
@@ -32,6 +37,7 @@ C:.
     |   +---adapters
     |   |   +---api
     |   |   |       ApiAuthRepository.ts
+    |   |   |       ApiCalculationRepository.ts
     |   |   |       ApiClient.ts
     |   |   |       ApiUserRepository.ts
     |   |   |       AxiosConfig.ts
@@ -45,6 +51,8 @@ C:.
     |   |   |       AuthService.ts
     |   |   |       
     |   |   +---calculations
+    |   |   |       TemplateApplicationService.ts
+    |   |   |       
     |   |   +---projects
     |   |   \---user
     |   |           UserService.ts
@@ -54,11 +62,15 @@ C:.
     |       |   +---auth
     |       |   |       AuthModels.ts
     |       |   |       
+    |       |   +---calculations
+    |       |   |       CalculationTemplate.ts
+    |       |   |       
     |       |   \---user
     |       |           User.ts
     |       |           
     |       +---repositories
     |       |       AuthRepository.ts
+    |       |       CalculationTemplateRepository.ts
     |       |       UserRepository.ts
     |       |       
     |       \---services
@@ -108,6 +120,7 @@ C:.
     |   |       
     |   +---context
     |   |       AuthContext.tsx
+    |   |       ServicesProvider.tsx
     |   |       ThemeContext.tsx
     |   |       UserProfileContext.tsx
     |   |       
@@ -143,12 +156,14 @@ C:.
     |   |   |   +---catalog
     |   |   |   |   |   CalculationInterface.tsx
     |   |   |   |   |   CalculationsCatalog.tsx
+    |   |   |   |   |   CatalogMain.tsx
     |   |   |   |   |   TemplateSelector.tsx
     |   |   |   |   |   TestCatalogManager.txt
     |   |   |   |   |   
     |   |   |   |   \---components
     |   |   |   |           CategoryFilter.tsx
-    |   |   |   |           TemplateCard.tsx
+    |   |   |   |           ParameterInput.tsx
+    |   |   |   |           TemplateCardCatalog.tsx
     |   |   |   |           TemplatePreview.tsx
     |   |   |   |           
     |   |   |   +---collaboration
@@ -180,6 +195,7 @@ C:.
     |   |   |   +---shared
     |   |   |   |   +---hooks
     |   |   |   |   |       useCalculations.tsx
+    |   |   |   |   |       useCatalogTemplates.tsx
     |   |   |   |   |       useComparison.tsx
     |   |   |   |   |       useTemplates.tsx
     |   |   |   |   |       

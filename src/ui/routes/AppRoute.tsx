@@ -1,6 +1,5 @@
 import {lazy} from "react";
 import type {RouteObject} from "react-router";
-import type {CalculationTemplate} from "../pages/calculations/shared/types/template.types";
 
 const MainLayout = lazy(() => import("../pages/layouts/MainLayout"));
 const HomePage = lazy(() => import("../pages/HomePage"));
@@ -104,6 +103,25 @@ const ProposedVoting = lazy(
 const CalculationsSettings = lazy(
 	() => import("../pages/calculations/CalculationsSettings")
 );
+
+// Calculation Materials
+
+const MaterialCalculationsMain = lazy(
+	() => import("../pages/calculations/materials/MaterialCalculationsMain")
+);
+const MaterialCalculationInterface = lazy(()=>import("../pages/calculations/materials/MaterialCalculationInterface"));
+const MaterialCalculationsHub = lazy(()=>import("../pages/calculations/materials/MaterialCalculationsHub"));
+const MaterialCalculationsRouter = lazy(()=>import("../pages/calculations/materials/MaterialCalculationsRouter"));
+const MaterialCatalog = lazy(()=>import("../pages/calculations/materials/MaterialCatalog"));
+const MaterialTemplatesManager = lazy(()=>import("../pages/calculations/materials/MaterialTemplatesManager"));
+const MaterialTrendingAnalytics = lazy(() => import("../pages/calculations/materials/MaterialTrendingAnalytics"));
+const MaterialCalculationComparison = lazy(
+	() => import("../pages/calculations/materials/MaterialCalculationComparison")
+);
+const MaterialResultsHistory = lazy(
+	() => import("../pages/calculations/materials/MaterialResultsHistory")
+);
+
 
 const appRoutes: RouteObject[] = [
 	//Public Routes
@@ -260,9 +278,7 @@ const appRoutes: RouteObject[] = [
 						children: [
 							{
 								index: true,
-								element: (
-									<CatalogMain/>
-								),
+								element: <CatalogMain />,
 							},
 							{
 								// Ruta dinámica que captura el templateId
@@ -367,6 +383,48 @@ const appRoutes: RouteObject[] = [
 					// 	path: "admin/dashboard",
 					// 	element: <CalculationsDashboard />,
 					// },
+					{
+						path: "materials",
+						children: [
+							{
+								index: true,
+								element: <MaterialCalculationsMain />, // Página principal de mis plantillas
+							},
+							// Rutas de desarrollo/testing (opcionales, se pueden quitar en producción)
+							{
+								path: "dev/interface",
+								element: <MaterialCalculationInterface />,
+							},
+							{
+								path: "dev/hub",
+								element: <MaterialCalculationsHub />,
+							},
+							{
+								path: "router",
+								element: <MaterialCalculationsRouter />,
+							},
+							{
+								path: "dev/catalog",
+								element: <MaterialCatalog />,
+							},
+							{
+								path: "dev/manager",
+								element: <MaterialTemplatesManager />,
+							},
+							{
+								path: "dev/analytics",
+								element: <MaterialTrendingAnalytics />,
+							},
+							{
+								path: "dev/comparison",
+								element: <MaterialCalculationComparison />,
+							},
+							{
+								path: "dev/results",
+								element: <MaterialResultsHistory />,
+							},
+						],
+					},
 				],
 			},
 			{
