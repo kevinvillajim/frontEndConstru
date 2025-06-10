@@ -79,6 +79,34 @@ const calculations = {
 		getFullUrl(`/calculations/comparisons/${id}`),
 };
 
+const materialCalculations = {
+	base: getFullUrl("/material-calculation"), // ← CORREGIDO: singular
+	execute: getFullUrl("/material-calculation/execute"),
+	templates: {
+		list: getFullUrl("/material-calculation/templates"),
+		featured: getFullUrl("/material-calculation/templates/featured"),
+		byType: (type: string) =>
+			getFullUrl(`/material-calculation/templates/by-type/${type}`),
+		byId: (id: string) => getFullUrl(`/material-calculation/templates/${id}`),
+		preview: (id: string) =>
+			getFullUrl(`/material-calculation/templates/${id}/preview`),
+		search: getFullUrl("/material-calculation/templates/search"),
+	},
+	results: {
+		list: getFullUrl("/material-calculation/results"),
+		byId: (id: string) => getFullUrl(`/material-calculation/results/${id}`),
+		save: (id: string) =>
+			getFullUrl(`/material-calculation/results/${id}/save`),
+		share: (id: string) =>
+			getFullUrl(`/material-calculation/results/${id}/share`),
+	},
+	trending: {
+		overview: getFullUrl("/material-calculation/trending"),
+		analytics: getFullUrl("/material-calculation/analytics/overview"),
+		byType: getFullUrl("/material-calculation/analytics/by-type"),
+	},
+};
+
 // Endpoints de recomendaciones
 const recommendations = {
 	templates: getFullUrl("/recommendations/templates"),
@@ -274,6 +302,7 @@ const endpoints = {
 	dashboards,
 	metrics,
 	suppliers,
+	materialCalculations,
 };
 
 export default endpoints;

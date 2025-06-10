@@ -1,22 +1,39 @@
 // src/ui/pages/calculations/materials/components/SharedComponents.tsx
+// CORRECCIÓN: Solo exportar componentes para cumplir con fast-refresh
+
 import React from "react";
 import {
 	CheckCircleIcon,
 	ExclamationTriangleIcon,
 	InformationCircleIcon,
 	XCircleIcon,
-	SparklesIcon,
-	StarIcon,
-	ClockIcon,
-	ChartBarIcon,
-	CheckBadgeIcon,
 } from "@heroicons/react/24/outline";
-import type {MaterialCalculationType} from "../../shared/types/material.types";
 
-// Props interfaces
+// Tipos para props de componentes
 interface LoadingSpinnerProps {
 	size?: "sm" | "md" | "lg";
-	color?: string;
+	className?: string;
+}
+
+interface EmptyStateProps {
+	icon?: React.ComponentType<{className?: string}>;
+	title: string;
+	description?: string;
+	actionButton?: React.ReactNode;
+	className?: string;
+}
+
+interface StatCardProps {
+	icon: React.ComponentType<{className?: string}>;
+	title: string;
+	value: string | number;
+	subtitle?: string;
+	trend?: {
+		value: number;
+		isPositive: boolean;
+	};
+	color?: "blue" | "green" | "yellow" | "red" | "purple" | "gray";
+	className?: string;
 }
 
 interface AlertProps {
@@ -24,427 +41,391 @@ interface AlertProps {
 	title?: string;
 	message: string;
 	onClose?: () => void;
+	className?: string;
 }
 
 interface BadgeProps {
-	variant: "primary" | "success" | "warning" | "error" | "gray";
 	children: React.ReactNode;
-	size?: "sm" | "md";
+	variant?: "default" | "primary" | "success" | "warning" | "error" | "info";
+	size?: "sm" | "md" | "lg";
+	className?: string;
 }
 
-interface MaterialTypeBadgeProps {
-	type: MaterialCalculationType;
-	size?: "sm" | "md";
+interface ProgressBarProps {
+	progress: number;
+	max?: number;
+	label?: string;
+	showPercentage?: boolean;
+	color?: "blue" | "green" | "yellow" | "red" | "purple";
+	size?: "sm" | "md" | "lg";
+	className?: string;
 }
 
-interface StatsCardProps {
-	title: string;
-	value: string | number;
-	subtitle?: string;
-	icon: React.ComponentType<{className?: string}>;
-	trend?: {
-		value: number;
-		isPositive: boolean;
-	};
-	color?: "primary" | "emerald" | "amber" | "purple" | "red";
+interface TooltipProps {
+	content: string;
+	children: React.ReactNode;
+	position?: "top" | "bottom" | "left" | "right";
+	className?: string;
 }
 
-interface TemplateCardStatsProps {
-	usageCount: number;
-	averageRating: number;
-	estimatedTime?: string;
-	isFeatured?: boolean;
-	isVerified?: boolean;
-}
+// === COMPONENTES ===
 
-interface EmptyStateProps {
-	icon: React.ComponentType<{className?: string}>;
-	title: string;
-	description: string;
-	action?: {
-		label: string;
-		onClick: () => void;
-	};
-}
-
-// Loading Spinner Component
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 	size = "md",
-	color = "border-primary-600",
+	className = "",
 }) => {
 	const sizeClasses = {
-		sm: "h-6 w-6",
+		sm: "h-4 w-4",
 		md: "h-8 w-8",
 		lg: "h-12 w-12",
 	};
 
 	return (
 		<div
-			className={`animate-spin rounded-full border-b-2 ${color} ${sizeClasses[size]}`}
+			className={`animate-spin rounded-full border-b-2 border-primary-600 ${sizeClasses[size]} ${className}`}
 		/>
 	);
 };
 
-// Alert Component
-export const Alert: React.FC<AlertProps> = ({
-	type,
+export const EmptyState: React.FC<EmptyStateProps> = ({
+	icon: Icon = InformationCircleIcon,
 	title,
-	message,
-	onClose,
+	description,
+	actionButton,
+	className = "",
 }) => {
-	const config = {
-		success: {
-			bg: "bg-green-50",
-			border: "border-green-200",
-			icon: CheckCircleIcon,
-			iconColor: "text-green-600",
-			titleColor: "text-green-800",
-			textColor: "text-green-700",
-		},
-		error: {
-			bg: "bg-red-50",
-			border: "border-red-200",
-			icon: XCircleIcon,
-			iconColor: "text-red-600",
-			titleColor: "text-red-800",
-			textColor: "text-red-700",
-		},
-		warning: {
-			bg: "bg-amber-50",
-			border: "border-amber-200",
-			icon: ExclamationTriangleIcon,
-			iconColor: "text-amber-600",
-			titleColor: "text-amber-800",
-			textColor: "text-amber-700",
-		},
-		info: {
-			bg: "bg-blue-50",
-			border: "border-blue-200",
-			icon: InformationCircleIcon,
-			iconColor: "text-blue-600",
-			titleColor: "text-blue-800",
-			textColor: "text-blue-700",
-		},
+	return (
+		<div className={`text-center py-12 ${className}`}>
+			<Icon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+			<h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+			{description && (
+				<p className="text-gray-500 mb-6 max-w-md mx-auto">{description}</p>
+			)}
+			{actionButton}
+		</div>
+	);
+};
+
+export const StatCard: React.FC<StatCardProps> = ({
+	icon: Icon,
+	title,
+	value,
+	subtitle,
+	trend,
+	color = "blue",
+	className = "",
+}) => {
+	const colorClasses = {
+		blue: "text-blue-600 bg-blue-50",
+		green: "text-green-600 bg-green-50",
+		yellow: "text-yellow-600 bg-yellow-50",
+		red: "text-red-600 bg-red-50",
+		purple: "text-purple-600 bg-purple-50",
+		gray: "text-gray-600 bg-gray-50",
 	};
 
-	const {
-		bg,
-		border,
-		icon: Icon,
-		iconColor,
-		titleColor,
-		textColor,
-	} = config[type];
-
 	return (
-		<div className={`${bg} ${border} border rounded-xl p-6`}>
-			<div className="flex items-start gap-3">
-				<Icon className={`h-6 w-6 ${iconColor} flex-shrink-0 mt-0.5`} />
+		<div
+			className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}
+		>
+			<div className="flex items-center justify-between">
 				<div className="flex-1">
-					{title && (
-						<h3 className={`font-semibold ${titleColor} mb-1`}>{title}</h3>
-					)}
-					<p className={`${textColor}`}>{message}</p>
+					<div className="flex items-center">
+						<div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+							<Icon className="h-5 w-5" />
+						</div>
+						<div className="ml-3">
+							<p className="text-sm font-medium text-gray-600">{title}</p>
+							<p className="text-2xl font-bold text-gray-900">{value}</p>
+							{subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+						</div>
+					</div>
 				</div>
-				{onClose && (
-					<button
-						onClick={onClose}
-						className={`p-1 ${textColor} hover:opacity-75 transition-opacity`}
+				{trend && (
+					<div
+						className={`text-sm font-medium ${
+							trend.isPositive ? "text-green-600" : "text-red-600"
+						}`}
 					>
-						<XCircleIcon className="h-5 w-5" />
-					</button>
+						{trend.isPositive ? "↗" : "↘"} {Math.abs(trend.value)}%
+					</div>
 				)}
 			</div>
 		</div>
 	);
 };
 
-// Badge Component
-export const Badge: React.FC<BadgeProps> = ({
-	variant,
-	children,
-	size = "md",
+export const Alert: React.FC<AlertProps> = ({
+	type,
+	title,
+	message,
+	onClose,
+	className = "",
 }) => {
-	const variants = {
-		primary: "bg-primary-50 text-primary-700 border-primary-200",
-		success: "bg-emerald-50 text-emerald-700 border-emerald-200",
-		warning: "bg-amber-50 text-amber-700 border-amber-200",
-		error: "bg-red-50 text-red-700 border-red-200",
-		gray: "bg-gray-50 text-gray-700 border-gray-200",
+	const typeConfig = {
+		success: {
+			icon: CheckCircleIcon,
+			bgColor: "bg-green-50",
+			borderColor: "border-green-200",
+			iconColor: "text-green-400",
+			titleColor: "text-green-800",
+			messageColor: "text-green-700",
+		},
+		error: {
+			icon: XCircleIcon,
+			bgColor: "bg-red-50",
+			borderColor: "border-red-200",
+			iconColor: "text-red-400",
+			titleColor: "text-red-800",
+			messageColor: "text-red-700",
+		},
+		warning: {
+			icon: ExclamationTriangleIcon,
+			bgColor: "bg-yellow-50",
+			borderColor: "border-yellow-200",
+			iconColor: "text-yellow-400",
+			titleColor: "text-yellow-800",
+			messageColor: "text-yellow-700",
+		},
+		info: {
+			icon: InformationCircleIcon,
+			bgColor: "bg-blue-50",
+			borderColor: "border-blue-200",
+			iconColor: "text-blue-400",
+			titleColor: "text-blue-800",
+			messageColor: "text-blue-700",
+		},
 	};
 
-	const sizes = {
+	const config = typeConfig[type];
+	const Icon = config.icon;
+
+	return (
+		<div
+			className={`rounded-md border p-4 ${config.bgColor} ${config.borderColor} ${className}`}
+		>
+			<div className="flex">
+				<div className="flex-shrink-0">
+					<Icon className={`h-5 w-5 ${config.iconColor}`} />
+				</div>
+				<div className="ml-3 flex-1">
+					{title && (
+						<h3 className={`text-sm font-medium ${config.titleColor}`}>
+							{title}
+						</h3>
+					)}
+					<div
+						className={`text-sm ${config.messageColor} ${title ? "mt-2" : ""}`}
+					>
+						{message}
+					</div>
+				</div>
+				{onClose && (
+					<div className="ml-auto pl-3">
+						<div className="-mx-1.5 -my-1.5">
+							<button
+								type="button"
+								onClick={onClose}
+								className={`inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${config.iconColor} hover:bg-opacity-20`}
+							>
+								<span className="sr-only">Cerrar</span>
+								<XCircleIcon className="h-5 w-5" />
+							</button>
+						</div>
+					</div>
+				)}
+			</div>
+		</div>
+	);
+};
+
+export const Badge: React.FC<BadgeProps> = ({
+	children,
+	variant = "default",
+	size = "md",
+	className = "",
+}) => {
+	const variantClasses = {
+		default: "bg-gray-100 text-gray-800",
+		primary: "bg-primary-100 text-primary-800",
+		success: "bg-green-100 text-green-800",
+		warning: "bg-yellow-100 text-yellow-800",
+		error: "bg-red-100 text-red-800",
+		info: "bg-blue-100 text-blue-800",
+	};
+
+	const sizeClasses = {
 		sm: "px-2 py-1 text-xs",
-		md: "px-3 py-1.5 text-sm",
+		md: "px-2.5 py-0.5 text-sm",
+		lg: "px-3 py-1 text-base",
 	};
 
 	return (
 		<span
-			className={`
-      inline-flex items-center rounded-full font-medium border
-      ${variants[variant]} ${sizes[size]}
-    `}
+			className={`inline-flex items-center rounded-full font-medium ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
 		>
 			{children}
 		</span>
 	);
 };
 
-// Material Type Badge
-export const MaterialTypeBadge: React.FC<MaterialTypeBadgeProps> = ({
-	type,
+export const ProgressBar: React.FC<ProgressBarProps> = ({
+	progress,
+	max = 100,
+	label,
+	showPercentage = true,
+	color = "blue",
 	size = "md",
+	className = "",
 }) => {
-	const typeConfig = {
-		STEEL_STRUCTURES: {name: "Acero", emoji: "🔩", color: "slate"},
-		CERAMIC_FINISHES: {name: "Cerámicos", emoji: "🔲", color: "emerald"},
-		CONCRETE_FOUNDATIONS: {name: "Hormigón", emoji: "🏗️", color: "stone"},
-		ELECTRICAL_INSTALLATIONS: {name: "Eléctrico", emoji: "⚡", color: "yellow"},
-		MELAMINE_FURNITURE: {name: "Muebles", emoji: "🗄️", color: "orange"},
+	const colorClasses = {
+		blue: "bg-blue-600",
+		green: "bg-green-600",
+		yellow: "bg-yellow-600",
+		red: "bg-red-600",
+		purple: "bg-purple-600",
 	};
 
-	const config = typeConfig[type];
-	if (!config) return null;
-
-	return (
-		<span
-			className={`
-      inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
-      bg-${config.color}-50 text-${config.color}-700 border border-${config.color}-200
-    `}
-		>
-			<span className="text-base">{config.emoji}</span>
-			{config.name}
-		</span>
-	);
-};
-
-// Stats Card Component
-export const StatsCard: React.FC<StatsCardProps> = ({
-	title,
-	value,
-	subtitle,
-	icon: Icon,
-	trend,
-	color = "primary",
-}) => {
-	const colorConfig = {
-		primary:
-			"from-primary-50 to-primary-100 border-primary-200 text-primary-600",
-		emerald:
-			"from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-600",
-		amber: "from-amber-50 to-amber-100 border-amber-200 text-amber-600",
-		purple: "from-purple-50 to-purple-100 border-purple-200 text-purple-600",
-		red: "from-red-50 to-red-100 border-red-200 text-red-600",
+	const sizeClasses = {
+		sm: "h-2",
+		md: "h-3",
+		lg: "h-4",
 	};
 
+	const percentage = Math.min((progress / max) * 100, 100);
+
 	return (
-		<div
-			className={`bg-gradient-to-r ${colorConfig[color]} border rounded-xl p-6`}
-		>
-			<div className="flex items-center">
-				<div className="flex-shrink-0">
-					<Icon className={`h-8 w-8 ${colorConfig[color].split(" ")[2]}`} />
-				</div>
-				<div className="ml-4 flex-1">
-					<p
-						className={`text-sm font-medium ${colorConfig[color].split(" ")[2].replace("text-", "text-").replace("-600", "-700")}`}
-					>
-						{title}
-					</p>
-					<p
-						className={`text-2xl font-bold ${colorConfig[color].split(" ")[2].replace("text-", "text-").replace("-600", "-900")}`}
-					>
-						{typeof value === "number" ? value.toLocaleString() : value}
-					</p>
-					{subtitle && <p className="text-xs text-gray-600 mt-1">{subtitle}</p>}
-					{trend && (
-						<div className="flex items-center mt-1">
-							{trend.isPositive ? (
-								<ChartBarIcon className="h-4 w-4 text-green-500 mr-1" />
-							) : (
-								<ChartBarIcon className="h-4 w-4 text-red-500 mr-1" />
-							)}
-							<span
-								className={`text-xs ${trend.isPositive ? "text-green-600" : "text-red-600"}`}
-							>
-								{trend.isPositive ? "+" : ""}
-								{trend.value}%
-							</span>
-						</div>
+		<div className={className}>
+			{(label || showPercentage) && (
+				<div className="flex justify-between items-center mb-2">
+					{label && (
+						<span className="text-sm font-medium text-gray-700">{label}</span>
+					)}
+					{showPercentage && (
+						<span className="text-sm text-gray-500">
+							{Math.round(percentage)}%
+						</span>
 					)}
 				</div>
+			)}
+			<div
+				className={`w-full bg-gray-200 rounded-full overflow-hidden ${sizeClasses[size]}`}
+			>
+				<div
+					className={`${colorClasses[color]} ${sizeClasses[size]} rounded-full transition-all duration-300 ease-out`}
+					style={{width: `${percentage}%`}}
+				/>
 			</div>
 		</div>
 	);
 };
 
-// Template Card Stats Component
-export const TemplateCardStats: React.FC<TemplateCardStatsProps> = ({
-	usageCount,
-	averageRating,
-	estimatedTime,
-	isFeatured,
-	isVerified,
+export const Tooltip: React.FC<TooltipProps> = ({
+	content,
+	children,
+	position = "top",
+	className = "",
 }) => {
-	return (
-		<div className="space-y-3">
-			{/* Badges */}
-			<div className="flex items-center gap-2">
-				{isVerified && (
-					<Badge variant="primary" size="sm">
-						<CheckBadgeIcon className="h-3 w-3 mr-1" />
-						Verificado
-					</Badge>
-				)}
-				{isFeatured && (
-					<Badge variant="warning" size="sm">
-						<SparklesIcon className="h-3 w-3 mr-1" />
-						Destacado
-					</Badge>
-				)}
-			</div>
+	const [isVisible, setIsVisible] = React.useState(false);
 
-			{/* Stats */}
-			<div className="grid grid-cols-3 gap-4 text-sm">
-				<div className="text-center">
-					<div className="flex items-center justify-center gap-1 text-gray-500 mb-1">
-						<ChartBarIcon className="h-4 w-4" />
-					</div>
-					<p className="font-medium text-gray-900">{usageCount}</p>
-					<p className="text-xs text-gray-500">Usos</p>
-				</div>
-				<div className="text-center">
-					<div className="flex items-center justify-center gap-1 text-gray-500 mb-1">
-						<StarIcon className="h-4 w-4" />
-					</div>
-					<p className="font-medium text-gray-900">
-						{averageRating ? averageRating.toFixed(1) : "0.0"}
-					</p>
-					<p className="text-xs text-gray-500">Rating</p>
-				</div>
-				<div className="text-center">
-					<div className="flex items-center justify-center gap-1 text-gray-500 mb-1">
-						<ClockIcon className="h-4 w-4" />
-					</div>
-					<p className="font-medium text-gray-900">{estimatedTime || "5min"}</p>
-					<p className="text-xs text-gray-500">Tiempo</p>
-				</div>
-			</div>
-		</div>
-	);
-};
+	const positionClasses = {
+		top: "bottom-full left-1/2 transform -translate-x-1/2 mb-2",
+		bottom: "top-full left-1/2 transform -translate-x-1/2 mt-2",
+		left: "right-full top-1/2 transform -translate-y-1/2 mr-2",
+		right: "left-full top-1/2 transform -translate-y-1/2 ml-2",
+	};
 
-// Empty State Component
-export const EmptyState: React.FC<EmptyStateProps> = ({
-	icon: Icon,
-	title,
-	description,
-	action,
-}) => {
+	const arrowClasses = {
+		top: "top-full left-1/2 transform -translate-x-1/2 border-t-gray-900",
+		bottom: "bottom-full left-1/2 transform -translate-x-1/2 border-b-gray-900",
+		left: "left-full top-1/2 transform -translate-y-1/2 border-l-gray-900",
+		right: "right-full top-1/2 transform -translate-y-1/2 border-r-gray-900",
+	};
+
 	return (
-		<div className="text-center py-12">
-			<div className="mx-auto h-24 w-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-				<Icon className="h-12 w-12 text-gray-400" />
+		<div className="relative inline-block">
+			<div
+				onMouseEnter={() => setIsVisible(true)}
+				onMouseLeave={() => setIsVisible(false)}
+				className={className}
+			>
+				{children}
 			</div>
-			<h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
-			<p className="text-gray-600 mb-6 max-w-sm mx-auto">{description}</p>
-			{action && (
-				<button
-					onClick={action.onClick}
-					className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors"
+			{isVisible && (
+				<div
+					className={`absolute z-50 px-2 py-1 text-sm text-white bg-gray-900 rounded shadow-lg whitespace-nowrap ${positionClasses[position]}`}
 				>
-					{action.label}
-				</button>
+					{content}
+					<div
+						className={`absolute w-0 h-0 border-4 border-transparent ${arrowClasses[position]}`}
+					/>
+				</div>
 			)}
 		</div>
 	);
 };
 
-// Utility function for formatting currency
-export const formatCurrency = (
-	amount: number,
-	currency: string = "USD"
-): string => {
-	return new Intl.NumberFormat("es-EC", {
-		style: "currency",
-		currency: currency,
-	}).format(amount);
+// Componente de grid responsivo para cards
+export const CardGrid: React.FC<{
+	children: React.ReactNode;
+	className?: string;
+}> = ({children, className = ""}) => {
+	return (
+		<div
+			className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${className}`}
+		>
+			{children}
+		</div>
+	);
 };
 
-// Utility function for formatting dates
-export const formatDate = (
-	date: string | Date,
-	options?: Intl.DateTimeFormatOptions
-): string => {
-	const defaultOptions: Intl.DateTimeFormatOptions = {
-		year: "numeric",
-		month: "short",
-		day: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
+// Componente de skeleton loading
+export const SkeletonCard: React.FC<{className?: string}> = ({
+	className = "",
+}) => {
+	return (
+		<div
+			className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}
+		>
+			<div className="animate-pulse">
+				<div className="flex items-center space-x-4">
+					<div className="rounded-full bg-gray-300 h-12 w-12"></div>
+					<div className="flex-1 space-y-2">
+						<div className="h-4 bg-gray-300 rounded w-3/4"></div>
+						<div className="h-3 bg-gray-300 rounded w-1/2"></div>
+					</div>
+				</div>
+				<div className="mt-4 space-y-2">
+					<div className="h-3 bg-gray-300 rounded"></div>
+					<div className="h-3 bg-gray-300 rounded w-5/6"></div>
+				</div>
+			</div>
+		</div>
+	);
+};
+
+// Componente de separador
+export const Divider: React.FC<{
+	orientation?: "horizontal" | "vertical";
+	className?: string;
+}> = ({orientation = "horizontal", className = ""}) => {
+	const orientationClasses = {
+		horizontal: "w-full h-px bg-gray-200",
+		vertical: "h-full w-px bg-gray-200",
 	};
 
-	return new Intl.DateTimeFormat("es-EC", {
-		...defaultOptions,
-		...options,
-	}).format(new Date(date));
+	return <div className={`${orientationClasses[orientation]} ${className}`} />;
 };
 
-// Utility function for formatting numbers
-export const formatNumber = (num: number, decimals: number = 2): string => {
-	return num.toLocaleString("es-EC", {
-		maximumFractionDigits: decimals,
-		minimumFractionDigits: 0,
-	});
-};
-
-// Utility function for truncating text
-export const truncateText = (text: string, maxLength: number): string => {
-	if (text.length <= maxLength) return text;
-	return text.substring(0, maxLength - 3) + "...";
-};
-
-// Utility function for getting relative time
-export const getRelativeTime = (date: string | Date): string => {
-	const rtf = new Intl.RelativeTimeFormat("es", {numeric: "auto"});
-	const now = new Date();
-	const target = new Date(date);
-	const diffInSeconds = (target.getTime() - now.getTime()) / 1000;
-
-	if (Math.abs(diffInSeconds) < 60) {
-		return rtf.format(Math.round(diffInSeconds), "second");
-	} else if (Math.abs(diffInSeconds) < 3600) {
-		return rtf.format(Math.round(diffInSeconds / 60), "minute");
-	} else if (Math.abs(diffInSeconds) < 86400) {
-		return rtf.format(Math.round(diffInSeconds / 3600), "hour");
-	} else if (Math.abs(diffInSeconds) < 2592000) {
-		return rtf.format(Math.round(diffInSeconds / 86400), "day");
-	} else if (Math.abs(diffInSeconds) < 31536000) {
-		return rtf.format(Math.round(diffInSeconds / 2592000), "month");
-	} else {
-		return rtf.format(Math.round(diffInSeconds / 31536000), "year");
-	}
-};
-
-// Material quantity formatter
-export const formatMaterialQuantity = (
-	quantity: number,
-	unit: string
-): string => {
-	return `${formatNumber(quantity)} ${unit}`;
-};
-
-// Success rate formatter
-export const formatSuccessRate = (rate: number): string => {
-	return `${(rate * 100).toFixed(1)}%`;
-};
-
-// Execution time formatter
-export const formatExecutionTime = (timeMs: number): string => {
-	if (timeMs < 1000) {
-		return `${timeMs}ms`;
-	} else {
-		return `${(timeMs / 1000).toFixed(1)}s`;
-	}
+// Componente de contenedor con scroll
+export const ScrollContainer: React.FC<{
+	children: React.ReactNode;
+	maxHeight?: string;
+	className?: string;
+}> = ({children, maxHeight = "max-h-96", className = ""}) => {
+	return (
+		<div className={`overflow-y-auto ${maxHeight} ${className}`}>
+			{children}
+		</div>
+	);
 };

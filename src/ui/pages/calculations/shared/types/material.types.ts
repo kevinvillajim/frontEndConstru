@@ -8,6 +8,15 @@ export enum MaterialCalculationType {
 	MELAMINE_FURNITURE = "MELAMINE_FURNITURE",
 }
 
+export interface MaterialTemplateFilters {
+	isFeatured?: boolean;
+	type?: MaterialCalculationType;
+	sortBy?: string;
+	search?: string;
+	tags?: string[];
+	sortOrder: "asc"|"desc";
+}
+
 export enum ParameterDataType {
 	NUMBER = "number",
 	STRING = "string",
@@ -30,7 +39,7 @@ export interface MaterialParameter {
 	scope: ParameterScope;
 	displayOrder: number;
 	isRequired: boolean;
-	defaultValue?: any;
+	defaultValue?: string | number | boolean;
 	minValue?: number;
 	maxValue?: number;
 	step?: number;
@@ -101,8 +110,8 @@ export interface MaterialCalculationResult {
 	templateType: MaterialCalculationType;
 	userId: string;
 	projectId?: string;
-	inputParameters: Record<string, any>;
-	outputParameters: Record<string, any>;
+	inputParameters: Record<string, string | number | boolean>; // CORREGIDO: Era 'any'
+	outputParameters: Record<string, string | number | boolean>; // CORREGIDO: Era 'any'
 	materialQuantities: MaterialQuantity[];
 	executionTime: number;
 	wasSuccessful: boolean;
@@ -114,7 +123,7 @@ export interface MaterialCalculationResult {
 	totalEstimatedCost?: number;
 	notes?: string;
 	version: number;
-	metadata?: Record<string, any>;
+	metadata?: Record<string, unknown>;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -122,7 +131,7 @@ export interface MaterialCalculationResult {
 export interface MaterialExecutionRequest {
 	templateId: string;
 	templateType: MaterialCalculationType;
-	inputParameters: Record<string, any>;
+	inputParameters: Record<string, string | number | boolean>;
 	projectId?: string;
 	includeWaste?: boolean;
 	regionalFactors?: string;
@@ -216,7 +225,7 @@ export interface MaterialComparison {
 	userId: string;
 	results: MaterialCalculationResult[];
 	comparisonType: "template" | "parameters" | "results";
-	metadata?: Record<string, any>;
+	metadata?: Record<string, unknown>;
 	isPublic: boolean;
 	tags?: string[];
 	createdAt: Date;

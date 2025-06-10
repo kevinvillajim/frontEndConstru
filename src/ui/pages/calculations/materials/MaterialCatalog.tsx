@@ -14,7 +14,7 @@ import {
 	CheckBadgeIcon,
 } from "@heroicons/react/24/outline";
 import {useMaterialTemplates} from "../shared/hooks/useMaterialCalculations";
-import type {MaterialCalculationType} from "../shared/types/material.types";
+import type {MaterialCalculationTemplate, MaterialCalculationType, MaterialTemplateFilters} from "../shared/types/material.types";
 
 const CATEGORIES = [
 	{id: "all", name: "Todas", icon: "🔍"},
@@ -46,7 +46,7 @@ const MaterialCatalog: React.FC = () => {
 	const [filteredTemplates, setFilteredTemplates] = useState(templates);
 
 	useEffect(() => {
-		const filters: any = {
+		const filters: MaterialTemplateFilters = {
 			isFeatured: sortBy === "featured" ? true : undefined,
 			type: selectedCategory === "all" ? undefined : selectedCategory,
 			sortBy: sortBy === "featured" ? "usageCount" : sortBy,
@@ -213,7 +213,7 @@ const MaterialCatalog: React.FC = () => {
 		</div>
 	);
 
-	const renderTemplateCard = (template: any) => (
+	const renderTemplateCard = (template: MaterialCalculationTemplate) => (
 		<div
 			key={template.id}
 			className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200 group"

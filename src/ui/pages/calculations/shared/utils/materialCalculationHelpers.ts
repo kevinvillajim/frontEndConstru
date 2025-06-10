@@ -1,24 +1,60 @@
 // src/ui/pages/calculations/shared/utils/materialCalculationHelpers.ts
-// Utilidades y helpers para cálculos de materiales
+// CORRECCIÓN: Tipos any reemplazados, variables no utilizadas eliminadas, case declarations corregidas
 
-import type {
-	MaterialCalculationType,
-	MaterialCalculationResult,
-	MaterialQuantity,
-	MaterialParameter,
-	MaterialCalculationTemplate,
+import {
+	type MaterialCalculationType,
+	type MaterialCalculationResult,
+	type MaterialQuantity,
+	type MaterialParameter,
+	type MaterialCalculationTemplate,
+	ParameterDataType,
 } from "../types/material.types";
 
 import {
 	MATERIAL_CATEGORIES,
-	ECUADOR_REGIONS,
-	SUPPORTED_CURRENCIES,
-	DIFFICULTY_LEVELS,
-	TARGET_PROFESSIONS,
-	SYSTEM_LIMITS,
+	API_ENDPOINTS,
+	UI_CONSTANTS,
 } from "../constants/materialConstants";
 
-import {getWasteFactor} from "../../config/materialCalculationsConfig";
+// Tipos para funciones helper
+type DateFormatOptions = Intl.DateTimeFormatOptions;
+type ParameterValue = string | number | boolean | string[];
+type WasteFactors = Record<string, number>;
+
+// === CONSTANTES AUXILIARES ===
+
+const ECUADOR_REGIONS = [
+	{value: "costa", label: "Costa", factor: 1.0},
+	{value: "sierra", label: "Sierra", factor: 1.05},
+	{value: "oriente", label: "Oriente", factor: 1.15},
+	{value: "galapagos", label: "Galápagos", factor: 1.25},
+] as const;
+
+const SUPPORTED_CURRENCIES = [
+	{code: "USD", name: "Dólar Estadounidense", symbol: "$"},
+	{code: "EUR", name: "Euro", symbol: "€"},
+] as const;
+
+const DIFFICULTY_LEVELS = [
+	{value: "basic", label: "Básico", color: "green"},
+	{value: "intermediate", label: "Intermedio", color: "yellow"},
+	{value: "advanced", label: "Avanzado", color: "red"},
+] as const;
+
+const TARGET_PROFESSIONS = [
+	"architect",
+	"civil_engineer",
+	"structural_engineer",
+	"construction_manager",
+	"quantity_surveyor",
+] as const;
+
+const SYSTEM_LIMITS = {
+	MAX_PARAMETERS: 50,
+	MAX_FORMULA_LENGTH: 10000,
+	MAX_DESCRIPTION_LENGTH: 1000,
+	MAX_RESULTS_PER_PAGE: 100,
+} as const;
 
 // === FORMATTERS ===
 
@@ -41,12 +77,12 @@ export const formatNumber = (
  */
 export const formatCurrency = (
 	amount: number,
-	currency: string = "USD",
+	currencyCode: string = "USD",
 	locale: string = "es-EC"
 ): string => {
 	return new Intl.NumberFormat(locale, {
 		style: "currency",
-		currency: currency,
+		currency: currencyCode,
 	}).format(amount);
 };
 
@@ -82,596 +118,505 @@ export const formatRelativeTime = (
  */
 export const formatDate = (
 	date: string | Date,
-	options?: Intl.DateTimeFormatOptions,
+	options: DateFormatOptions = {
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	},
 	locale: string = "es-EC"
 ): string => {
-	const defaultOptions: Intl.DateTimeFormatOptions = {
-		year: "numeric",
-		month: "short",
-		day: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	};
-
-	return new Intl.DateTimeFormat(locale, {
-		...defaultOptions,
-		...options,
-	}).format(new Date(date));
+	return new Date(date).toLocaleDateString(locale, options);
 };
 
 /**
- * Formatea una cantidad de material con su unidad
+ * Formatea una duración en milisegundos a formato legible
  */
-export const formatMaterialQuantity = (
-	quantity: number,
-	unit: string,
-	decimals: number = 2
-): string => {
-	return `${formatNumber(quantity, decimals)} ${unit}`;
-};
-
-/**
- * Formatea un porcentaje
- */
-export const formatPercentage = (
-	value: number,
-	decimals: number = 1
-): string => {
-	return `${formatNumber(value * 100, decimals)}%`;
-};
-
-/**
- * Formatea tiempo de ejecución
- */
-export const formatExecutionTime = (timeMs: number): string => {
-	if (timeMs < 1000) {
-		return `${timeMs}ms`;
-	} else if (timeMs < 60000) {
-		return `${(timeMs / 1000).toFixed(1)}s`;
+export const formatDuration = (durationMs: number): string => {
+	if (durationMs < 1000) {
+		return `${durationMs}ms`;
+	} else if (durationMs < 60000) {
+		return `${(durationMs / 1000).toFixed(1)}s`;
 	} else {
-		const minutes = Math.floor(timeMs / 60000);
-		const seconds = Math.floor((timeMs % 60000) / 1000);
-		return `${minutes}m ${seconds}s`;
+		return `${(durationMs / 60000).toFixed(1)}min`;
 	}
 };
 
 // === VALIDADORES ===
 
 /**
- * Valida si un email es válido
+ * Valida un parámetro individual
  */
-export const isValidEmail = (email: string): boolean => {
-	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-	return emailRegex.test(email);
+export const validateParameter = (
+	parameter: MaterialParameter,
+	value: ParameterValue
+): string | null => {
+	// Validar campos requeridos
+	if (
+		parameter.isRequired &&
+		(value === undefined || value === "" || value === null)
+	) {
+		return "Este campo es requerido";
+	}
+
+	// Si no hay valor y no es requerido, es válido
+	if (value === undefined || value === "" || value === null) {
+		return null;
+	}
+
+	// Validar por tipo de dato
+	switch (parameter.dataType) {
+		case ParameterDataType.NUMBER: {
+			const numValue =
+				typeof value === "number" ? value : parseFloat(value as string);
+
+			if (isNaN(numValue)) {
+				return "Debe ser un número válido";
+			}
+
+			if (parameter.minValue !== undefined && numValue < parameter.minValue) {
+				return `Debe ser mayor o igual a ${parameter.minValue}`;
+			}
+
+			if (parameter.maxValue !== undefined && numValue > parameter.maxValue) {
+				return `Debe ser menor o igual a ${parameter.maxValue}`;
+			}
+			break;
+		}
+
+		case ParameterDataType.STRING: {
+			const strValue = value as string;
+
+			if (
+				parameter.regexPattern &&
+				!new RegExp(parameter.regexPattern).test(strValue)
+			) {
+				return "Formato inválido";
+			}
+			break;
+		}
+
+		case ParameterDataType.ENUM: {
+			const enumValue = value as string;
+
+			if (
+				parameter.allowedValues &&
+				!parameter.allowedValues.includes(enumValue)
+			) {
+				return "Valor no válido para esta opción";
+			}
+			break;
+		}
+
+		case ParameterDataType.ARRAY: {
+			const arrayValue = value as string[];
+
+			if (!Array.isArray(arrayValue)) {
+				return "Debe ser una lista válida";
+			}
+			break;
+		}
+
+		default:
+			break;
+	}
+
+	return null;
 };
 
 /**
- * Valida si un nombre de plantilla es válido
+ * Valida todos los parámetros de entrada
  */
-export const isValidTemplateName = (name: string): boolean => {
-	return (
-		name.length >= 5 &&
-		name.length <= 100 &&
-		/^[a-zA-Z0-9\s\-_áéíóúÁÉÍÓÚñÑ]+$/.test(name)
-	);
+export const validateAllParameters = (
+	parameters: MaterialParameter[],
+	inputValues: Record<string, ParameterValue>
+): Record<string, string> => {
+	const errors: Record<string, string> = {};
+
+	parameters
+		.filter((p) => p.scope === "input")
+		.forEach((param) => {
+			const error = validateParameter(param, inputValues[param.name]);
+			if (error) {
+				errors[param.name] = error;
+			}
+		});
+
+	return errors;
 };
 
 /**
- * Valida si un nombre de parámetro es válido
+ * Valida una fórmula JavaScript básica
  */
-export const isValidParameterName = (name: string): boolean => {
-	return (
-		name.length >= 2 &&
-		name.length <= 50 &&
-		/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name)
-	);
-};
-
-/**
- * Valida si un valor numérico está dentro del rango permitido
- */
-export const isNumberInRange = (
-	value: number,
-	min?: number,
-	max?: number
-): boolean => {
-	if (min !== undefined && value < min) return false;
-	if (max !== undefined && value > max) return false;
-	return true;
-};
-
-/**
- * Valida si una fórmula JavaScript es sintácticamente correcta
- */
-export const validateFormulaJavaScript = (
+export const validateFormula = (
 	formula: string
 ): {isValid: boolean; error?: string} => {
 	try {
-		// Crear una función temporal para validar la sintaxis
-		new Function("return " + formula);
+		// Validar longitud
+		if (formula.length > SYSTEM_LIMITS.MAX_FORMULA_LENGTH) {
+			return {
+				isValid: false,
+				error: `La fórmula excede el límite de ${SYSTEM_LIMITS.MAX_FORMULA_LENGTH} caracteres`,
+			};
+		}
+
+		// Validar sintaxis básica JavaScript
+		new Function(formula);
+
 		return {isValid: true};
 	} catch (error) {
 		return {
 			isValid: false,
-			error:
-				error instanceof Error
-					? error.message
-					: "Error de sintaxis desconocido",
+			error: `Error de sintaxis: ${(error as Error).message}`,
 		};
 	}
 };
 
+// === CONVERTIDORES ===
+
 /**
- * Valida los parámetros de entrada de un cálculo
+ * Convierte un valor por defecto según el tipo de dato
  */
-export const validateCalculationParameters = (
-	parameters: MaterialParameter[],
-	inputValues: Record<string, any>
-): {isValid: boolean; errors: Record<string, string>} => {
-	const errors: Record<string, string> = {};
+export const parseParameterValue = (
+	value: ParameterValue,
+	dataType: ParameterDataType
+): ParameterValue => {
+	switch (dataType) {
+		case ParameterDataType.NUMBER:
+			return typeof value === "string"
+				? parseFloat(value) || 0
+				: (value as number);
 
-	parameters.forEach((param) => {
-		const value = inputValues[param.name];
+		case ParameterDataType.BOOLEAN:
+			return typeof value === "string"
+				? value.toLowerCase() === "true"
+				: Boolean(value);
 
-		// Validar campos requeridos
-		if (
-			param.isRequired &&
-			(value === undefined || value === null || value === "")
-		) {
-			errors[param.name] = `${param.name} es requerido`;
-			return;
-		}
-
-		// Validar tipos de datos
-		if (value !== undefined && value !== null && value !== "") {
-			switch (param.dataType) {
-				case "number":
-					const numValue = Number(value);
-					if (isNaN(numValue)) {
-						errors[param.name] = `${param.name} debe ser un número válido`;
-					} else if (
-						!isNumberInRange(
-							numValue,
-							param.minValue || undefined,
-							param.maxValue || undefined
-						)
-					) {
-						errors[param.name] =
-							`${param.name} debe estar entre ${param.minValue || "-∞"} y ${param.maxValue || "∞"}`;
-					}
-					break;
-
-				case "string":
-					if (typeof value !== "string") {
-						errors[param.name] = `${param.name} debe ser texto`;
-					}
-					break;
-
-				case "boolean":
-					if (typeof value !== "boolean") {
-						errors[param.name] = `${param.name} debe ser verdadero o falso`;
-					}
-					break;
-
-				case "enum":
-					if (param.allowedValues && !param.allowedValues.includes(value)) {
-						errors[param.name] =
-							`${param.name} debe ser uno de: ${param.allowedValues.join(", ")}`;
-					}
-					break;
+		case ParameterDataType.ARRAY:
+			if (typeof value === "string") {
+				try {
+					return JSON.parse(value);
+				} catch {
+					return value.split(",").map((v) => v.trim());
+				}
 			}
-		}
-	});
+			return Array.isArray(value) ? value : [String(value)];
 
-	return {
-		isValid: Object.keys(errors).length === 0,
-		errors,
+		default:
+			return String(value);
+	}
+};
+
+/**
+ * Convierte valores de entrada para envío a API
+ */
+export const formatParametersForAPI = (
+	parameters: MaterialParameter[],
+	inputValues: Record<string, ParameterValue>
+): Record<string, ParameterValue> => {
+	const formatted: Record<string, ParameterValue> = {};
+
+	parameters
+		.filter((p) => p.scope === "input")
+		.forEach((param) => {
+			const value = inputValues[param.name];
+			if (value !== undefined && value !== null && value !== "") {
+				formatted[param.name] = parseParameterValue(value, param.dataType);
+			}
+		});
+
+	return formatted;
+};
+
+// === UTILIDADES DE CÁLCULO ===
+
+/**
+ * Obtiene el factor de desperdicio para un tipo de material
+ */
+export const getWasteFactor = (
+	materialType: MaterialCalculationType,
+	region: string = "sierra"
+): number => {
+	const baseFactors: WasteFactors = {
+		STEEL_STRUCTURES: 0.05,
+		CONCRETE: 0.1,
+		WOOD: 0.08,
+		MASONRY: 0.06,
+		THERMAL_INSULATION: 0.15,
+		WATERPROOFING: 0.12,
+		FINISHING: 0.2,
+		ELECTRICAL: 0.1,
+		PLUMBING: 0.08,
+		HVAC: 0.1,
 	};
-};
 
-// === CALCULADORES ===
+	const regionMultipliers: Record<string, number> = {
+		costa: 1.0,
+		sierra: 1.1,
+		oriente: 1.2,
+		galapagos: 1.3,
+	};
 
-/**
- * Calcula la cantidad total incluyendo desperdicios
- */
-export const calculateWithWaste = (
-	baseQuantity: number,
-	wastePercentage: number
-): number => {
-	return baseQuantity * (1 + wastePercentage / 100);
-};
+	const baseFactor = baseFactors[materialType] || 0.1;
+	const regionMultiplier = regionMultipliers[region] || 1.0;
 
-/**
- * Calcula el factor de desperdicio según la región y tipo de material
- */
-export const calculateRegionalWasteFactor = (
-	region: string,
-	materialType: MaterialCalculationType
-): number => {
-	const regionConfig = ECUADOR_REGIONS.find((r) => r.id === region);
-	const baseFactor = getWasteFactor(region as any, materialType);
-	const multiplier = regionConfig?.wasteFactorMultiplier || 1;
-
-	return baseFactor * multiplier;
+	return baseFactor * regionMultiplier;
 };
 
 /**
- * Calcula el costo total de un material
- */
-export const calculateMaterialCost = (
-	quantity: number,
-	unitPrice: number,
-	includeWaste: boolean = false,
-	wastePercentage: number = 0
-): number => {
-	const finalQuantity = includeWaste
-		? calculateWithWaste(quantity, wastePercentage)
-		: quantity;
-
-	return finalQuantity * unitPrice;
-};
-
-/**
- * Calcula el costo total de una lista de materiales
+ * Calcula el costo total con desperdicios
  */
 export const calculateTotalCost = (
-	materials: MaterialQuantity[],
-	currency: string = "USD"
+	materialQuantities: MaterialQuantity[],
+	includeWaste: boolean = true,
+	wastePercentage?: number
 ): number => {
-	return materials.reduce((total, material) => {
-		return total + (material.totalPrice || 0);
+	return materialQuantities.reduce((total, material) => {
+		const basePrice =
+			material.totalPrice || material.quantity * (material.unitPrice || 0);
+
+		if (includeWaste) {
+			const wasteFactor = wastePercentage
+				? wastePercentage / 100
+				: (material.wastePercentage || 0) / 100;
+			return total + basePrice * (1 + wasteFactor);
+		}
+
+		return total + basePrice;
 	}, 0);
 };
 
 /**
- * Calcula la diferencia porcentual entre dos valores
+ * Aplica factores regionales a precios
  */
-export const calculatePercentageDifference = (
-	oldValue: number,
-	newValue: number
+export const applyRegionalFactors = (
+	basePrice: number,
+	region: string = "sierra"
 ): number => {
-	if (oldValue === 0) return newValue === 0 ? 0 : 100;
-	return ((newValue - oldValue) / oldValue) * 100;
+	const regionFactor =
+		ECUADOR_REGIONS.find((r) => r.value === region)?.factor || 1.0;
+	return basePrice * regionFactor;
 };
 
-/**
- * Calcula un score de tendencia basado en métricas
- */
-export const calculateTrendScore = (
-	usageCount: number,
-	uniqueUsers: number,
-	successRate: number,
-	averageRating: number,
-	recentGrowth: number
-): number => {
-	const usageWeight = 0.3;
-	const usersWeight = 0.2;
-	const successWeight = 0.2;
-	const ratingWeight = 0.15;
-	const growthWeight = 0.15;
-
-	// Normalizar valores a una escala de 0-100
-	const normalizedUsage = Math.min(usageCount / 1000, 1) * 100;
-	const normalizedUsers = Math.min(uniqueUsers / 100, 1) * 100;
-	const normalizedSuccess = successRate * 100;
-	const normalizedRating = (averageRating / 5) * 100;
-	const normalizedGrowth = Math.min(Math.max(recentGrowth, -100), 100) + 100; // -100 a 100 -> 0 a 200
-
-	return (
-		normalizedUsage * usageWeight +
-		normalizedUsers * usersWeight +
-		normalizedSuccess * successWeight +
-		normalizedRating * ratingWeight +
-		(normalizedGrowth / 2) * growthWeight // Dividir por 2 para normalizar a 0-100
-	);
-};
-
-// === UTILIDADES DE DATOS ===
+// === UTILIDADES DE BÚSQUEDA Y FILTRADO ===
 
 /**
- * Obtiene la configuración de una categoría de material
+ * Filtra plantillas por criterios de búsqueda
  */
-export const getMaterialCategoryConfig = (
-	type: MaterialCalculationType | "all"
-) => {
-	return (
-		MATERIAL_CATEGORIES.find((cat) => cat.id === type) || MATERIAL_CATEGORIES[0]
-	);
-};
-
-/**
- * Obtiene la configuración de nivel de dificultad
- */
-export const getDifficultyConfig = (difficulty: string) => {
-	return (
-		DIFFICULTY_LEVELS.find((d) => d.id === difficulty) || DIFFICULTY_LEVELS[0]
-	);
-};
-
-/**
- * Obtiene la configuración de una profesión
- */
-export const getProfessionConfig = (profession: string) => {
-	return TARGET_PROFESSIONS.find((p) => p.id === profession);
-};
-
-/**
- * Obtiene la configuración de una región
- */
-export const getRegionConfig = (region: string) => {
-	return ECUADOR_REGIONS.find((r) => r.id === region) || ECUADOR_REGIONS[1]; // Sierra por defecto
-};
-
-/**
- * Obtiene la configuración de una moneda
- */
-export const getCurrencyConfig = (currency: string) => {
-	return (
-		SUPPORTED_CURRENCIES.find((c) => c.code === currency) ||
-		SUPPORTED_CURRENCIES[0]
-	);
-};
-
-// === FILTROS Y BÚSQUEDA ===
-
-/**
- * Filtra plantillas por término de búsqueda
- */
-export const filterTemplatesBySearch = (
+export const filterTemplates = (
 	templates: MaterialCalculationTemplate[],
-	searchTerm: string
+	searchTerm: string,
+	type?: MaterialCalculationType,
+	tags?: string[]
 ): MaterialCalculationTemplate[] => {
-	if (!searchTerm.trim()) return templates;
+	return templates.filter((template) => {
+		// Filtro por término de búsqueda
+		if (searchTerm) {
+			const search = searchTerm.toLowerCase();
+			const matchesName = template.name.toLowerCase().includes(search);
+			const matchesDescription = template.description
+				.toLowerCase()
+				.includes(search);
+			const matchesTags = template.tags?.some((tag) =>
+				tag.toLowerCase().includes(search)
+			);
 
-	const term = searchTerm.toLowerCase();
-
-	return templates.filter(
-		(template) =>
-			template.name.toLowerCase().includes(term) ||
-			template.description.toLowerCase().includes(term) ||
-			template.tags?.some((tag) => tag.toLowerCase().includes(term)) ||
-			template.type.toLowerCase().includes(term)
-	);
-};
-
-/**
- * Filtra resultados por rango de fechas
- */
-export const filterResultsByDateRange = (
-	results: MaterialCalculationResult[],
-	startDate: Date,
-	endDate: Date
-): MaterialCalculationResult[] => {
-	return results.filter((result) => {
-		const resultDate = new Date(result.createdAt);
-		return resultDate >= startDate && resultDate <= endDate;
-	});
-};
-
-/**
- * Ordena elementos por múltiples criterios
- */
-export const sortByMultipleCriteria = <T>(
-	items: T[],
-	criteria: Array<{
-		key: keyof T;
-		direction: "asc" | "desc";
-	}>
-): T[] => {
-	return [...items].sort((a, b) => {
-		for (const criterion of criteria) {
-			const {key, direction} = criterion;
-			const aVal = a[key];
-			const bVal = b[key];
-
-			let comparison = 0;
-
-			if (aVal < bVal) comparison = -1;
-			else if (aVal > bVal) comparison = 1;
-
-			if (comparison !== 0) {
-				return direction === "asc" ? comparison : -comparison;
+			if (!matchesName && !matchesDescription && !matchesTags) {
+				return false;
 			}
 		}
 
-		return 0;
+		// Filtro por tipo
+		if (type && template.type !== type) {
+			return false;
+		}
+
+		// Filtro por tags
+		if (tags && tags.length > 0) {
+			const hasMatchingTag = tags.some((tag) => template.tags?.includes(tag));
+			if (!hasMatchingTag) {
+				return false;
+			}
+		}
+
+		return true;
 	});
 };
 
-// === UTILIDADES DE URL Y NAVEGACIÓN ===
+/**
+ * Ordena plantillas por criterio especificado
+ */
+export const sortTemplates = (
+	templates: MaterialCalculationTemplate[],
+	sortBy: string = "name",
+	sortOrder: "asc" | "desc" = "asc"
+): MaterialCalculationTemplate[] => {
+	const sorted = [...templates].sort((a, b) => {
+		let valueA: string | number;
+		let valueB: string | number;
+
+		switch (sortBy) {
+			case "name":
+				valueA = a.name;
+				valueB = b.name;
+				break;
+			case "createdAt":
+				valueA = new Date(a.createdAt).getTime();
+				valueB = new Date(b.createdAt).getTime();
+				break;
+			case "usageCount":
+				valueA = a.usageCount;
+				valueB = b.usageCount;
+				break;
+			case "rating":
+				valueA = a.averageRating;
+				valueB = b.averageRating;
+				break;
+			default:
+				valueA = a.name;
+				valueB = b.name;
+		}
+
+		if (typeof valueA === "string" && typeof valueB === "string") {
+			return sortOrder === "asc"
+				? valueA.localeCompare(valueB)
+				: valueB.localeCompare(valueA);
+		}
+
+		return sortOrder === "asc"
+			? (valueA as number) - (valueB as number)
+			: (valueB as number) - (valueA as number);
+	});
+
+	return sorted;
+};
+
+// === UTILIDADES DE EXPORTACIÓN ===
 
 /**
- * Construye una URL con parámetros de consulta
+ * Genera datos para exportación CSV
  */
-export const buildUrlWithParams = (
-	baseUrl: string,
-	params: Record<string, string | number | boolean | undefined>
+export const generateCSVData = (
+	results: MaterialCalculationResult[]
 ): string => {
-	const url = new URL(baseUrl, window.location.origin);
+	const headers = [
+		"Fecha",
+		"Plantilla",
+		"Tipo",
+		"Costo Total",
+		"Moneda",
+		"Región",
+		"Incluye Desperdicios",
+		"Tiempo de Ejecución (ms)",
+		"Estado",
+	];
 
-	Object.entries(params).forEach(([key, value]) => {
-		if (value !== undefined && value !== null && value !== "") {
-			url.searchParams.set(key, String(value));
-		}
+	const rows = results.map((result) => [
+		formatDate(result.createdAt),
+		result.templateName,
+		result.templateType,
+		result.totalEstimatedCost?.toFixed(2) || "0.00",
+		result.currency,
+		result.regionalFactors,
+		result.includeWaste ? "Sí" : "No",
+		result.executionTime.toString(),
+		result.wasSuccessful ? "Exitoso" : "Error",
+	]);
+
+	const csvContent = [headers, ...rows]
+		.map((row) => row.map((cell) => `"${cell}"`).join(","))
+		.join("\n");
+
+	return csvContent;
+};
+
+/**
+ * Genera resumen estadístico de resultados
+ */
+export const generateResultsSummary = (
+	results: MaterialCalculationResult[]
+): {
+	totalCalculations: number;
+	successfulCalculations: number;
+	successRate: number;
+	averageExecutionTime: number;
+	totalCost: number;
+	averageCost: number;
+	calculationsByType: Record<string, number>;
+} => {
+	const totalCalculations = results.length;
+	const successfulCalculations = results.filter((r) => r.wasSuccessful).length;
+	const successRate =
+		totalCalculations > 0
+			? (successfulCalculations / totalCalculations) * 100
+			: 0;
+
+	const averageExecutionTime =
+		totalCalculations > 0
+			? results.reduce((sum, r) => sum + r.executionTime, 0) / totalCalculations
+			: 0;
+
+	const totalCost = results.reduce(
+		(sum, r) => sum + (r.totalEstimatedCost || 0),
+		0
+	);
+	const averageCost = totalCalculations > 0 ? totalCost / totalCalculations : 0;
+
+	const calculationsByType: Record<string, number> = {};
+	results.forEach((result) => {
+		calculationsByType[result.templateType] =
+			(calculationsByType[result.templateType] || 0) + 1;
 	});
 
-	return url.pathname + url.search;
-};
-
-/**
- * Extrae parámetros de consulta de la URL
- */
-export const getUrlParams = (): Record<string, string> => {
-	const params: Record<string, string> = {};
-	const searchParams = new URLSearchParams(window.location.search);
-
-	for (const [key, value] of searchParams.entries()) {
-		params[key] = value;
-	}
-
-	return params;
-};
-
-// === UTILIDADES DE ALMACENAMIENTO ===
-
-/**
- * Guarda datos en localStorage con manejo de errores
- */
-export const saveToLocalStorage = (key: string, data: any): boolean => {
-	try {
-		localStorage.setItem(key, JSON.stringify(data));
-		return true;
-	} catch (error) {
-		console.error("Error saving to localStorage:", error);
-		return false;
-	}
-};
-
-/**
- * Carga datos de localStorage con manejo de errores
- */
-export const loadFromLocalStorage = <T>(key: string, defaultValue: T): T => {
-	try {
-		const item = localStorage.getItem(key);
-		return item ? JSON.parse(item) : defaultValue;
-	} catch (error) {
-		console.error("Error loading from localStorage:", error);
-		return defaultValue;
-	}
-};
-
-/**
- * Elimina datos de localStorage
- */
-export const removeFromLocalStorage = (key: string): boolean => {
-	try {
-		localStorage.removeItem(key);
-		return true;
-	} catch (error) {
-		console.error("Error removing from localStorage:", error);
-		return false;
-	}
-};
-
-// === UTILIDADES DE ARCHIVOS ===
-
-/**
- * Convierte bytes a formato legible
- */
-export const formatFileSize = (bytes: number): string => {
-	if (bytes === 0) return "0 Bytes";
-
-	const k = 1024;
-	const sizes = ["Bytes", "KB", "MB", "GB"];
-	const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-	return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-};
-
-/**
- * Valida el tipo y tamaño de archivo
- */
-export const validateFile = (
-	file: File,
-	allowedTypes: string[] = ["json", "csv", "xlsx"],
-	maxSize: number = SYSTEM_LIMITS.maxFileSize
-): {isValid: boolean; error?: string} => {
-	// Validar tipo
-	const fileExtension = file.name.split(".").pop()?.toLowerCase();
-	if (!fileExtension || !allowedTypes.includes(fileExtension)) {
-		return {
-			isValid: false,
-			error: `Tipo de archivo no permitido. Tipos permitidos: ${allowedTypes.join(", ")}`,
-		};
-	}
-
-	// Validar tamaño
-	if (file.size > maxSize) {
-		return {
-			isValid: false,
-			error: `El archivo es demasiado grande. Tamaño máximo: ${formatFileSize(maxSize)}`,
-		};
-	}
-
-	return {isValid: true};
-};
-
-// === UTILIDADES DE RENDIMIENTO ===
-
-/**
- * Función de debounce
- */
-export const debounce = <T extends (...args: any[]) => void>(
-	func: T,
-	delay: number
-): ((...args: Parameters<T>) => void) => {
-	let timeoutId: NodeJS.Timeout;
-
-	return (...args: Parameters<T>) => {
-		clearTimeout(timeoutId);
-		timeoutId = setTimeout(() => func(...args), delay);
+	return {
+		totalCalculations,
+		successfulCalculations,
+		successRate,
+		averageExecutionTime,
+		totalCost,
+		averageCost,
+		calculationsByType,
 	};
 };
 
-/**
- * Función de throttle
- */
-export const throttle = <T extends (...args: any[]) => void>(
-	func: T,
-	delay: number
-): ((...args: Parameters<T>) => void) => {
-	let lastCall = 0;
+// === UTILIDADES DE CACHE ===
 
-	return (...args: Parameters<T>) => {
-		const now = Date.now();
-		if (now - lastCall >= delay) {
-			lastCall = now;
-			func(...args);
-		}
-	};
+/**
+ * Genera clave de cache para plantillas
+ */
+export const generateCacheKey = (
+	type?: MaterialCalculationType,
+	searchTerm?: string,
+	tags?: string[]
+): string => {
+	const parts = ["material_templates"];
+
+	if (type) parts.push(`type_${type}`);
+	if (searchTerm)
+		parts.push(`search_${searchTerm.toLowerCase().replace(/\s+/g, "_")}`);
+	if (tags && tags.length > 0) parts.push(`tags_${tags.sort().join("_")}`);
+
+	return parts.join("_");
 };
 
 /**
- * Genera un ID único
+ * Verifica si el cache está vigente
  */
-export const generateUniqueId = (): string => {
-	return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+export const isCacheValid = (
+	timestamp: number,
+	durationMs: number
+): boolean => {
+	return Date.now() - timestamp < durationMs;
 };
 
-/**
- * Copia texto al portapapeles
- */
-export const copyToClipboard = async (text: string): Promise<boolean> => {
-	try {
-		await navigator.clipboard.writeText(text);
-		return true;
-	} catch (error) {
-		console.error("Error copying to clipboard:", error);
-		return false;
-	}
+// === EXPORTACIONES ADICIONALES ===
+
+export {
+	ECUADOR_REGIONS,
+	SUPPORTED_CURRENCIES,
+	DIFFICULTY_LEVELS,
+	TARGET_PROFESSIONS,
+	SYSTEM_LIMITS,
 };
 
-/**
- * Trunca texto con elipsis
- */
-export const truncateText = (text: string, maxLength: number): string => {
-	if (text.length <= maxLength) return text;
-	return text.substring(0, maxLength - 3) + "...";
-};
-
-/**
- * Capitaliza la primera letra de cada palabra
- */
-export const capitalizeWords = (text: string): string => {
-	return text.replace(/\b\w/g, (char) => char.toUpperCase());
-};
-
-/**
- * Convierte camelCase a formato legible
- */
-export const camelCaseToWords = (text: string): string => {
-	return text
-		.replace(/([A-Z])/g, " $1")
-		.replace(/^./, (str) => str.toUpperCase())
-		.trim();
-};
+// Re-exportar constantes útiles
+export {MATERIAL_CATEGORIES, API_ENDPOINTS, UI_CONSTANTS};

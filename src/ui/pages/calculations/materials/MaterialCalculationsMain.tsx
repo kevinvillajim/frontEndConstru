@@ -1,4 +1,6 @@
 // src/ui/pages/calculations/materials/MaterialCalculationsMain.tsx
+// VERSIÓN TEMPORAL CON PANEL DE DEBUG INTEGRADO
+
 import React, {useState, useEffect} from "react";
 import {useNavigate} from "react-router-dom";
 import {
@@ -15,6 +17,165 @@ import {
 } from "@heroicons/react/24/outline";
 import {useMaterialTemplates} from "../shared/hooks/useMaterialCalculations";
 import type {MaterialCalculationType} from "../shared/types/material.types";
+
+// 🚨 COMPONENTE DE DEBUG TEMPORAL - ELIMINAR EN PRODUCCIÓN
+const QuickDebugPanel: React.FC = () => {
+	const [results, setResults] = useState<any[]>([]);
+	const [loading, setLoading] = useState(false);
+
+	const quickTest = async () => {
+		setLoading(true);
+		setResults([]);
+		console.clear();
+		console.log("🚀 INICIO DE DIAGNÓSTICO RÁPIDO");
+
+		const tests = [
+			{
+				name: "Backend Directo",
+				url: "http://localhost:4000/api/material-calculation/templates",
+			},
+			{name: "Proxy Correcto", url: "/api/material-calculation/templates"},
+			{name: "Proxy Incorrecto", url: "/api/material-calculations/templates"},
+		];
+
+		const testResults = [];
+
+		for (const test of tests) {
+			console.log(`\n🧪 Probando: ${test.name} -> ${test.url}`);
+
+			try {
+				const startTime = Date.now();
+				const response = await fetch(test.url, {
+					headers: {"Content-Type": "application/json"},
+				});
+				const timing = Date.now() - startTime;
+
+				console.log(`📊 Respuesta:`, {
+					status: response.status,
+					statusText: response.statusText,
+					contentType: response.headers.get("content-type"),
+					url: response.url,
+				});
+
+				const contentType = response.headers.get("content-type") || "";
+				let data, type;
+
+				if (contentType.includes("application/json")) {
+					data = await response.json();
+					type = "JSON";
+					console.log(`✅ JSON válido:`, data);
+				} else {
+					data = await response.text();
+					type = contentType.includes("html") ? "HTML" : "TEXT";
+					console.log(`⚠️ No es JSON (${type}):`, data.substring(0, 100));
+				}
+
+				testResults.push({
+					name: test.name,
+					url: test.url,
+					success: response.ok && contentType.includes("json"),
+					status: response.status,
+					type,
+					timing,
+					error: null,
+					preview:
+						type === "JSON"
+							? JSON.stringify(data, null, 2).substring(0, 200)
+							: data.substring(0, 200),
+				});
+			} catch (error) {
+				console.error(`❌ Error en ${test.name}:`, error);
+				testResults.push({
+					name: test.name,
+					url: test.url,
+					success: false,
+					status: 0,
+					type: "ERROR",
+					timing: 0,
+					error: error instanceof Error ? error.message : "Error desconocido",
+					preview: null,
+				});
+			}
+		}
+
+		console.log("\n📋 RESUMEN FINAL:");
+		testResults.forEach((result) => {
+			console.log(
+				`${result.success ? "✅" : "❌"} ${result.name}: ${result.success ? "OK" : result.error}`
+			);
+		});
+
+		setResults(testResults);
+		setLoading(false);
+	};
+
+	return (
+		<div className="fixed top-4 right-4 z-50 bg-white border-2 border-red-500 rounded-lg shadow-lg p-4 max-w-md">
+			<div className="mb-2">
+				<h3 className="font-bold text-red-600">🚨 DEBUG PANEL</h3>
+				<p className="text-xs text-gray-600">Panel temporal de diagnóstico</p>
+			</div>
+
+			<button
+				onClick={quickTest}
+				disabled={loading}
+				className="w-full mb-3 px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 text-sm"
+			>
+				{loading ? "🔄 Probando..." : "🧪 Diagnóstico Rápido"}
+			</button>
+
+			<div className="text-xs space-y-1 mb-3">
+				<div>
+					<strong>Frontend:</strong> {window.location.origin}
+				</div>
+				<div>
+					<strong>Backend:</strong> localhost:4000
+				</div>
+			</div>
+
+			{results.length > 0 && (
+				<div className="space-y-2 max-h-60 overflow-y-auto">
+					{results.map((result, i) => (
+						<div
+							key={i}
+							className={`p-2 rounded text-xs border ${
+								result.success
+									? "bg-green-50 border-green-200"
+									: "bg-red-50 border-red-200"
+							}`}
+						>
+							<div className="font-medium">
+								{result.success ? "✅" : "❌"} {result.name}
+							</div>
+							<div className="text-gray-600">
+								Status: {result.status} | Tipo: {result.type} | {result.timing}
+								ms
+							</div>
+							{result.error && (
+								<div className="text-red-600 mt-1">Error: {result.error}</div>
+							)}
+							{result.preview && (
+								<details className="mt-1">
+									<summary className="cursor-pointer text-blue-600">
+										Ver respuesta
+									</summary>
+									<pre className="mt-1 text-xs bg-gray-100 p-1 rounded overflow-auto max-h-20">
+										{result.preview}
+									</pre>
+								</details>
+							)}
+						</div>
+					))}
+				</div>
+			)}
+
+			<div className="mt-3 text-xs text-gray-500">
+				💡 Abre DevTools → Console/Network para más detalles
+			</div>
+		</div>
+	);
+};
+// 🚨 FIN DEL COMPONENTE DE DEBUG
 
 // Configuración de categorías mejorada - más pequeña y sutil
 const MATERIAL_CATEGORIES = [
@@ -75,276 +236,223 @@ const MaterialCalculationsMain: React.FC = () => {
 
 	// Cargar plantillas al montar el componente
 	useEffect(() => {
+		console.log("🔄 Cargando templates, categoría:", selectedCategory);
+
 		if (selectedCategory === "all") {
 			fetchTemplates({});
 		} else {
-			getTemplatesByType(selectedCategory).then(setFilteredTemplates);
+			getTemplatesByType(selectedCategory).then((data) => {
+				console.log("📊 Templates recibidos:", data);
+				setFilteredTemplates(data);
+			});
 		}
 	}, [selectedCategory, fetchTemplates, getTemplatesByType]);
 
-	// Filtrar por búsqueda
+	// Actualizar plantillas filtradas cuando cambien las plantillas base
+	useEffect(() => {
+		setFilteredTemplates(templates);
+	}, [templates]);
+
+	// Filtrar plantillas por término de búsqueda
 	useEffect(() => {
 		if (!searchTerm) {
 			setFilteredTemplates(templates);
-		} else {
-			const filtered = templates.filter(
-				(template) =>
-					template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					template.description.toLowerCase().includes(searchTerm.toLowerCase())
-			);
-			setFilteredTemplates(filtered);
+			return;
 		}
+
+		const filtered = templates.filter(
+			(template) =>
+				template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				template.description.toLowerCase().includes(searchTerm.toLowerCase())
+		);
+		setFilteredTemplates(filtered);
 	}, [searchTerm, templates]);
 
 	const handleCategoryChange = (category: MaterialCalculationType | "all") => {
 		setSelectedCategory(category);
-		setSearchTerm(""); // Limpiar búsqueda al cambiar categoría
+		setSearchTerm(""); // Reset search when changing category
 	};
 
-	const handleUseTemplate = (templateId: string) => {
+	const handleTemplateClick = (templateId: string) => {
 		navigate(`/calculations/materials/interface/${templateId}`);
 	};
 
-	const handleCreateTemplate = () => {
-		navigate("/calculations/materials/templates/create");
-	};
-
-	const renderCategories = () => (
-		<div className="flex flex-wrap gap-2 mb-6">
-			{MATERIAL_CATEGORIES.map((category) => {
-				const isActive = selectedCategory === category.id;
-				const Icon = category.icon;
-
-				return (
-					<button
-						key={category.id}
-						onClick={() => handleCategoryChange(category.id)}
-						className={`
-              inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full 
-              border transition-all duration-200 ease-in-out
-              ${isActive ? category.activeColor : category.color}
-              hover:scale-105 hover:shadow-sm
-            `}
-					>
-						<Icon className="h-4 w-4" />
-						{category.name}
-					</button>
-				);
-			})}
-		</div>
-	);
-
-	const renderSearchBar = () => (
-		<div className="relative mb-6">
-			<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-				<MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-			</div>
-			<input
-				type="text"
-				placeholder="Buscar plantillas de materiales..."
-				value={searchTerm}
-				onChange={(e) => setSearchTerm(e.target.value)}
-				className="
-          w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl
-          focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-          text-gray-900 placeholder-gray-500
-          transition-all duration-200
-        "
-			/>
-		</div>
-	);
-
-	const renderTemplateCard = (template: any) => (
-		<div
-			key={template.id}
-			className="
-        bg-white border border-gray-200 rounded-xl p-6
-        hover:shadow-lg hover:border-gray-300 hover:scale-[1.02]
-        transition-all duration-200 ease-in-out
-        group cursor-pointer
-      "
-		>
-			<div className="flex items-start justify-between mb-4">
-				<div className="flex-1">
-					<h3 className="font-semibold text-gray-900 mb-2 group-hover:text-primary-700 transition-colors">
-						{template.name}
-					</h3>
-					<p className="text-sm text-gray-600 line-clamp-2">
-						{template.description}
-					</p>
-				</div>
-				<div className="ml-4 flex items-center gap-2">
-					<span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-50 text-primary-700">
-						{template.type}
-					</span>
-				</div>
-			</div>
-
-			<div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-				<div className="flex items-center gap-4">
-					<span className="flex items-center gap-1">
-						<PlayIcon className="h-4 w-4" />
-						{template.usageCount || 0} usos
-					</span>
-					{template.averageRating && (
-						<span className="flex items-center gap-1">
-							⭐ {template.averageRating}
-						</span>
-					)}
-				</div>
-				{template.isFeatured && (
-					<span className="inline-flex items-center gap-1 text-amber-600">
-						<SparklesIcon className="h-4 w-4" />
-						Destacado
-					</span>
-				)}
-			</div>
-
-			<div className="flex items-center gap-3">
-				<button
-					onClick={() => handleUseTemplate(template.id)}
-					className="
-            flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 
-            bg-primary-600 text-white text-sm font-medium rounded-lg
-            hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500
-            transition-colors duration-200
-          "
-				>
-					<PlayIcon className="h-4 w-4" />
-					Usar Plantilla
-				</button>
-				<button
-					className="
-          p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 
-          rounded-lg transition-colors duration-200
-        "
-				>
-					<AdjustmentsHorizontalIcon className="h-4 w-4" />
-				</button>
-			</div>
-		</div>
-	);
-
-	const renderHeader = () => (
-		<div className="mb-8">
-			<div className="flex items-center justify-between mb-4">
-				<div>
-					<h1 className="text-2xl font-bold text-gray-900 mb-2">
-						Cálculos de Materiales
-					</h1>
-					<p className="text-gray-600">
-						Plantillas profesionales para cálculo de materiales de construcción
-					</p>
-				</div>
-				<button
-					onClick={handleCreateTemplate}
-					className="
-            inline-flex items-center gap-2 px-4 py-2.5 
-            bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-medium 
-            rounded-lg shadow-sm hover:shadow-md hover:from-primary-700 hover:to-primary-800
-            focus:outline-none focus:ring-2 focus:ring-primary-500
-            transition-all duration-200
-          "
-				>
-					<PlusIcon className="h-4 w-4" />
-					Nueva Plantilla
-				</button>
-			</div>
-		</div>
-	);
-
-	const renderStatsCards = () => (
-		<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-			<div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-xl p-6">
-				<div className="flex items-center">
-					<div className="flex-shrink-0">
-						<BeakerIcon className="h-8 w-8 text-primary-600" />
-					</div>
-					<div className="ml-4">
-						<p className="text-sm font-medium text-primary-700">
-							Total Plantillas
-						</p>
-						<p className="text-2xl font-bold text-primary-900">
-							{templates.length}
-						</p>
-					</div>
-				</div>
-			</div>
-
-			<div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-6">
-				<div className="flex items-center">
-					<div className="flex-shrink-0">
-						<ChartBarIcon className="h-8 w-8 text-emerald-600" />
-					</div>
-					<div className="ml-4">
-						<p className="text-sm font-medium text-emerald-700">Esta Semana</p>
-						<p className="text-2xl font-bold text-emerald-900">156</p>
-					</div>
-				</div>
-			</div>
-
-			<div className="bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 rounded-xl p-6">
-				<div className="flex items-center">
-					<div className="flex-shrink-0">
-						<SparklesIcon className="h-8 w-8 text-amber-600" />
-					</div>
-					<div className="ml-4">
-						<p className="text-sm font-medium text-amber-700">Destacadas</p>
-						<p className="text-2xl font-bold text-amber-900">
-							{templates.filter((t) => t.isFeatured).length}
-						</p>
-					</div>
-				</div>
-			</div>
-		</div>
-	);
-
+	// Función para mostrar estado de carga
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center h-64">
-				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+			<div className="max-w-7xl mx-auto px-4 py-8">
+				<div className="text-center py-12">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+					<p className="text-gray-600">Cargando plantillas de materiales...</p>
+				</div>
+
+				{/* 🚨 PANEL DE DEBUG - VISIBLE INCLUSO DURANTE CARGA */}
+				<QuickDebugPanel />
 			</div>
 		);
 	}
 
+	// Función para mostrar error
 	if (error) {
 		return (
-			<div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-				<p className="text-red-800">Error: {error}</p>
-				<button
-					onClick={() => fetchTemplates({})}
-					className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-				>
-					Reintentar
-				</button>
+			<div className="max-w-7xl mx-auto px-4 py-8">
+				<div className="text-center py-12">
+					<div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+						<div className="text-red-600 mb-2">
+							❌ Error al cargar plantillas
+						</div>
+						<p className="text-red-700 text-sm">{error}</p>
+						<button
+							onClick={() => fetchTemplates({})}
+							className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+						>
+							Reintentar
+						</button>
+					</div>
+				</div>
+
+				{/* 🚨 PANEL DE DEBUG - ESPECIALMENTE ÚTIL DURANTE ERRORES */}
+				<QuickDebugPanel />
 			</div>
 		);
 	}
 
 	return (
-		<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-			{renderHeader()}
-			{renderStatsCards()}
-			{renderCategories()}
-			{renderSearchBar()}
+		<div className="max-w-7xl mx-auto px-4 py-8">
+			{/* Header */}
+			<div className="mb-8">
+				<h1 className="text-3xl font-bold text-gray-900 mb-2">
+					Cálculos de Materiales
+				</h1>
+				<p className="text-gray-600">
+					Herramientas profesionales para calcular materiales de construcción
+					según la normativa ecuatoriana NEC.
+				</p>
+			</div>
 
-			{filteredTemplates.length === 0 ? (
-				<div className="text-center py-12">
-					<BeakerIcon className="mx-auto h-12 w-12 text-gray-400" />
-					<h3 className="mt-4 text-lg font-medium text-gray-900">
-						No se encontraron plantillas
-					</h3>
-					<p className="mt-2 text-gray-600">
-						{searchTerm
-							? "Intenta con otros términos de búsqueda"
-							: "No hay plantillas disponibles para esta categoría"}
-					</p>
+			{/* Filtros de categoría compactos */}
+			<div className="mb-6">
+				<div className="flex flex-wrap gap-2">
+					{MATERIAL_CATEGORIES.map((category) => {
+						const Icon = category.icon;
+						const isActive = selectedCategory === category.id;
+
+						return (
+							<button
+								key={category.id}
+								onClick={() => handleCategoryChange(category.id)}
+								className={`
+									flex items-center px-3 py-2 rounded-lg text-sm font-medium border transition-all duration-200
+									${isActive ? category.activeColor : category.color}
+									hover:shadow-sm
+								`}
+							>
+								<Icon className="h-4 w-4 mr-2" />
+								{category.name}
+							</button>
+						);
+					})}
 				</div>
-			) : (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{filteredTemplates.map(renderTemplateCard)}
+			</div>
+
+			{/* Barra de búsqueda */}
+			<div className="mb-8">
+				<div className="relative max-w-md">
+					<MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+					<input
+						type="text"
+						placeholder="Buscar plantillas..."
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+					/>
 				</div>
-			)}
+			</div>
+
+			{/* Lista de plantillas */}
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				{filteredTemplates.length === 0 ? (
+					<div className="col-span-full text-center py-12">
+						<BeakerIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+						<h3 className="text-lg font-medium text-gray-900 mb-2">
+							No se encontraron plantillas
+						</h3>
+						<p className="text-gray-500">
+							{searchTerm
+								? "Intenta con otros términos de búsqueda"
+								: "No hay plantillas disponibles para esta categoría"}
+						</p>
+					</div>
+				) : (
+					filteredTemplates.map((template) => (
+						<div
+							key={template.id}
+							onClick={() => handleTemplateClick(template.id)}
+							className="bg-white rounded-xl border border-gray-200 p-6 hover:border-primary-300 hover:shadow-lg transition-all duration-200 cursor-pointer group"
+						>
+							<div className="flex items-start justify-between mb-4">
+								<div className="flex-1">
+									<h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
+										{template.name}
+									</h3>
+									<p className="text-sm text-gray-600 mt-1 line-clamp-2">
+										{template.description}
+									</p>
+								</div>
+								<PlayIcon className="h-5 w-5 text-gray-400 group-hover:text-primary-600 transition-colors ml-2 flex-shrink-0" />
+							</div>
+
+							<div className="flex items-center justify-between text-sm text-gray-500">
+								<div className="flex items-center space-x-4">
+									<span className="flex items-center">
+										<ChartBarIcon className="h-4 w-4 mr-1" />
+										{template.usageCount} usos
+									</span>
+									{template.averageRating > 0 && (
+										<span className="flex items-center">
+											<span className="text-yellow-400 mr-1">★</span>
+											{template.averageRating.toFixed(1)}
+										</span>
+									)}
+								</div>
+								{template.isFeatured && (
+									<span className="text-primary-600 font-medium">
+										<SparklesIcon className="h-4 w-4 inline mr-1" />
+										Destacada
+									</span>
+								)}
+							</div>
+
+							{template.tags && template.tags.length > 0 && (
+								<div className="mt-3 flex flex-wrap gap-1">
+									{template.tags.slice(0, 3).map((tag) => (
+										<span
+											key={tag}
+											className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+										>
+											{tag}
+										</span>
+									))}
+								</div>
+							)}
+						</div>
+					))
+				)}
+			</div>
+
+			{/* Acciones rápidas */}
+			<div className="mt-12 text-center">
+				<button
+					onClick={() => navigate("/calculations/materials/templates")}
+					className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+				>
+					<PlusIcon className="h-5 w-5 mr-2" />
+					Crear Plantilla Personal
+				</button>
+			</div>
+
+			{/* 🚨 PANEL DE DEBUG TEMPORAL - ELIMINAR EN PRODUCCIÓN */}
+			<QuickDebugPanel />
 		</div>
 	);
 };

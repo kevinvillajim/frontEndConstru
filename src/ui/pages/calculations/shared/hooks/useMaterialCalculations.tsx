@@ -1,4 +1,6 @@
 // src/ui/pages/calculations/shared/hooks/useMaterialCalculations.tsx
+// 🚨 CORRECCIÓN CRÍTICA: Cambiado API_BASE de /material-calculations a /material-calculation
+
 import {useState, useCallback} from "react";
 import type {
 	MaterialCalculationTemplate,
@@ -9,7 +11,8 @@ import type {
 	MaterialCalculationType,
 } from "../types/material.types";
 
-const API_BASE = "/api/material-calculations";
+// 🔧 CORREGIDO: Cambiado de plural a singular para coincidir con backend
+const API_BASE = "/api/material-calculation"; // ← ESTA ERA LA LÍNEA PROBLEMÁTICA
 
 // Hook para plantillas de materiales
 export const useMaterialTemplates = () => {
@@ -121,7 +124,7 @@ export const useMaterialTemplates = () => {
 				return data.data;
 			}
 			return [];
-		} catch (err) {
+		} catch {
 			setError("Error al cargar plantillas destacadas");
 			return [];
 		} finally {
@@ -417,12 +420,78 @@ export const useMaterialResults = () => {
 		}
 	}, []);
 
+	const toggleSaveResult = useCallback(async (resultId: string) => {
+		try {
+			const response = await fetch(`${API_BASE}/results/${resultId}/save`, {
+				method: "PUT",
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+					"Content-Type": "application/json",
+				},
+			});
+
+			if (!response.ok) {
+				throw new Error("Error al guardar/desguardar resultado");
+			}
+
+			const data = await response.json();
+
+			// Actualizar la lista local
+			setResults((prev) =>
+				prev.map((result) =>
+					result.id === resultId
+						? {...result, isSaved: data.data.isSaved}
+						: result
+				)
+			);
+
+			return data.data.isSaved;
+		} catch (err) {
+			console.error("Error al guardar/desguardar resultado:", err);
+			return false;
+		}
+	}, []);
+
+	const toggleShareResult = useCallback(async (resultId: string) => {
+		try {
+			const response = await fetch(`${API_BASE}/results/${resultId}/share`, {
+				method: "PUT",
+				headers: {
+					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+					"Content-Type": "application/json",
+				},
+			});
+
+			if (!response.ok) {
+				throw new Error("Error al compartir/descompartir resultado");
+			}
+
+			const data = await response.json();
+
+			// Actualizar la lista local
+			setResults((prev) =>
+				prev.map((result) =>
+					result.id === resultId
+						? {...result, isShared: data.data.isShared}
+						: result
+				)
+			);
+
+			return data.data.isShared;
+		} catch (err) {
+			console.error("Error al compartir/descompartir resultado:", err);
+			return false;
+		}
+	}, []);
+
 	return {
 		results,
 		loading,
 		error,
 		fetchResults,
 		deleteResult,
+		toggleSaveResult,
+		toggleShareResult,
 	};
 };
 

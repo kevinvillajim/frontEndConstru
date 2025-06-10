@@ -16,7 +16,7 @@ import {
 	StarIcon,
 } from "@heroicons/react/24/outline";
 import {useMaterialTemplates} from "../shared/hooks/useMaterialCalculations";
-import type {MaterialCalculationType} from "../shared/types/material.types";
+import type {MaterialCalculationTemplate, MaterialCalculationType} from "../shared/types/material.types";
 
 const TEMPLATE_TYPES = [
 	{id: "all", name: "Todas las Plantillas"},
@@ -137,7 +137,7 @@ const MaterialTemplatesManager: React.FC = () => {
 		</div>
 	);
 
-	const renderTemplateCard = (template: any) => (
+	const renderTemplateCard = (template: MaterialCalculationTemplate) => (
 		<div
 			key={template.id}
 			className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg hover:border-gray-300 transition-all duration-200"

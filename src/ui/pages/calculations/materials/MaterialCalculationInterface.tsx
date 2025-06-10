@@ -1,5 +1,7 @@
 // src/ui/pages/calculations/materials/MaterialCalculationInterface.tsx
-import React, {useState, useEffect} from "react";
+// CORRECCIÓN: Reemplazados todos los tipos 'any' por tipos específicos
+
+import React, {useState, useEffect, useCallback} from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import {
 	ArrowLeftIcon,
@@ -16,11 +18,21 @@ import {
 	useMaterialTemplates,
 	useMaterialCalculationExecution,
 } from "../shared/hooks/useMaterialCalculations";
+import {
+	ParameterDataType,
+} from "../shared/types/material.types";
+import type {	MaterialCalculationTemplate,
+	MaterialParameter}  from "../shared/types/material.types";
+
+// Tipos para valores de entrada
+type ParameterValue = string | number | boolean | string[];
+type InputValues = Record<string, ParameterValue>;
+type ValidationErrors = Record<string, string>;
 
 interface ParameterInputProps {
-	parameter: any;
-	value: any;
-	onChange: (value: any) => void;
+	parameter: MaterialParameter;
+	value: ParameterValue;
+	onChange: (value: ParameterValue) => void;
 	error?: string;
 }
 
@@ -32,11 +44,11 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 }) => {
 	const renderInput = () => {
 		switch (parameter.dataType) {
-			case "number":
+			case ParameterDataType.NUMBER:
 				return (
 					<input
 						type="number"
-						value={value || ""}
+						value={typeof value === "number" ? value : ""}
 						onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
 						min={parameter.minValue}
 						max={parameter.maxValue}
@@ -49,10 +61,10 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 					/>
 				);
 
-			case "enum":
+			case ParameterDataType.ENUM:
 				return (
 					<select
-						value={value || ""}
+						value={typeof value === "string" ? value : ""}
 						onChange={(e) => onChange(e.target.value)}
 						className={`
               w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500
@@ -68,12 +80,12 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 					</select>
 				);
 
-			case "boolean":
+			case ParameterDataType.BOOLEAN:
 				return (
 					<div className="flex items-center">
 						<input
 							type="checkbox"
-							checked={value || false}
+							checked={typeof value === "boolean" ? value : false}
 							onChange={(e) => onChange(e.target.checked)}
 							className="h-4 w-4 text-primary-600 rounded focus:ring-primary-500"
 						/>
@@ -87,13 +99,13 @@ const ParameterInput: React.FC<ParameterInputProps> = ({
 				return (
 					<input
 						type="text"
-						value={value || ""}
+						value={typeof value === "string" ? value : ""}
 						onChange={(e) => onChange(e.target.value)}
 						className={`
               w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500
               ${error ? "border-red-300 bg-red-50" : "border-gray-300 bg-white"}
             `}
-						placeholder={parameter.defaultValue || ""}
+						placeholder={parameter.defaultValue?.toString() || ""}
 					/>
 				);
 		}
@@ -135,24 +147,22 @@ const MaterialCalculationInterface: React.FC = () => {
 		error: executionError,
 	} = useMaterialCalculationExecution();
 
-	const [template, setTemplate] = useState<any>(null);
+	// Estados tipados correctamente
+	const [template, setTemplate] = useState<MaterialCalculationTemplate | null>(
+		null
+	);
 	const [loading, setLoading] = useState(true);
-	const [inputValues, setInputValues] = useState<Record<string, any>>({});
-	const [validationErrors, setValidationErrors] = useState<
-		Record<string, string>
-	>({});
+	const [inputValues, setInputValues] = useState<InputValues>({});
+	const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+		{}
+	);
 	const [includeWaste, setIncludeWaste] = useState(true);
 	const [regionalFactors, setRegionalFactors] = useState("sierra");
 	const [currency, setCurrency] = useState("USD");
 	const [notes, setNotes] = useState("");
 
-	useEffect(() => {
-		if (templateId) {
-			loadTemplate();
-		}
-	}, [templateId]);
-
-	const loadTemplate = async () => {
+	// useCallback para loadTemplate para evitar dependencias infinitas
+	const loadTemplate = useCallback(async () => {
 		if (!templateId) return;
 
 		setLoading(true);
@@ -160,63 +170,127 @@ const MaterialCalculationInterface: React.FC = () => {
 			const templateData = await fetchTemplateById(templateId);
 			if (templateData) {
 				setTemplate(templateData);
-				// Inicializar valores por defecto
-				const defaultValues: Record<string, any> = {};
-				templateData.parameters?.forEach((param: any) => {
-					if (param.defaultValue !== null && param.defaultValue !== undefined) {
-						defaultValues[param.name] = param.defaultValue;
-					}
-				});
-				setInputValues(defaultValues);
+				// Inicializar valores con defaults tipados correctamente
+				const initialValues: InputValues = {};
+				templateData.parameters
+					.filter((p) => p.scope === "input")
+					.forEach((param) => {
+						if (param.defaultValue !== undefined) {
+							initialValues[param.name] = parseDefaultValue(
+								param.defaultValue,
+								param.dataType
+							);
+						}
+					});
+				setInputValues(initialValues);
 			}
 		} catch (error) {
-			console.error("Error loading template:", error);
+			console.error("Error cargando template:", error);
 		} finally {
 			setLoading(false);
 		}
+	}, [templateId, fetchTemplateById]);
+
+	// Incluir loadTemplate en las dependencias del useEffect
+	useEffect(() => {
+		if (templateId) {
+			loadTemplate();
+		}
+	}, [templateId, loadTemplate]);
+
+	// Función helper para parsear valores por defecto
+	const parseDefaultValue = (
+		value: ParameterValue,
+		dataType: ParameterDataType
+	): ParameterValue => {
+		switch (dataType) {
+			case ParameterDataType.NUMBER:
+				return typeof value === "string"
+					? parseFloat(value)
+					: (value as number);
+			case ParameterDataType.BOOLEAN:
+				return typeof value === "string"
+					? value.toLowerCase() === "true"
+					: (value as boolean);
+			case ParameterDataType.ARRAY:
+				if (typeof value === "string") {
+					try {
+						return JSON.parse(value);
+					} catch {
+						return value.split(",");
+					}
+				}
+				return value as string[];
+			default:
+				return value as string;
+		}
 	};
 
-	const handleInputChange = (paramName: string, value: any) => {
+	// Manejar cambios en inputs tipados correctamente
+	const handleInputChange = (parameterName: string, value: ParameterValue) => {
 		setInputValues((prev) => ({
 			...prev,
-			[paramName]: value,
+			[parameterName]: value,
 		}));
 
 		// Limpiar error de validación si existe
-		if (validationErrors[paramName]) {
+		if (validationErrors[parameterName]) {
 			setValidationErrors((prev) => {
 				const newErrors = {...prev};
-				delete newErrors[paramName];
+				delete newErrors[parameterName];
 				return newErrors;
 			});
 		}
 	};
 
+	// Validar inputs antes de ejecutar
 	const validateInputs = (): boolean => {
-		const errors: Record<string, string> = {};
+		if (!template) return false;
 
-		template.parameters?.forEach((param: any) => {
+		const errors: ValidationErrors = {};
+		const inputParams = template.parameters.filter((p) => p.scope === "input");
+
+		inputParams.forEach((param) => {
 			const value = inputValues[param.name];
 
+			// Validar campos requeridos
 			if (
 				param.isRequired &&
-				(value === undefined || value === null || value === "")
+				(value === undefined || value === "" || value === null)
 			) {
-				errors[param.name] = `${param.name} es requerido`;
+				errors[param.name] = "Este campo es requerido";
 				return;
 			}
 
+			// Validar números
 			if (
-				param.dataType === "number" &&
+				param.dataType === ParameterDataType.NUMBER &&
 				value !== undefined &&
-				value !== null
+				value !== ""
 			) {
-				if (param.minValue !== null && value < param.minValue) {
-					errors[param.name] = `Valor mínimo: ${param.minValue}`;
+				const numValue =
+					typeof value === "number" ? value : parseFloat(value as string);
+
+				if (isNaN(numValue)) {
+					errors[param.name] = "Debe ser un número válido";
+				} else {
+					if (param.minValue !== undefined && numValue < param.minValue) {
+						errors[param.name] = `Debe ser mayor o igual a ${param.minValue}`;
+					}
+					if (param.maxValue !== undefined && numValue > param.maxValue) {
+						errors[param.name] = `Debe ser menor o igual a ${param.maxValue}`;
+					}
 				}
-				if (param.maxValue !== null && value > param.maxValue) {
-					errors[param.name] = `Valor máximo: ${param.maxValue}`;
-				}
+			}
+
+			// Validar patrones regex
+			if (
+				param.regexPattern &&
+				value &&
+				typeof value === "string" &&
+				!new RegExp(param.regexPattern).test(value)
+			) {
+				errors[param.name] = "Formato inválido";
 			}
 		});
 
@@ -224,16 +298,20 @@ const MaterialCalculationInterface: React.FC = () => {
 		return Object.keys(errors).length === 0;
 	};
 
-	const handleExecuteCalculation = async () => {
-		if (!validateInputs()) {
-			return;
-		}
+	// Ejecutar cálculo
+	const handleExecute = async () => {
+		if (!template || !validateInputs()) return;
 
 		try {
 			await executeCalculation({
 				templateId: template.id,
 				templateType: template.type,
-				inputParameters: inputValues,
+				inputParameters: Object.fromEntries(
+					Object.entries(inputValues).map(([key, value]) => [
+						key,
+						Array.isArray(value) ? value.join(",") : value,
+					])
+				),
 				includeWaste,
 				regionalFactors,
 				currency,
@@ -241,324 +319,378 @@ const MaterialCalculationInterface: React.FC = () => {
 				saveResult: true,
 			});
 		} catch (error) {
-			console.error("Error executing calculation:", error);
+			console.error("Error en ejecución:", error);
 		}
 	};
 
-	const renderHeader = () => (
-		<div className="bg-white border-b border-gray-200">
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-				<div className="flex items-center gap-4 mb-4">
-					<button
-						onClick={() => navigate("/calculations/materials")}
-						className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-					>
-						<ArrowLeftIcon className="h-5 w-5" />
-					</button>
-					<div className="flex-1">
-						<h1 className="text-2xl font-bold text-gray-900">
-							{template?.name}
-						</h1>
-						<p className="text-gray-600 mt-1">{template?.description}</p>
-					</div>
-					<div className="flex items-center gap-2">
-						<button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-							<BookmarkIcon className="h-5 w-5" />
-						</button>
-						<button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-							<ShareIcon className="h-5 w-5" />
-						</button>
-						<button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-							<DocumentDuplicateIcon className="h-5 w-5" />
-						</button>
-					</div>
-				</div>
-
-				{template && (
-					<div className="flex items-center gap-4 text-sm text-gray-500">
-						<span className="flex items-center gap-1">
-							<CpuChipIcon className="h-4 w-4" />
-							{template.type}
-						</span>
-						<span className="flex items-center gap-1">
-							<PlayIcon className="h-4 w-4" />
-							{template.usageCount || 0} usos
-						</span>
-						{template.averageRating && (
-							<span className="flex items-center gap-1">
-								⭐ {template.averageRating}
-							</span>
-						)}
-						{template.isFeatured && (
-							<span className="flex items-center gap-1 text-amber-600">
-								<SparklesIcon className="h-4 w-4" />
-								Destacado
-							</span>
-						)}
-					</div>
-				)}
-			</div>
-		</div>
-	);
-
-	const renderParameterForm = () => (
-		<div className="bg-white rounded-xl border border-gray-200 p-6">
-			<h3 className="text-lg font-semibold text-gray-900 mb-6">
-				Parámetros de Entrada
-			</h3>
-
-			<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-				{template.parameters
-					?.filter((param: any) => param.scope === "input")
-					?.sort(
-						(a: any, b: any) => (a.displayOrder || 0) - (b.displayOrder || 0)
-					)
-					?.map((parameter: any) => (
-						<ParameterInput
-							key={parameter.id}
-							parameter={parameter}
-							value={inputValues[parameter.name]}
-							onChange={(value) => handleInputChange(parameter.name, value)}
-							error={validationErrors[parameter.name]}
-						/>
-					))}
-			</div>
-
-			<div className="mt-6 pt-6 border-t border-gray-200">
-				<h4 className="text-md font-medium text-gray-900 mb-4">
-					Opciones Adicionales
-				</h4>
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<div className="space-y-2">
-						<label className="block text-sm font-medium text-gray-700">
-							Incluir Desperdicios
-						</label>
-						<div className="flex items-center">
-							<input
-								type="checkbox"
-								checked={includeWaste}
-								onChange={(e) => setIncludeWaste(e.target.checked)}
-								className="h-4 w-4 text-primary-600 rounded focus:ring-primary-500"
-							/>
-							<span className="ml-2 text-sm text-gray-700">
-								Aplicar factores de desperdicio
-							</span>
-						</div>
-					</div>
-
-					<div className="space-y-2">
-						<label className="block text-sm font-medium text-gray-700">
-							Región
-						</label>
-						<select
-							value={regionalFactors}
-							onChange={(e) => setRegionalFactors(e.target.value)}
-							className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-						>
-							<option value="costa">Costa</option>
-							<option value="sierra">Sierra</option>
-							<option value="oriente">Oriente</option>
-						</select>
-					</div>
-
-					<div className="space-y-2">
-						<label className="block text-sm font-medium text-gray-700">
-							Moneda
-						</label>
-						<select
-							value={currency}
-							onChange={(e) => setCurrency(e.target.value)}
-							className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-						>
-							<option value="USD">USD</option>
-							<option value="EUR">EUR</option>
-						</select>
-					</div>
-				</div>
-
-				<div className="mt-4 space-y-2">
-					<label className="block text-sm font-medium text-gray-700">
-						Notas Adicionales
-					</label>
-					<textarea
-						value={notes}
-						onChange={(e) => setNotes(e.target.value)}
-						rows={3}
-						className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-						placeholder="Observaciones o comentarios sobre el cálculo..."
-					/>
-				</div>
-			</div>
-
-			<div className="mt-6 flex items-center justify-end gap-3">
-				<button
-					onClick={() => navigate("/calculations/materials")}
-					className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-				>
-					Cancelar
-				</button>
-				<button
-					onClick={handleExecuteCalculation}
-					disabled={executing}
-					className="
-            inline-flex items-center gap-2 px-6 py-2 
-            bg-primary-600 text-white font-medium rounded-lg
-            hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500
-            disabled:opacity-50 disabled:cursor-not-allowed
-            transition-colors duration-200
-          "
-				>
-					{executing ? (
-						<>
-							<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-							Calculando...
-						</>
-					) : (
-						<>
-							<PlayIcon className="h-4 w-4" />
-							Ejecutar Cálculo
-						</>
-					)}
-				</button>
-			</div>
-		</div>
-	);
-
-	const renderResults = () => {
-		if (!result) return null;
-
-		return (
-			<div className="bg-white rounded-xl border border-gray-200 p-6">
-				<div className="flex items-center gap-2 mb-6">
-					<CheckCircleIcon className="h-6 w-6 text-green-600" />
-					<h3 className="text-lg font-semibold text-gray-900">
-						Resultados del Cálculo
-					</h3>
-				</div>
-
-				<div className="space-y-6">
-					{/* Resumen de materiales */}
-					<div className="bg-green-50 border border-green-200 rounded-lg p-4">
-						<h4 className="font-medium text-green-900 mb-2">
-							Materiales Calculados
-						</h4>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							{result.materialQuantities?.map(
-								(material: any, index: number) => (
-									<div
-										key={index}
-										className="flex justify-between items-center"
-									>
-										<span className="text-green-800">{material.name}</span>
-										<span className="font-medium text-green-900">
-											{material.quantity} {material.unit}
-										</span>
-									</div>
-								)
-							)}
-						</div>
-					</div>
-
-					{/* Parámetros de salida */}
-					{template.parameters
-						?.filter((param: any) => param.scope === "output")
-						?.map((param: any) => (
-							<div
-								key={param.id}
-								className="border border-gray-200 rounded-lg p-4"
-							>
-								<div className="flex justify-between items-center">
-									<div>
-										<h4 className="font-medium text-gray-900">{param.name}</h4>
-										<p className="text-sm text-gray-600">{param.description}</p>
-									</div>
-									<div className="text-right">
-										<p className="text-xl font-bold text-gray-900">
-											{result.outputParameters?.[param.name]}{" "}
-											{param.unitOfMeasure}
-										</p>
-									</div>
-								</div>
-							</div>
-						))}
-
-					{/* Metadatos */}
-					<div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-						<div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-							<div>
-								<p className="text-gray-600">Tiempo de Ejecución</p>
-								<p className="font-medium">{result.executionTime}ms</p>
-							</div>
-							<div>
-								<p className="text-gray-600">Moneda</p>
-								<p className="font-medium">{result.currency}</p>
-							</div>
-							<div>
-								<p className="text-gray-600">Región</p>
-								<p className="font-medium">{result.regionalFactors}</p>
-							</div>
-							<div>
-								<p className="text-gray-600">Desperdicios</p>
-								<p className="font-medium">
-									{result.includeWaste ? "Incluidos" : "No incluidos"}
-								</p>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		);
+	// Funciones de acciones tipadas
+	const handleDuplicate = () => {
+		if (template) {
+			navigate(`/calculations/materials/templates/duplicate/${template.id}`);
+		}
 	};
 
-	const renderError = () => {
-		if (!executionError) return null;
-
-		return (
-			<div className="bg-red-50 border border-red-200 rounded-xl p-6">
-				<div className="flex items-center gap-2 mb-2">
-					<ExclamationTriangleIcon className="h-6 w-6 text-red-600" />
-					<h3 className="text-lg font-semibold text-red-900">
-						Error en el Cálculo
-					</h3>
-				</div>
-				<p className="text-red-800">{executionError}</p>
-			</div>
-		);
+	const handleShare = () => {
+		if (template) {
+			// Implementar lógica de compartir
+			console.log("Compartir template:", template.id);
+		}
 	};
 
+	const handleBookmark = () => {
+		if (template) {
+			// Implementar lógica de favoritos
+			console.log("Agregar a favoritos:", template.id);
+		}
+	};
+
+	// Estados de carga
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center h-64">
-				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+			<div className="flex items-center justify-center min-h-[400px]">
+				<div className="flex items-center space-x-3">
+					<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+					<span className="text-gray-600">Cargando plantilla...</span>
+				</div>
 			</div>
 		);
 	}
 
 	if (!template) {
 		return (
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				<div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-					<p className="text-red-800">Plantilla no encontrada</p>
+			<div className="max-w-4xl mx-auto px-4 py-8">
+				<div className="bg-white rounded-xl border border-red-200 p-8 text-center">
+					<ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+					<h2 className="text-xl font-semibold text-gray-900 mb-2">
+						Plantilla no encontrada
+					</h2>
+					<p className="text-gray-600 mb-6">
+						La plantilla solicitada no existe o no está disponible.
+					</p>
 					<button
 						onClick={() => navigate("/calculations/materials")}
-						className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+						className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
 					>
-						Volver a Materiales
+						Volver al catálogo
 					</button>
 				</div>
 			</div>
 		);
 	}
 
-	return (
-		<div className="min-h-screen bg-gray-50">
-			{renderHeader()}
+	const inputParameters = template.parameters.filter(
+		(p) => p.scope === "input"
+	);
+	const outputParameters = template.parameters.filter(
+		(p) => p.scope === "output"
+	);
 
-			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-				<div className="space-y-6">
-					{renderParameterForm()}
-					{renderError()}
-					{renderResults()}
+	return (
+		<div className="max-w-6xl mx-auto px-4 py-6">
+			{/* Header */}
+			<div className="mb-6">
+				<div className="flex items-center justify-between mb-4">
+					<button
+						onClick={() => navigate("/calculations/materials")}
+						className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+					>
+						<ArrowLeftIcon className="h-5 w-5 mr-2" />
+						Volver al catálogo
+					</button>
+
+					<div className="flex items-center space-x-2">
+						<button
+							onClick={handleBookmark}
+							className="p-2 text-gray-400 hover:text-yellow-500 transition-colors"
+							title="Agregar a favoritos"
+						>
+							<BookmarkIcon className="h-5 w-5" />
+						</button>
+						<button
+							onClick={handleDuplicate}
+							className="p-2 text-gray-400 hover:text-blue-500 transition-colors"
+							title="Duplicar plantilla"
+						>
+							<DocumentDuplicateIcon className="h-5 w-5" />
+						</button>
+						<button
+							onClick={handleShare}
+							className="p-2 text-gray-400 hover:text-green-500 transition-colors"
+							title="Compartir"
+						>
+							<ShareIcon className="h-5 w-5" />
+						</button>
+					</div>
+				</div>
+
+				<div className="bg-white rounded-xl border border-gray-200 p-6">
+					<div className="flex items-start justify-between">
+						<div className="flex-1">
+							<h1 className="text-2xl font-bold text-gray-900 mb-2">
+								{template.name}
+							</h1>
+							<p className="text-gray-600 mb-4">{template.description}</p>
+
+							<div className="flex items-center space-x-4 text-sm text-gray-500">
+								<span className="flex items-center">
+									<CpuChipIcon className="h-4 w-4 mr-1" />
+									{template.type.replace("_", " ")}
+								</span>
+								{template.difficulty && (
+									<span className="capitalize">{template.difficulty}</span>
+								)}
+								{template.estimatedTime && (
+									<span>~{template.estimatedTime}</span>
+								)}
+								<span className="flex items-center">
+									<SparklesIcon className="h-4 w-4 mr-1" />
+									{template.usageCount} usos
+								</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				{/* Panel de parámetros de entrada */}
+				<div className="lg:col-span-2">
+					<div className="bg-white rounded-xl border border-gray-200 p-6">
+						<h2 className="text-lg font-semibold text-gray-900 mb-6">
+							Parámetros de Entrada
+						</h2>
+
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+							{inputParameters.map((parameter) => (
+								<ParameterInput
+									key={parameter.id}
+									parameter={parameter}
+									value={inputValues[parameter.name]}
+									onChange={(value) => handleInputChange(parameter.name, value)}
+									error={validationErrors[parameter.name]}
+								/>
+							))}
+						</div>
+
+						{/* Configuraciones adicionales */}
+						<div className="mt-8 pt-6 border-t border-gray-200">
+							<h3 className="text-md font-medium text-gray-900 mb-4">
+								Configuraciones Adicionales
+							</h3>
+
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Incluir desperdicios
+									</label>
+									<input
+										type="checkbox"
+										checked={includeWaste}
+										onChange={(e) => setIncludeWaste(e.target.checked)}
+										className="h-4 w-4 text-primary-600 rounded focus:ring-primary-500"
+									/>
+								</div>
+
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Región
+									</label>
+									<select
+										value={regionalFactors}
+										onChange={(e) => setRegionalFactors(e.target.value)}
+										className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+									>
+										<option value="costa">Costa</option>
+										<option value="sierra">Sierra</option>
+										<option value="oriente">Oriente</option>
+										<option value="galapagos">Galápagos</option>
+									</select>
+								</div>
+
+								<div>
+									<label className="block text-sm font-medium text-gray-700 mb-2">
+										Moneda
+									</label>
+									<select
+										value={currency}
+										onChange={(e) => setCurrency(e.target.value)}
+										className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+									>
+										<option value="USD">USD</option>
+										<option value="EUR">EUR</option>
+									</select>
+								</div>
+							</div>
+
+							<div className="mt-4">
+								<label className="block text-sm font-medium text-gray-700 mb-2">
+									Notas adicionales
+								</label>
+								<textarea
+									value={notes}
+									onChange={(e) => setNotes(e.target.value)}
+									rows={3}
+									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+									placeholder="Agregar notas o comentarios sobre este cálculo..."
+								/>
+							</div>
+						</div>
+
+						{/* Botón de ejecutar */}
+						<div className="mt-6">
+							<button
+								onClick={handleExecute}
+								disabled={executing || Object.keys(validationErrors).length > 0}
+								className={`
+									w-full flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-colors
+									${
+										executing || Object.keys(validationErrors).length > 0
+											? "bg-gray-300 text-gray-500 cursor-not-allowed"
+											: "bg-primary-600 text-white hover:bg-primary-700"
+									}
+								`}
+							>
+								{executing ? (
+									<>
+										<div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+										Calculando...
+									</>
+								) : (
+									<>
+										<PlayIcon className="h-5 w-5 mr-2" />
+										Ejecutar Cálculo
+									</>
+								)}
+							</button>
+						</div>
+					</div>
+				</div>
+
+				{/* Panel de resultados */}
+				<div className="lg:col-span-1">
+					<div className="bg-white rounded-xl border border-gray-200 p-6">
+						<h2 className="text-lg font-semibold text-gray-900 mb-6">
+							Resultados
+						</h2>
+
+						{executionError && (
+							<div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+								<div className="flex items-center">
+									<ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2" />
+									<span className="text-red-700 font-medium">
+										Error en el cálculo
+									</span>
+								</div>
+								<p className="text-red-600 text-sm mt-1">{executionError}</p>
+							</div>
+						)}
+
+						{result && (
+							<div className="space-y-4">
+								<div className="flex items-center text-green-600 mb-4">
+									<CheckCircleIcon className="h-5 w-5 mr-2" />
+									<span className="font-medium">
+										Cálculo completado exitosamente
+									</span>
+								</div>
+
+								{/* Mostrar resultados de output parameters */}
+								{outputParameters.map((param) => {
+									const value = result.outputParameters?.[param.name];
+									if (value !== undefined) {
+										return (
+											<div
+												key={param.id}
+												className="border-b border-gray-100 pb-3"
+											>
+												<div className="text-sm font-medium text-gray-700">
+													{param.name}
+													{param.unitOfMeasure && (
+														<span className="text-gray-500 ml-1">
+															({param.unitOfMeasure})
+														</span>
+													)}
+												</div>
+												<div className="text-lg font-semibold text-gray-900">
+													{typeof value === "number"
+														? value.toLocaleString("es-EC", {
+																maximumFractionDigits: 2,
+															})
+														: value}
+												</div>
+												{param.description && (
+													<div className="text-xs text-gray-500 mt-1">
+														{param.description}
+													</div>
+												)}
+											</div>
+										);
+									}
+									return null;
+								})}
+
+								{/* Mostrar materiales calculados */}
+								{result.materialQuantities &&
+									result.materialQuantities.length > 0 && (
+										<div className="mt-6">
+											<h3 className="text-md font-medium text-gray-900 mb-3">
+												Materiales Calculados
+											</h3>
+											<div className="space-y-2">
+												{result.materialQuantities.map((material, index) => (
+													<div
+														key={index}
+														className="bg-gray-50 rounded-lg p-3"
+													>
+														<div className="font-medium text-gray-900">
+															{material.name}
+														</div>
+														<div className="text-sm text-gray-600">
+															{material.quantity.toLocaleString("es-EC")}{" "}
+															{material.unit}
+														</div>
+														{material.totalPrice && (
+															<div className="text-sm font-medium text-primary-600">
+																$
+																{material.totalPrice.toLocaleString("es-EC", {
+																	minimumFractionDigits: 2,
+																})}
+															</div>
+														)}
+													</div>
+												))}
+											</div>
+										</div>
+									)}
+
+								{/* Costo total estimado */}
+								{result.totalEstimatedCost && (
+									<div className="mt-6 pt-4 border-t border-gray-200">
+										<div className="text-sm text-gray-600">
+											Costo Total Estimado
+										</div>
+										<div className="text-2xl font-bold text-primary-600">
+											$
+											{result.totalEstimatedCost.toLocaleString("es-EC", {
+												minimumFractionDigits: 2,
+											})}{" "}
+											{result.currency}
+										</div>
+									</div>
+								)}
+							</div>
+						)}
+
+						{!result && !executing && !executionError && (
+							<div className="text-center text-gray-500 py-8">
+								<CpuChipIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+								<p>
+									Completa los parámetros y ejecuta el cálculo para ver los
+									resultados
+								</p>
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>
