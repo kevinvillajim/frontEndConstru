@@ -106,9 +106,9 @@ const CalculationsSettings = lazy(
 
 // Calculation Materials
 
-const MaterialCalculationsMain = lazy(
-	() => import("../pages/calculations/materials/MaterialCalculationsMain")
-);
+// const MaterialCalculationsMain = lazy(
+// 	() => import("../pages/calculations/materials/MaterialCalculationsMain")
+// );
 const MaterialCalculationInterface = lazy(()=>import("../pages/calculations/materials/MaterialCalculationInterface"));
 const MaterialCalculationsHub = lazy(()=>import("../pages/calculations/materials/MaterialCalculationsHub"));
 const MaterialCalculationsRouter = lazy(()=>import("../pages/calculations/materials/MaterialCalculationsRouter"));
@@ -388,7 +388,7 @@ const appRoutes: RouteObject[] = [
 						children: [
 							{
 								index: true,
-								element: <MaterialCalculationsMain />, // Página principal de mis plantillas
+								element: <MaterialCalculationsHub />, // Página principal de mis plantillas
 							},
 							// Rutas de desarrollo/testing (opcionales, se pueden quitar en producción)
 							{

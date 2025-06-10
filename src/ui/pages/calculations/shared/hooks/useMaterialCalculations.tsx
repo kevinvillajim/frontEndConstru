@@ -1,511 +1,508 @@
 // src/ui/pages/calculations/shared/hooks/useMaterialCalculations.tsx
-// 🚨 CORRECCIÓN CRÍTICA: Cambiado API_BASE de /material-calculations a /material-calculation
-
 import {useState, useCallback} from "react";
-import type {
-	MaterialCalculationTemplate,
-	MaterialCalculationResult,
-	MaterialCalculationFilters,
-	MaterialExecutionRequest,
-	MaterialTrendingTemplate,
-	MaterialCalculationType,
-} from "../types/material.types";
+import ApiClient from "../../../../../core/adapters/api/ApiClient";
 
-// 🔧 CORREGIDO: Cambiado de plural a singular para coincidir con backend
-const API_BASE = "/api/material-calculation"; // ← ESTA ERA LA LÍNEA PROBLEMÁTICA
+export interface MaterialTemplate {
+	id: string;
+	name: string;
+	description: string;
+	type: string;
+	formula: string;
+	parameters: MaterialParameter[];
+	necReference?: string;
+	isActive: boolean;
+	isVerified: boolean;
+	isFeatured: boolean;
+	usageCount: number;
+	averageRating: string;
+	ratingCount: number;
+	createdAt: string;
+	updatedAt: string;
+}
 
-// Hook para plantillas de materiales
-export const useMaterialTemplates = () => {
-	const [templates, setTemplates] = useState<MaterialCalculationTemplate[]>([]);
-	const [loading, setLoading] = useState(false);
+export interface MaterialParameter {
+	id: string;
+	name: string;
+	description: string;
+	dataType: "number" | "string" | "enum" | "boolean";
+	scope: "input" | "output";
+	displayOrder: number;
+	isRequired: boolean;
+	defaultValue?: string | number | boolean;
+	minValue?: number;
+	maxValue?: number;
+	unitOfMeasure?: string;
+	allowedValues?: string[];
+	helpText?: string;
+}
+
+export interface MaterialCalculationRequest {
+	templateId: string;
+	templateType: "official" | "user";
+	inputParameters: Record<string, string | number | boolean>;
+	includeWaste?: boolean;
+	regionalFactors?: RegionalFactor[];
+	currency?: string;
+	notes?: string;
+	saveResult?: boolean;
+}
+
+export interface MaterialCalculationResult {
+	id: string;
+	templateId: string;
+	templateType: string;
+	inputParameters: Record<string, string | number | boolean>;
+	outputParameters?: Record<string, string | number | boolean>;
+	materialQuantities: MaterialQuantity[];
+	totalCost?: number;
+	currency: string;
+	wasteIncluded: boolean;
+	executionTime: number;
+	createdAt: string;
+}
+
+export interface MaterialQuantity {
+	name: string;
+	quantity: number;
+	unit: string;
+	unitPrice?: number;
+	totalPrice?: number;
+}
+
+export interface RegionalFactor {
+	factor: string;
+	value: number;
+	description?: string;
+}
+
+export interface TemplateFilters {
+	searchTerm?: string;
+	category?: string;
+	isActive?: boolean;
+	isVerified?: boolean;
+	isFeatured?: boolean;
+	page?: number;
+	limit?: number;
+}
+
+export interface UserTemplate {
+	id: string;
+	name: string;
+	description: string;
+	type: string;
+	isPublic: boolean;
+	usageCount: number;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface CalculationHistory {
+	id: string;
+	templateName: string;
+	calculationName: string;
+	executedAt: string;
+	result: MaterialCalculationResult;
+}
+
+export const useMaterialCalculations = () => {
+	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [pagination, setPagination] = useState({
-		total: 0,
-		page: 1,
-		limit: 20,
-		pages: 0,
-	});
 
-	const fetchTemplates = useCallback(
-		async (filters?: MaterialCalculationFilters) => {
-			setLoading(true);
-			setError(null);
-
+	const getTemplates = useCallback(
+		async (filters?: TemplateFilters): Promise<MaterialTemplate[]> => {
 			try {
-				const queryParams = new URLSearchParams();
+				setIsLoading(true);
+				setError(null);
 
-				if (filters?.type) queryParams.append("type", filters.type);
-				if (filters?.subCategory)
-					queryParams.append("subCategory", filters.subCategory);
-				if (filters?.isFeatured)
-					queryParams.append("isFeatured", filters.isFeatured.toString());
+				// Construir parámetros de consulta
+				const params = new URLSearchParams();
 				if (filters?.searchTerm)
-					queryParams.append("searchTerm", filters.searchTerm);
-				if (filters?.tags?.length)
-					queryParams.append("tags", filters.tags.join(","));
-				if (filters?.minRating)
-					queryParams.append("minRating", filters.minRating.toString());
-				if (filters?.sortBy) queryParams.append("sortBy", filters.sortBy);
-				if (filters?.sortOrder)
-					queryParams.append("sortOrder", filters.sortOrder);
+					params.append("searchTerm", filters.searchTerm);
+				if (filters?.category) params.append("types", filters.category);
+				if (filters?.isActive !== undefined)
+					params.append("isActive", filters.isActive.toString());
+				if (filters?.isVerified !== undefined)
+					params.append("isVerified", filters.isVerified.toString());
+				if (filters?.isFeatured !== undefined)
+					params.append("isFeatured", filters.isFeatured.toString());
+				if (filters?.page) params.append("page", filters.page.toString());
+				if (filters?.limit) params.append("limit", filters.limit.toString());
 
-				const response = await fetch(`${API_BASE}/templates?${queryParams}`, {
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-						"Content-Type": "application/json",
-					},
-				});
+				// Agregar valores por defecto
+				if (!params.has("isActive")) params.append("isActive", "true");
+				if (!params.has("page")) params.append("page", "1");
+				if (!params.has("limit")) params.append("limit", "50");
 
-				if (!response.ok) {
-					throw new Error("Error al cargar plantillas de materiales");
+				const response = await ApiClient.get(
+					`/material-calculation/templates?${params.toString()}`
+				);
+
+				if (response.data.success && response.data.data) {
+					return response.data.data;
 				}
 
-				const data = await response.json();
-
-				if (data.success) {
-					setTemplates(data.data.templates || []);
-					setPagination(
-						data.data.pagination || {
-							total: 0,
-							page: 1,
-							limit: 20,
-							pages: 0,
-						}
-					);
-				} else {
-					throw new Error(data.message || "Error desconocido");
-				}
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Error desconocido");
-				setTemplates([]);
-			} finally {
-				setLoading(false);
-			}
-		},
-		[]
-	);
-
-	const fetchTemplateById = useCallback(
-		async (id: string): Promise<MaterialCalculationTemplate | null> => {
-			try {
-				const response = await fetch(`${API_BASE}/templates/${id}`, {
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-						"Content-Type": "application/json",
-					},
-				});
-
-				if (!response.ok) {
-					throw new Error("Plantilla no encontrada");
-				}
-
-				const data = await response.json();
-				return data.success ? data.data : null;
-			} catch (err) {
-				console.error("Error al cargar plantilla:", err);
-				return null;
-			}
-		},
-		[]
-	);
-
-	const getFeaturedTemplates = useCallback(async () => {
-		setLoading(true);
-		try {
-			const response = await fetch(`${API_BASE}/templates/featured`, {
-				headers: {
-					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-					"Content-Type": "application/json",
-				},
-			});
-			const data = await response.json();
-
-			if (data.success) {
-				return data.data;
-			}
-			return [];
-		} catch {
-			setError("Error al cargar plantillas destacadas");
-			return [];
-		} finally {
-			setLoading(false);
-		}
-	}, []);
-
-	const getTemplatesByType = useCallback(
-		async (
-			type: MaterialCalculationType
-		): Promise<MaterialCalculationTemplate[]> => {
-			try {
-				const response = await fetch(`${API_BASE}/templates/by-type/${type}`, {
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-						"Content-Type": "application/json",
-					},
-				});
-				const data = await response.json();
-
-				return data.success ? data.data : [];
-			} catch (err) {
-				console.error("Error al cargar plantillas por tipo:", err);
 				return [];
+			} catch (error: unknown) {
+				console.error("Error fetching material templates:", error);
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Error al cargar las plantillas";
+				setError(errorMessage);
+				return [];
+			} finally {
+				setIsLoading(false);
 			}
 		},
 		[]
 	);
 
-	const getTemplatePreview = useCallback(async (templateId: string) => {
-		try {
-			const response = await fetch(
-				`${API_BASE}/templates/${templateId}/preview`,
-				{
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-						"Content-Type": "application/json",
-					},
+	const getTemplate = useCallback(
+		async (templateId: string): Promise<MaterialTemplate | null> => {
+			try {
+				setIsLoading(true);
+				setError(null);
+
+				const response = await ApiClient.get(
+					`/material-calculation/templates/${templateId}`
+				);
+
+				if (response.data.success && response.data.data) {
+					return response.data.data;
 				}
-			);
-			const data = await response.json();
 
-			return data.success ? data.data : null;
-		} catch (err) {
-			console.error("Error al obtener preview:", err);
-			return null;
-		}
-	}, []);
-
-	return {
-		templates,
-		loading,
-		error,
-		pagination,
-		fetchTemplates,
-		fetchTemplateById,
-		getFeaturedTemplates,
-		getTemplatesByType,
-		getTemplatePreview,
-	};
-};
-
-// Hook para ejecución de cálculos
-export const useMaterialCalculationExecution = () => {
-	const [executing, setExecuting] = useState(false);
-	const [result, setResult] = useState<MaterialCalculationResult | null>(null);
-	const [error, setError] = useState<string | null>(null);
+				return null;
+			} catch (error: unknown) {
+				console.error("Error fetching material template:", error);
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Error al cargar la plantilla";
+				setError(errorMessage);
+				return null;
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[]
+	);
 
 	const executeCalculation = useCallback(
-		async (request: MaterialExecutionRequest) => {
-			setExecuting(true);
-			setError(null);
-			setResult(null);
-
-			try {
-				const response = await fetch(`${API_BASE}/execute`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-					},
-					body: JSON.stringify(request),
-				});
-
-				if (!response.ok) {
-					throw new Error("Error al ejecutar cálculo");
-				}
-
-				const data = await response.json();
-
-				if (data.success) {
-					setResult(data.data);
-					return data.data;
-				} else {
-					throw new Error(data.message || "Error en la ejecución");
-				}
-			} catch (err) {
-				const errorMessage =
-					err instanceof Error ? err.message : "Error desconocido";
-				setError(errorMessage);
-				throw err;
-			} finally {
-				setExecuting(false);
-			}
-		},
-		[]
-	);
-
-	const clearResult = useCallback(() => {
-		setResult(null);
-		setError(null);
-	}, []);
-
-	return {
-		executing,
-		result,
-		error,
-		executeCalculation,
-		clearResult,
-	};
-};
-
-// Hook para trending y analytics
-export const useMaterialTrending = () => {
-	const [trending, setTrending] = useState<MaterialTrendingTemplate[]>([]);
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	const fetchTrending = useCallback(
 		async (
-			period: "daily" | "weekly" | "monthly" | "yearly" = "weekly",
-			limit: number = 10
-		) => {
-			setLoading(true);
-			setError(null);
-
+			request: MaterialCalculationRequest
+		): Promise<MaterialCalculationResult> => {
 			try {
-				const queryParams = new URLSearchParams({
-					period,
-					limit: limit.toString(),
-				});
+				setIsLoading(true);
+				setError(null);
 
-				const response = await fetch(`${API_BASE}/trending?${queryParams}`, {
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-						"Content-Type": "application/json",
-					},
-				});
+				// Asegurar que tenemos un userId (puede ser temporal para demo)
+				const calculationData = {
+					...request,
+					userId: "demo-user-id", // En producción, esto vendría del contexto de auth
+				};
 
-				if (!response.ok) {
-					throw new Error("Error al cargar tendencias");
+				const response = await ApiClient.post(
+					"/material-calculation/execute",
+					calculationData
+				);
+
+				if (response.data.success && response.data.data) {
+					return response.data.data;
 				}
 
-				const data = await response.json();
+				throw new Error(
+					response.data.message || "Error en la ejecución del cálculo"
+				);
+			} catch (error: unknown) {
+				console.error("Error executing material calculation:", error);
+				let errorMessage = "Error al ejecutar el cálculo";
 
-				if (data.success) {
-					setTrending(data.data);
-				} else {
-					throw new Error(data.message || "Error desconocido");
+				if (error instanceof Error) {
+					errorMessage = error.message;
+				} else if (
+					typeof error === "object" &&
+					error !== null &&
+					"response" in error
+				) {
+					const axiosError = error as {response?: {data?: {message?: string}}};
+					errorMessage = axiosError.response?.data?.message || errorMessage;
 				}
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Error desconocido");
-				setTrending([]);
+
+				setError(errorMessage);
+				throw new Error(errorMessage);
 			} finally {
-				setLoading(false);
+				setIsLoading(false);
 			}
 		},
 		[]
 	);
 
-	const getAnalyticsOverview = useCallback(
-		async (period: string = "monthly") => {
+	const getCalculationHistory = useCallback(
+		async (
+			templateId?: string,
+			limit: number = 10
+		): Promise<MaterialCalculationResult[]> => {
 			try {
-				const response = await fetch(
-					`${API_BASE}/analytics/overview?period=${period}`,
+				setIsLoading(true);
+				setError(null);
+
+				const params = new URLSearchParams();
+				if (templateId) params.append("templateId", templateId);
+				params.append("limit", limit.toString());
+
+				const response = await ApiClient.get(
+					`/material-calculation/history?${params.toString()}`
+				);
+
+				if (response.data.success && response.data.data) {
+					return response.data.data;
+				}
+
+				return [];
+			} catch (error: unknown) {
+				console.error("Error fetching calculation history:", error);
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Error al cargar el historial";
+				setError(errorMessage);
+				return [];
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[]
+	);
+
+	const saveCalculationResult = useCallback(
+		async (
+			resultId: string,
+			name?: string,
+			notes?: string
+		): Promise<boolean> => {
+			try {
+				setIsLoading(true);
+				setError(null);
+
+				const response = await ApiClient.put(
+					`/material-calculation/results/${resultId}`,
 					{
-						headers: {
-							Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-							"Content-Type": "application/json",
-						},
+						isSaved: true,
+						name,
+						notes,
 					}
 				);
-				const data = await response.json();
 
-				return data.success ? data.data : null;
-			} catch (err) {
-				console.error("Error al obtener analytics:", err);
-				return null;
+				return response.data.success;
+			} catch (error: unknown) {
+				console.error("Error saving calculation result:", error);
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Error al guardar el resultado";
+				setError(errorMessage);
+				return false;
+			} finally {
+				setIsLoading(false);
 			}
 		},
 		[]
 	);
 
-	const getAnalyticsByType = useCallback(async () => {
-		try {
-			const response = await fetch(`${API_BASE}/analytics/by-type`, {
-				headers: {
-					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-					"Content-Type": "application/json",
-				},
-			});
-			const data = await response.json();
+	const deleteCalculationResult = useCallback(
+		async (resultId: string): Promise<boolean> => {
+			try {
+				setIsLoading(true);
+				setError(null);
 
-			return data.success ? data.data : null;
-		} catch (err) {
-			console.error("Error al obtener analytics por tipo:", err);
-			return null;
-		}
-	}, []);
+				const response = await ApiClient.delete(
+					`/material-calculation/results/${resultId}`
+				);
+
+				return response.data.success;
+			} catch (error: unknown) {
+				console.error("Error deleting calculation result:", error);
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Error al eliminar el resultado";
+				setError(errorMessage);
+				return false;
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[]
+	);
+
+	const getTrendingTemplates = useCallback(
+		async (
+			period: "daily" | "weekly" | "monthly" = "weekly",
+			limit: number = 10
+		): Promise<MaterialTemplate[]> => {
+			try {
+				setIsLoading(true);
+				setError(null);
+
+				const response = await ApiClient.get(
+					`/material-calculation/trending?period=${period}&limit=${limit}`
+				);
+
+				if (response.data.success && response.data.data) {
+					return response.data.data;
+				}
+
+				return [];
+			} catch (error: unknown) {
+				console.error("Error fetching trending templates:", error);
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Error al cargar plantillas trending";
+				setError(errorMessage);
+				return [];
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[]
+	);
+
+	const getTemplateAnalytics = useCallback(
+		async (
+			templateId: string,
+			period?: string
+		): Promise<Record<string, unknown> | null> => {
+			try {
+				setIsLoading(true);
+				setError(null);
+
+				const params = period ? `?period=${period}` : "";
+				const response = await ApiClient.get(
+					`/material-calculation/templates/${templateId}/analytics${params}`
+				);
+
+				if (response.data.success && response.data.data) {
+					return response.data.data;
+				}
+
+				return null;
+			} catch (error: unknown) {
+				console.error("Error fetching template analytics:", error);
+				const errorMessage =
+					error instanceof Error ? error.message : "Error al cargar analytics";
+				setError(errorMessage);
+				return null;
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[]
+	);
 
 	return {
-		trending,
-		loading,
+		// Estados
+		isLoading,
 		error,
-		fetchTrending,
-		getAnalyticsOverview,
-		getAnalyticsByType,
+
+		// Métodos para plantillas
+		getTemplates,
+		getTemplate,
+		getTrendingTemplates,
+		getTemplateAnalytics,
+
+		// Métodos para cálculos
+		executeCalculation,
+		getCalculationHistory,
+		saveCalculationResult,
+		deleteCalculationResult,
+
+		// Método para limpiar errores
+		clearError: () => setError(null),
 	};
 };
 
-// Hook para resultados y historial
-export const useMaterialResults = () => {
-	const [results, setResults] = useState<MaterialCalculationResult[]>([]);
-	const [loading, setLoading] = useState(false);
+// Hook específico para plantillas de usuario (mock implementation)
+export const useMaterialTemplates = () => {
+	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const fetchResults = useCallback(
-		async (filters?: {
-			projectId?: string;
-			templateId?: string;
-			limit?: number;
-		}) => {
-			setLoading(true);
-			setError(null);
+	const getUserTemplates = useCallback(async (): Promise<UserTemplate[]> => {
+		// Mock implementation - replace with real API call
+		return [];
+	}, []);
 
-			try {
-				const queryParams = new URLSearchParams();
-				if (filters?.projectId)
-					queryParams.append("projectId", filters.projectId);
-				if (filters?.templateId)
-					queryParams.append("templateId", filters.templateId);
-				if (filters?.limit)
-					queryParams.append("limit", filters.limit.toString());
-
-				const response = await fetch(`${API_BASE}/results?${queryParams}`, {
-					headers: {
-						Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-						"Content-Type": "application/json",
-					},
-				});
-
-				if (!response.ok) {
-					throw new Error("Error al cargar resultados");
-				}
-
-				const data = await response.json();
-
-				if (data.success) {
-					setResults(data.data.results || []);
-				} else {
-					throw new Error(data.message || "Error desconocido");
-				}
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Error desconocido");
-				setResults([]);
-			} finally {
-				setLoading(false);
-			}
+	const createTemplate = useCallback(
+		async (
+			templateData: Partial<UserTemplate>
+		): Promise<UserTemplate | null> => {
+			// Mock implementation - replace with real API call
+			console.log("Creating template:", templateData);
+			return null;
 		},
 		[]
 	);
 
-	const deleteResult = useCallback(async (resultId: string) => {
-		try {
-			const response = await fetch(`${API_BASE}/results/${resultId}`, {
-				method: "DELETE",
-				headers: {
-					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-					"Content-Type": "application/json",
-				},
-			});
-
-			if (!response.ok) {
-				throw new Error("Error al eliminar resultado");
-			}
-
-			// Actualizar la lista local
-			setResults((prev) => prev.filter((result) => result.id !== resultId));
-			return true;
-		} catch (err) {
-			console.error("Error al eliminar resultado:", err);
+	const updateTemplate = useCallback(
+		async (
+			id: string,
+			templateData: Partial<UserTemplate>
+		): Promise<boolean> => {
+			// Mock implementation - replace with real API call
+			console.log("Updating template:", id, templateData);
 			return false;
-		}
-	}, []);
+		},
+		[]
+	);
 
-	const toggleSaveResult = useCallback(async (resultId: string) => {
-		try {
-			const response = await fetch(`${API_BASE}/results/${resultId}/save`, {
-				method: "PUT",
-				headers: {
-					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-					"Content-Type": "application/json",
-				},
-			});
-
-			if (!response.ok) {
-				throw new Error("Error al guardar/desguardar resultado");
-			}
-
-			const data = await response.json();
-
-			// Actualizar la lista local
-			setResults((prev) =>
-				prev.map((result) =>
-					result.id === resultId
-						? {...result, isSaved: data.data.isSaved}
-						: result
-				)
-			);
-
-			return data.data.isSaved;
-		} catch (err) {
-			console.error("Error al guardar/desguardar resultado:", err);
-			return false;
-		}
-	}, []);
-
-	const toggleShareResult = useCallback(async (resultId: string) => {
-		try {
-			const response = await fetch(`${API_BASE}/results/${resultId}/share`, {
-				method: "PUT",
-				headers: {
-					Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-					"Content-Type": "application/json",
-				},
-			});
-
-			if (!response.ok) {
-				throw new Error("Error al compartir/descompartir resultado");
-			}
-
-			const data = await response.json();
-
-			// Actualizar la lista local
-			setResults((prev) =>
-				prev.map((result) =>
-					result.id === resultId
-						? {...result, isShared: data.data.isShared}
-						: result
-				)
-			);
-
-			return data.data.isShared;
-		} catch (err) {
-			console.error("Error al compartir/descompartir resultado:", err);
-			return false;
-		}
+	const deleteTemplate = useCallback(async (id: string): Promise<boolean> => {
+		// Mock implementation - replace with real API call
+		console.log("Deleting template:", id);
+		return false;
 	}, []);
 
 	return {
-		results,
-		loading,
+		isLoading,
 		error,
-		fetchResults,
-		deleteResult,
-		toggleSaveResult,
-		toggleShareResult,
+		getUserTemplates,
+		createTemplate,
+		updateTemplate,
+		deleteTemplate,
+		clearError: () => setError(null),
 	};
 };
 
-// Hook combinado para facilitar el uso
-export const useMaterialCalculations = () => {
-	const templates = useMaterialTemplates();
-	const execution = useMaterialCalculationExecution();
-	const trending = useMaterialTrending();
-	const results = useMaterialResults();
+// Hook específico para resultados (mock implementation)
+export const useMaterialResults = () => {
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const getResults = useCallback(async (): Promise<CalculationHistory[]> => {
+		// Mock implementation - replace with real API call
+		return [];
+	}, []);
+
+	const getResult = useCallback(
+		async (id: string): Promise<MaterialCalculationResult | null> => {
+			// Mock implementation - replace with real API call
+			console.log("Getting result:", id);
+			return null;
+		},
+		[]
+	);
+
+	const deleteResult = useCallback(async (id: string): Promise<boolean> => {
+		// Mock implementation - replace with real API call
+		console.log("Deleting result:", id);
+		return false;
+	}, []);
 
 	return {
-		templates,
-		execution,
-		trending,
-		results,
+		isLoading,
+		error,
+		getResults,
+		getResult,
+		deleteResult,
+		clearError: () => setError(null),
 	};
 };

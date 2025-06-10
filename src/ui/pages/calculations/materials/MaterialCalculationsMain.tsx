@@ -1,288 +1,302 @@
 // src/ui/pages/calculations/materials/MaterialCalculationsMain.tsx
-
-import React, {useState, useEffect} from "react";
-import {useNavigate} from "react-router-dom";
+import React, {useState} from "react";
+import {Link, useNavigate} from "react-router-dom";
 import {
 	BeakerIcon,
-	HomeIcon,
-	CpuChipIcon,
-	SparklesIcon,
-	MagnifyingGlassIcon,
-	AdjustmentsHorizontalIcon,
-	PlayIcon,
-	PlusIcon,
-	ChartBarIcon,
+	RectangleStackIcon,
 	ClockIcon,
+	ArrowTrendingUpIcon,
+	PlayIcon,
+	SparklesIcon,
+	UserGroupIcon,
+	PlusIcon,
+	CpuChipIcon,
 } from "@heroicons/react/24/outline";
-import {useMaterialTemplates} from "../shared/hooks/useMaterialCalculations";
-import type {MaterialCalculationType} from "../shared/types/material.types";
 
-// Configuración de categorías mejorada - más pequeña y sutil
-const MATERIAL_CATEGORIES = [
+// Configuración de navegación principal mejorada
+const MAIN_SECTIONS = [
 	{
-		id: "all" as const,
-		name: "Todas",
-		icon: HomeIcon,
-		color: "text-gray-600 bg-gray-50 border-gray-200",
-		activeColor: "text-primary-700 bg-primary-50 border-primary-200",
+		id: "catalog",
+		name: "Catálogo de Materiales",
+		description:
+			"Plantillas públicas verificadas para cálculos de materiales y propiedades",
+		icon: RectangleStackIcon,
+		route: "/calculations/materials/catalog",
+		color: "from-blue-500 to-blue-600",
+		bgColor: "bg-blue-50",
+		borderColor: "border-blue-200",
+		textColor: "text-blue-700",
+		badge: "156 plantillas",
+		isMain: true,
 	},
 	{
-		id: "STEEL_STRUCTURES" as MaterialCalculationType,
-		name: "Acero",
+		id: "templates",
+		name: "Mis Plantillas",
+		description: "Crea y gestiona tus plantillas personales de materiales",
 		icon: BeakerIcon,
-		color: "text-slate-600 bg-slate-50 border-slate-200",
-		activeColor: "text-slate-700 bg-slate-100 border-slate-300",
+		route: "/calculations/materials/templates",
+		color: "from-emerald-500 to-emerald-600",
+		bgColor: "bg-emerald-50",
+		borderColor: "border-emerald-200",
+		textColor: "text-emerald-700",
+		badge: "Crear nueva",
+		isMain: true,
 	},
 	{
-		id: "CERAMIC_FINISHES" as MaterialCalculationType,
-		name: "Cerámicos",
-		icon: CpuChipIcon,
-		color: "text-emerald-600 bg-emerald-50 border-emerald-200",
-		activeColor: "text-emerald-700 bg-emerald-100 border-emerald-300",
-	},
-	{
-		id: "CONCRETE_FOUNDATIONS" as MaterialCalculationType,
-		name: "Hormigón",
-		icon: SparklesIcon,
-		color: "text-stone-600 bg-stone-50 border-stone-200",
-		activeColor: "text-stone-700 bg-stone-100 border-stone-300",
-	},
-	{
-		id: "ELECTRICAL_INSTALLATIONS" as MaterialCalculationType,
-		name: "Eléctrico",
-		icon: ChartBarIcon,
-		color: "text-yellow-600 bg-yellow-50 border-yellow-200",
-		activeColor: "text-yellow-700 bg-yellow-100 border-yellow-300",
-	},
-	{
-		id: "MELAMINE_FURNITURE" as MaterialCalculationType,
-		name: "Muebles",
+		id: "results",
+		name: "Historial de Resultados",
+		description: "Resultados guardados y historial de cálculos ejecutados",
 		icon: ClockIcon,
-		color: "text-orange-600 bg-orange-50 border-orange-200",
-		activeColor: "text-orange-700 bg-orange-100 border-orange-300",
+		route: "/calculations/materials/results",
+		color: "from-amber-500 to-amber-600",
+		bgColor: "bg-amber-50",
+		borderColor: "border-amber-200",
+		textColor: "text-amber-700",
+		badge: "42 resultados",
+		isMain: true,
+	},
+	{
+		id: "trending",
+		name: "Tendencias y Analytics",
+		description: "Plantillas populares, análisis de uso y estadísticas",
+		icon: ArrowTrendingUpIcon,
+		route: "/calculations/materials/trending",
+		color: "from-purple-500 to-purple-600",
+		bgColor: "bg-purple-50",
+		borderColor: "border-purple-200",
+		textColor: "text-purple-700",
+		badge: "Análisis",
+		isMain: true,
+	},
+];
+
+// Estadísticas rápidas mejoradas
+const QUICK_STATS = [
+	{
+		label: "Plantillas Activas",
+		value: "156",
+		change: "+12",
+		icon: RectangleStackIcon,
+		color: "from-blue-500 to-blue-600",
+	},
+	{
+		label: "Cálculos Este Mes",
+		value: "2.4k",
+		change: "+18",
+		icon: CpuChipIcon,
+		color: "from-emerald-500 to-emerald-600",
+	},
+	{
+		label: "Usuarios Activos",
+		value: "834",
+		change: "+7",
+		icon: UserGroupIcon,
+		color: "from-purple-500 to-purple-600",
+	},
+	{
+		label: "Nuevas Plantillas",
+		value: "23",
+		change: "+5",
+		icon: SparklesIcon,
+		color: "from-amber-500 to-amber-600",
+	},
+];
+
+// Actividad reciente simulada
+const RECENT_ACTIVITY = [
+	{
+		id: 1,
+		type: "calculation",
+		title: "Dosificación de Hormigón H21",
+		user: "María García",
+		time: "Hace 2 minutos",
+		icon: PlayIcon,
+		color: "text-green-600",
+	},
+	{
+		id: 2,
+		type: "template",
+		title: "Nueva plantilla: Acero Estructural",
+		user: "Carlos Ruiz",
+		time: "Hace 15 minutos",
+		icon: PlusIcon,
+		color: "text-blue-600",
+	},
+	{
+		id: 3,
+		type: "trending",
+		title: "Cálculo de Agregados trending",
+		time: "Hace 1 hora",
+		icon: ArrowTrendingUpIcon,
+		color: "text-purple-600",
 	},
 ];
 
 const MaterialCalculationsMain: React.FC = () => {
 	const navigate = useNavigate();
-	const {templates, loading, error, fetchTemplates, getTemplatesByType} =
-		useMaterialTemplates();
+	const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
-	const [selectedCategory, setSelectedCategory] = useState<
-		MaterialCalculationType | "all"
-	>("all");
-	const [searchTerm, setSearchTerm] = useState("");
-	const [filteredTemplates, setFilteredTemplates] = useState(templates);
-
-	// Cargar plantillas al montar el componente
-	useEffect(() => {
-		console.log("🔄 Cargando templates, categoría:", selectedCategory);
-
-		if (selectedCategory === "all") {
-			fetchTemplates({});
-		} else {
-			getTemplatesByType(selectedCategory).then((data) => {
-				console.log("📊 Templates recibidos:", data);
-				setFilteredTemplates(data);
-			});
-		}
-	}, [selectedCategory, fetchTemplates, getTemplatesByType]);
-
-	// Actualizar plantillas filtradas cuando cambien las plantillas base
-	useEffect(() => {
-		setFilteredTemplates(templates);
-	}, [templates]);
-
-	// Filtrar plantillas por término de búsqueda
-	useEffect(() => {
-		if (!searchTerm) {
-			setFilteredTemplates(templates);
-			return;
-		}
-
-		const filtered = templates.filter(
-			(template) =>
-				template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				template.description.toLowerCase().includes(searchTerm.toLowerCase())
-		);
-		setFilteredTemplates(filtered);
-	}, [searchTerm, templates]);
-
-	const handleCategoryChange = (category: MaterialCalculationType | "all") => {
-		setSelectedCategory(category);
-		setSearchTerm(""); // Reset search when changing category
+	const handleSectionClick = (route: string, sectionId: string) => {
+		setSelectedSection(sectionId);
+		// Pequeño delay para la animación
+		setTimeout(() => {
+			navigate(route);
+		}, 150);
 	};
 
-	const handleTemplateClick = (templateId: string) => {
-		navigate(`/calculations/materials/interface/${templateId}`);
-	};
-
-	// Función para mostrar estado de carga
-	if (loading) {
-		return (
-			<div className="max-w-7xl mx-auto px-4 py-8">
-				<div className="text-center py-12">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-					<p className="text-gray-600">Cargando plantillas de materiales...</p>
-				</div>
+	const renderHeader = () => (
+		<div className="text-center mb-12">
+			<div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
+				<BeakerIcon className="h-10 w-10 text-white" />
 			</div>
-		);
-	}
+			<h1 className="text-3xl font-bold text-gray-900 mb-3">
+				Cálculos de Materiales
+			</h1>
+			<p className="text-lg text-gray-600 max-w-2xl mx-auto">
+				Herramientas especializadas para cálculos de materiales de construcción,
+				dosificaciones y propiedades según normativa ecuatoriana
+			</p>
+		</div>
+	);
 
-	// Función para mostrar error
-	if (error) {
-		return (
-			<div className="max-w-7xl mx-auto px-4 py-8">
-				<div className="text-center py-12">
-					<div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
-						<div className="text-red-600 mb-2">
-							❌ Error al cargar plantillas
-						</div>
-						<p className="text-red-700 text-sm">{error}</p>
-						<button
-							onClick={() => fetchTemplates({})}
-							className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-						>
-							Reintentar
-						</button>
-					</div>
-				</div>
-			</div>
-		);
-	}
-
-	return (
-		<div className="max-w-7xl mx-auto px-4 py-8">
-			{/* Header */}
-			<div className="mb-8">
-				<h1 className="text-3xl font-bold text-gray-900 mb-2">
-					Cálculos de Materiales
-				</h1>
-				<p className="text-gray-600">
-					Herramientas profesionales para calcular materiales de construcción
-					según la normativa ecuatoriana NEC.
-				</p>
-			</div>
-
-			{/* Filtros de categoría compactos */}
-			<div className="mb-6">
-				<div className="flex flex-wrap gap-2">
-					{MATERIAL_CATEGORIES.map((category) => {
-						const Icon = category.icon;
-						const isActive = selectedCategory === category.id;
-
-						return (
-							<button
-								key={category.id}
-								onClick={() => handleCategoryChange(category.id)}
-								className={`
-									flex items-center px-3 py-2 rounded-lg text-sm font-medium border transition-all duration-200
-									${isActive ? category.activeColor : category.color}
-									hover:shadow-sm
-								`}
+	const renderQuickStats = () => (
+		<div className="mb-12">
+			<h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
+				Resumen de Actividad
+			</h2>
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+				{QUICK_STATS.map((stat, index) => (
+					<div
+						key={index}
+						className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-300 group"
+					>
+						<div className="flex items-center justify-between mb-4">
+							<div
+								className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
 							>
-								<Icon className="h-4 w-4 mr-2" />
-								{category.name}
-							</button>
-						);
-					})}
-				</div>
-			</div>
-
-			{/* Barra de búsqueda */}
-			<div className="mb-8">
-				<div className="relative max-w-md">
-					<MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-					<input
-						type="text"
-						placeholder="Buscar plantillas..."
-						value={searchTerm}
-						onChange={(e) => setSearchTerm(e.target.value)}
-						className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-					/>
-				</div>
-			</div>
-
-			{/* Lista de plantillas */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{filteredTemplates.length === 0 ? (
-					<div className="col-span-full text-center py-12">
-						<BeakerIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-						<h3 className="text-lg font-medium text-gray-900 mb-2">
-							No se encontraron plantillas
-						</h3>
-						<p className="text-gray-500">
-							{searchTerm
-								? "Intenta con otros términos de búsqueda"
-								: "No hay plantillas disponibles para esta categoría"}
-						</p>
-					</div>
-				) : (
-					filteredTemplates.map((template) => (
-						<div
-							key={template.id}
-							onClick={() => handleTemplateClick(template.id)}
-							className="bg-white rounded-xl border border-gray-200 p-6 hover:border-primary-300 hover:shadow-lg transition-all duration-200 cursor-pointer group"
-						>
-							<div className="flex items-start justify-between mb-4">
-								<div className="flex-1">
-									<h3 className="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">
-										{template.name}
-									</h3>
-									<p className="text-sm text-gray-600 mt-1 line-clamp-2">
-										{template.description}
-									</p>
-								</div>
-								<PlayIcon className="h-5 w-5 text-gray-400 group-hover:text-primary-600 transition-colors ml-2 flex-shrink-0" />
+								<stat.icon className="h-6 w-6 text-white" />
 							</div>
-
-							<div className="flex items-center justify-between text-sm text-gray-500">
-								<div className="flex items-center space-x-4">
-									<span className="flex items-center">
-										<ChartBarIcon className="h-4 w-4 mr-1" />
-										{template.usageCount} usos
-									</span>
-									{template.averageRating > 0 && (
-										<span className="flex items-center">
-											<span className="text-yellow-400 mr-1">★</span>
-											{template.averageRating.toFixed(1)}
-										</span>
-									)}
-								</div>
-								{template.isFeatured && (
-									<span className="text-primary-600 font-medium">
-										<SparklesIcon className="h-4 w-4 inline mr-1" />
-										Destacada
-									</span>
-								)}
-							</div>
-
-							{template.tags && template.tags.length > 0 && (
-								<div className="mt-3 flex flex-wrap gap-1">
-									{template.tags.slice(0, 3).map((tag) => (
-										<span
-											key={tag}
-											className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
-										>
-											{tag}
-										</span>
-									))}
+							{stat.change && (
+								<div className="flex items-center gap-1 text-sm text-green-600 bg-green-50 px-2 py-1 rounded-full">
+									<ArrowTrendingUpIcon className="h-3 w-3" />
+									<span className="font-medium">{stat.change}%</span>
 								</div>
 							)}
 						</div>
-					))
-				)}
+						<div>
+							<div className="text-2xl font-bold text-gray-900 mb-1">
+								{stat.value}
+							</div>
+							<div className="text-sm text-gray-600">{stat.label}</div>
+						</div>
+					</div>
+				))}
 			</div>
+		</div>
+	);
 
-			{/* Acciones rápidas */}
-			<div className="mt-12 text-center">
-				<button
-					onClick={() => navigate("/calculations/materials/templates")}
-					className="inline-flex items-center px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-				>
-					<PlusIcon className="h-5 w-5 mr-2" />
-					Crear Plantilla Personal
-				</button>
+	const renderMainSections = () => (
+		<div className="mb-12">
+			<h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
+				Herramientas Principales
+			</h2>
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+				{MAIN_SECTIONS.map((section) => (
+					<div
+						key={section.id}
+						className={`
+							bg-white rounded-2xl border-2 p-8 cursor-pointer transition-all duration-300 group
+							hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]
+							${
+								selectedSection === section.id
+									? "border-blue-300 shadow-lg scale-[1.02]"
+									: "border-gray-100 hover:border-gray-200"
+							}
+						`}
+						onClick={() => handleSectionClick(section.route, section.id)}
+					>
+						<div className="flex items-start justify-between mb-6">
+							<div
+								className={`w-14 h-14 bg-gradient-to-r ${section.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
+							>
+								<section.icon className="h-7 w-7 text-white" />
+							</div>
+							<div
+								className={`px-3 py-1 ${section.bgColor} ${section.textColor} text-xs font-medium rounded-full border ${section.borderColor}`}
+							>
+								{section.badge}
+							</div>
+						</div>
+
+						<div>
+							<h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-700 transition-colors">
+								{section.name}
+							</h3>
+							<p className="text-gray-600 leading-relaxed">
+								{section.description}
+							</p>
+						</div>
+
+						{/* Indicador visual de hover */}
+						<div className="mt-6 flex items-center text-blue-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+							<span>Acceder</span>
+							<ArrowTrendingUpIcon className="h-4 w-4 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" />
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+
+	const renderRecentActivity = () => (
+		<div className="max-w-4xl mx-auto">
+			<h2 className="text-xl font-semibold text-gray-900 mb-6 text-center">
+				Actividad Reciente
+			</h2>
+			<div className="bg-white rounded-2xl border border-gray-100 p-6">
+				<div className="space-y-4">
+					{RECENT_ACTIVITY.map((activity) => (
+						<div
+							key={activity.id}
+							className="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors"
+						>
+							<div
+								className={`w-10 h-10 ${activity.color} bg-opacity-10 rounded-lg flex items-center justify-center`}
+							>
+								<activity.icon className={`h-5 w-5 ${activity.color}`} />
+							</div>
+							<div className="flex-1">
+								<div className="font-medium text-gray-900">
+									{activity.title}
+								</div>
+								<div className="text-sm text-gray-600">
+									{activity.user && `${activity.user} • `}
+									{activity.time}
+								</div>
+							</div>
+						</div>
+					))}
+				</div>
+
+				<div className="mt-6 text-center">
+					<Link
+						to="/calculations/materials/results"
+						className="text-blue-600 hover:text-blue-700 font-medium text-sm hover:underline"
+					>
+						Ver toda la actividad →
+					</Link>
+				</div>
+			</div>
+		</div>
+	);
+
+	return (
+		<div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+				{renderHeader()}
+				{renderQuickStats()}
+				{renderMainSections()}
+				{renderRecentActivity()}
 			</div>
 		</div>
 	);

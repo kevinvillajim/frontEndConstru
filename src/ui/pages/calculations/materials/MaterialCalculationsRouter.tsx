@@ -2,26 +2,29 @@
 import React from "react";
 import {Routes, Route, Navigate} from "react-router-dom";
 
-// Componentes principales
+// Importar componentes principales
 import MaterialCalculationsMain from "./MaterialCalculationsMain";
+import MaterialCatalog from "./MaterialCatalog";
 import MaterialCalculationInterface from "./MaterialCalculationInterface";
 import MaterialTemplatesManager from "./MaterialTemplatesManager";
-import MaterialCatalog from "./MaterialCatalog";
 import MaterialResultsHistory from "./MaterialResultsHistory";
 import MaterialCalculationComparison from "./MaterialCalculationComparison";
 import MaterialTrendingAnalytics from "./MaterialTrendingAnalytics";
 
-// Componente temporal para crear plantillas (se debería crear después)
+// Editor temporal hasta implementar el real
 const MaterialTemplateEditor: React.FC = () => {
 	return (
-		<div className="max-w-4xl mx-auto px-4 py-8">
-			<div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-				<h2 className="text-2xl font-bold text-gray-900 mb-4">
-					Editor de Plantillas de Materiales
+		<div className="min-h-screen bg-gray-50 flex items-center justify-center">
+			<div className="max-w-md mx-auto text-center bg-white rounded-xl p-8 border border-gray-200">
+				<div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+					<span className="text-2xl">🚧</span>
+				</div>
+				<h2 className="text-xl font-bold text-gray-900 mb-4">
+					Editor en Desarrollo
 				</h2>
 				<p className="text-gray-600 mb-6">
-					Esta funcionalidad está en desarrollo. Próximamente podrás crear y
-					editar plantillas personalizadas para cálculos de materiales.
+					Próximamente podrás crear y editar plantillas personalizadas para
+					cálculos de materiales.
 				</p>
 				<div className="space-y-4">
 					<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -29,17 +32,18 @@ const MaterialTemplateEditor: React.FC = () => {
 							Características que incluirá:
 						</h3>
 						<ul className="text-sm text-blue-800 space-y-1">
-							<li>• Editor visual de parámetros</li>
+							<li>• Editor visual de parámetros de materiales</li>
 							<li>• Validación de fórmulas JavaScript</li>
 							<li>• Preview en tiempo real</li>
 							<li>• Gestión de unidades de medida</li>
 							<li>• Sistema de versionado</li>
+							<li>• Factores de desperdicio configurables</li>
 						</ul>
 					</div>
 				</div>
 				<button
 					onClick={() => window.history.back()}
-					className="mt-6 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+					className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
 				>
 					Volver
 				</button>
@@ -51,19 +55,29 @@ const MaterialTemplateEditor: React.FC = () => {
 const MaterialCalculationsRouter: React.FC = () => {
 	return (
 		<Routes>
-			{/* Ruta principal - Hub de materiales */}
+			{/* ==============================================
+			    RUTA PRINCIPAL - HUB DE MATERIALES
+			    ============================================== */}
 			<Route index element={<MaterialCalculationsMain />} />
 
-			{/* Catálogo de plantillas públicas */}
+			{/* ==============================================
+			    CATÁLOGO - PLANTILLAS PÚBLICAS
+			    ============================================== */}
 			<Route path="catalog" element={<MaterialCatalog />} />
 
-			{/* Interfaz de cálculo específica */}
+			{/* Interfaz de cálculo específica con templateId */}
+			<Route
+				path="catalog/:templateId"
+				element={<MaterialCalculationInterface />}
+			/>
 			<Route
 				path="interface/:templateId"
 				element={<MaterialCalculationInterface />}
 			/>
 
-			{/* Gestión de plantillas personales */}
+			{/* ==============================================
+			    MIS PLANTILLAS - GESTIÓN PERSONAL
+			    ============================================== */}
 			<Route path="templates" element={<MaterialTemplatesManager />} />
 			<Route path="templates/create" element={<MaterialTemplateEditor />} />
 			<Route
@@ -75,22 +89,41 @@ const MaterialCalculationsRouter: React.FC = () => {
 				element={<MaterialTemplateEditor />}
 			/>
 
-			{/* Historial de resultados */}
+			{/* ==============================================
+			    HISTORIAL - RESULTADOS Y CÁLCULOS
+			    ============================================== */}
 			<Route path="results" element={<MaterialResultsHistory />} />
 			<Route path="results/:resultId" element={<MaterialResultsHistory />} />
 
-			{/* Comparación de cálculos */}
+			{/* ==============================================
+			    COMPARACIÓN - ANÁLISIS COMPARATIVO
+			    ============================================== */}
 			<Route path="comparison" element={<MaterialCalculationComparison />} />
 			<Route
 				path="comparison/:comparisonId"
 				element={<MaterialCalculationComparison />}
 			/>
 
-			{/* Analytics y tendencias */}
+			{/* ==============================================
+			    TENDENCIAS - ANALYTICS Y ESTADÍSTICAS
+			    ============================================== */}
 			<Route path="trending" element={<MaterialTrendingAnalytics />} />
 			<Route path="analytics" element={<MaterialTrendingAnalytics />} />
 
-			{/* Redirección por defecto */}
+			{/* ==============================================
+			    REDIRECCIONES Y RUTAS DE FALLBACK
+			    ============================================== */}
+			{/* Redirección de rutas legacy */}
+			<Route
+				path="main"
+				element={<Navigate to="/calculations/materials" replace />}
+			/>
+			<Route
+				path="hub"
+				element={<Navigate to="/calculations/materials" replace />}
+			/>
+
+			{/* Fallback para rutas no encontradas */}
 			<Route
 				path="*"
 				element={<Navigate to="/calculations/materials" replace />}
