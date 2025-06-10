@@ -1,5 +1,4 @@
 // src/ui/pages/calculations/materials/MaterialCalculationsMain.tsx
-// VERSIÓN TEMPORAL CON PANEL DE DEBUG INTEGRADO
 
 import React, {useState, useEffect} from "react";
 import {useNavigate} from "react-router-dom";
@@ -17,165 +16,6 @@ import {
 } from "@heroicons/react/24/outline";
 import {useMaterialTemplates} from "../shared/hooks/useMaterialCalculations";
 import type {MaterialCalculationType} from "../shared/types/material.types";
-
-// 🚨 COMPONENTE DE DEBUG TEMPORAL - ELIMINAR EN PRODUCCIÓN
-const QuickDebugPanel: React.FC = () => {
-	const [results, setResults] = useState<any[]>([]);
-	const [loading, setLoading] = useState(false);
-
-	const quickTest = async () => {
-		setLoading(true);
-		setResults([]);
-		console.clear();
-		console.log("🚀 INICIO DE DIAGNÓSTICO RÁPIDO");
-
-		const tests = [
-			{
-				name: "Backend Directo",
-				url: "http://localhost:4000/api/material-calculation/templates",
-			},
-			{name: "Proxy Correcto", url: "/api/material-calculation/templates"},
-			{name: "Proxy Incorrecto", url: "/api/material-calculations/templates"},
-		];
-
-		const testResults = [];
-
-		for (const test of tests) {
-			console.log(`\n🧪 Probando: ${test.name} -> ${test.url}`);
-
-			try {
-				const startTime = Date.now();
-				const response = await fetch(test.url, {
-					headers: {"Content-Type": "application/json"},
-				});
-				const timing = Date.now() - startTime;
-
-				console.log(`📊 Respuesta:`, {
-					status: response.status,
-					statusText: response.statusText,
-					contentType: response.headers.get("content-type"),
-					url: response.url,
-				});
-
-				const contentType = response.headers.get("content-type") || "";
-				let data, type;
-
-				if (contentType.includes("application/json")) {
-					data = await response.json();
-					type = "JSON";
-					console.log(`✅ JSON válido:`, data);
-				} else {
-					data = await response.text();
-					type = contentType.includes("html") ? "HTML" : "TEXT";
-					console.log(`⚠️ No es JSON (${type}):`, data.substring(0, 100));
-				}
-
-				testResults.push({
-					name: test.name,
-					url: test.url,
-					success: response.ok && contentType.includes("json"),
-					status: response.status,
-					type,
-					timing,
-					error: null,
-					preview:
-						type === "JSON"
-							? JSON.stringify(data, null, 2).substring(0, 200)
-							: data.substring(0, 200),
-				});
-			} catch (error) {
-				console.error(`❌ Error en ${test.name}:`, error);
-				testResults.push({
-					name: test.name,
-					url: test.url,
-					success: false,
-					status: 0,
-					type: "ERROR",
-					timing: 0,
-					error: error instanceof Error ? error.message : "Error desconocido",
-					preview: null,
-				});
-			}
-		}
-
-		console.log("\n📋 RESUMEN FINAL:");
-		testResults.forEach((result) => {
-			console.log(
-				`${result.success ? "✅" : "❌"} ${result.name}: ${result.success ? "OK" : result.error}`
-			);
-		});
-
-		setResults(testResults);
-		setLoading(false);
-	};
-
-	return (
-		<div className="fixed top-4 right-4 z-50 bg-white border-2 border-red-500 rounded-lg shadow-lg p-4 max-w-md">
-			<div className="mb-2">
-				<h3 className="font-bold text-red-600">🚨 DEBUG PANEL</h3>
-				<p className="text-xs text-gray-600">Panel temporal de diagnóstico</p>
-			</div>
-
-			<button
-				onClick={quickTest}
-				disabled={loading}
-				className="w-full mb-3 px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 text-sm"
-			>
-				{loading ? "🔄 Probando..." : "🧪 Diagnóstico Rápido"}
-			</button>
-
-			<div className="text-xs space-y-1 mb-3">
-				<div>
-					<strong>Frontend:</strong> {window.location.origin}
-				</div>
-				<div>
-					<strong>Backend:</strong> localhost:4000
-				</div>
-			</div>
-
-			{results.length > 0 && (
-				<div className="space-y-2 max-h-60 overflow-y-auto">
-					{results.map((result, i) => (
-						<div
-							key={i}
-							className={`p-2 rounded text-xs border ${
-								result.success
-									? "bg-green-50 border-green-200"
-									: "bg-red-50 border-red-200"
-							}`}
-						>
-							<div className="font-medium">
-								{result.success ? "✅" : "❌"} {result.name}
-							</div>
-							<div className="text-gray-600">
-								Status: {result.status} | Tipo: {result.type} | {result.timing}
-								ms
-							</div>
-							{result.error && (
-								<div className="text-red-600 mt-1">Error: {result.error}</div>
-							)}
-							{result.preview && (
-								<details className="mt-1">
-									<summary className="cursor-pointer text-blue-600">
-										Ver respuesta
-									</summary>
-									<pre className="mt-1 text-xs bg-gray-100 p-1 rounded overflow-auto max-h-20">
-										{result.preview}
-									</pre>
-								</details>
-							)}
-						</div>
-					))}
-				</div>
-			)}
-
-			<div className="mt-3 text-xs text-gray-500">
-				💡 Abre DevTools → Console/Network para más detalles
-			</div>
-		</div>
-	);
-};
-// 🚨 FIN DEL COMPONENTE DE DEBUG
 
 // Configuración de categorías mejorada - más pequeña y sutil
 const MATERIAL_CATEGORIES = [
@@ -285,9 +125,6 @@ const MaterialCalculationsMain: React.FC = () => {
 					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
 					<p className="text-gray-600">Cargando plantillas de materiales...</p>
 				</div>
-
-				{/* 🚨 PANEL DE DEBUG - VISIBLE INCLUSO DURANTE CARGA */}
-				<QuickDebugPanel />
 			</div>
 		);
 	}
@@ -310,9 +147,6 @@ const MaterialCalculationsMain: React.FC = () => {
 						</button>
 					</div>
 				</div>
-
-				{/* 🚨 PANEL DE DEBUG - ESPECIALMENTE ÚTIL DURANTE ERRORES */}
-				<QuickDebugPanel />
 			</div>
 		);
 	}
@@ -450,9 +284,6 @@ const MaterialCalculationsMain: React.FC = () => {
 					Crear Plantilla Personal
 				</button>
 			</div>
-
-			{/* 🚨 PANEL DE DEBUG TEMPORAL - ELIMINAR EN PRODUCCIÓN */}
-			<QuickDebugPanel />
 		</div>
 	);
 };
