@@ -9,10 +9,9 @@ import {
 	StarIcon,
 	ClockIcon,
 	ChartBarIcon,
-	CurrencyDollarIcon,
 	CheckBadgeIcon,
 } from "@heroicons/react/24/outline";
-import type {MaterialCalculationType} from "../shared/types/material.types";
+import type {MaterialCalculationType} from "../../shared/types/material.types";
 
 // Props interfaces
 interface LoadingSpinnerProps {

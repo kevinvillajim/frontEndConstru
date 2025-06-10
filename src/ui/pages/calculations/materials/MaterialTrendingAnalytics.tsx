@@ -3,21 +3,18 @@ import React, {useState, useEffect} from "react";
 import {useNavigate} from "react-router-dom";
 import {
 	FireIcon,
-	TrendingUpIcon,
-	TrendingDownIcon,
 	ChartBarIcon,
 	GlobeAltIcon,
 	ClockIcon,
 	UserGroupIcon,
 	StarIcon,
 	PlayIcon,
-	EyeIcon,
-	CalendarIcon,
 	ArrowRightIcon,
+	ArrowTrendingDownIcon,
+	ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
 import {useMaterialTrending} from "../shared/hooks/useMaterialCalculations";
 import type {
-	MaterialTrendingTemplate,
 	MaterialAnalytics,
 } from "../shared/types/material.types";
 
@@ -128,9 +125,9 @@ const MaterialTrendingAnalytics: React.FC = () => {
 								<div className="flex items-center mt-1">
 									{analytics.comparisons.previousPeriod.calculations >
 									analytics.totalCalculations ? (
-										<TrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
+										<ArrowTrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
 									) : (
-										<TrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
+										<ArrowTrendingDownIcon className="h-4 w-4 text-green-500 mr-1" />
 									)}
 									<span className="text-xs text-gray-600">
 										vs período anterior
@@ -157,9 +154,9 @@ const MaterialTrendingAnalytics: React.FC = () => {
 								<div className="flex items-center mt-1">
 									{analytics.comparisons.previousPeriod.users >
 									analytics.uniqueUsers ? (
-										<TrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
+										<ArrowTrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
 									) : (
-										<TrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
+										<ArrowTrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
 									)}
 									<span className="text-xs text-gray-600">
 										vs período anterior
@@ -203,9 +200,9 @@ const MaterialTrendingAnalytics: React.FC = () => {
 								<div className="flex items-center mt-1">
 									{analytics.comparisons.previousPeriod.successRate >
 									analytics.successRate ? (
-										<TrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
+										<ArrowTrendingDownIcon className="h-4 w-4 text-red-500 mr-1" />
 									) : (
-										<TrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
+										<ArrowTrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
 									)}
 									<span className="text-xs text-gray-600">
 										vs período anterior
@@ -291,7 +288,7 @@ const MaterialTrendingAnalytics: React.FC = () => {
 										{(item.successRate * 100).toFixed(1)}% éxito
 									</span>
 									<span className="flex items-center gap-1">
-										<TrendingUpIcon className="h-4 w-4" />
+										<ArrowTrendingUpIcon className="h-4 w-4" />
 										{item.trendScore.toFixed(1)} puntos
 									</span>
 								</div>

@@ -1,26 +1,18 @@
 // src/ui/pages/calculations/materials/MaterialCalculationComparison.tsx
 import React, {useState, useEffect} from "react";
-import {useNavigate} from "react-router-dom";
 import {
 	PlusIcon,
 	XMarkIcon,
 	ArrowsRightLeftIcon,
-	ChartBarIcon,
 	DocumentTextIcon,
-	CurrencyDollarIcon,
-	ScaleIcon,
-	TrashIcon,
 	ShareIcon,
 	ArrowDownTrayIcon,
 	CheckCircleIcon,
 	ExclamationTriangleIcon,
-	ClockIcon,
-	BeakerIcon,
 } from "@heroicons/react/24/outline";
 import {useMaterialResults} from "../shared/hooks/useMaterialCalculations";
 import type {
 	MaterialCalculationResult,
-	MaterialQuantity,
 } from "../shared/types/material.types";
 
 interface ComparisonItem {
@@ -37,7 +29,6 @@ const COMPARISON_COLORS = [
 ];
 
 const MaterialCalculationComparison: React.FC = () => {
-	const navigate = useNavigate();
 	const {results, loading, error, fetchResults} = useMaterialResults();
 
 	const [comparisonItems, setComparisonItems] = useState<ComparisonItem[]>([]);
@@ -215,7 +206,7 @@ const MaterialCalculationComparison: React.FC = () => {
 
 			{comparisonItems.length > 0 && (
 				<div className="flex flex-wrap gap-2">
-					{comparisonItems.map((item, index) => (
+					{comparisonItems.map((item) => (
 						<div
 							key={item.id}
 							className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg"
