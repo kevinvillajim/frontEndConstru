@@ -9,7 +9,6 @@ import {
 	ArrowDownTrayIcon,
 	EyeIcon,
 	DocumentDuplicateIcon,
-	ChartBarIcon,
 	CalendarIcon,
 	CurrencyDollarIcon,
 	BeakerIcon,

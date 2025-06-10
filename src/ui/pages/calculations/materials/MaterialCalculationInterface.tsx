@@ -7,8 +7,6 @@ import {
 	DocumentDuplicateIcon,
 	ShareIcon,
 	BookmarkIcon,
-	CalendarIcon,
-	ClockIcon,
 	CpuChipIcon,
 	ExclamationTriangleIcon,
 	CheckCircleIcon,
