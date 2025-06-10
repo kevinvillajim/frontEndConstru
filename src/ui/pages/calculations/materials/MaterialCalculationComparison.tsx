@@ -29,9 +29,8 @@ const COMPARISON_COLORS = [
 ];
 
 const MaterialCalculationComparison: React.FC = () => {
-	const {results, loading, error, fetchResults} = useMaterialResults();
-
-	const [comparisonItems, setComparisonItems] = useState<ComparisonItem[]>([]);
+	const [results, setResults] = useState<CalculationHistory[]>([]);
+	const {isLoading, error, getResults} = useMaterialResults();	const [comparisonItems, setComparisonItems] = useState<ComparisonItem[]>([]);
 	const [showResultSelector, setShowResultSelector] = useState(false);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [filteredResults, setFilteredResults] = useState<
@@ -39,8 +38,17 @@ const MaterialCalculationComparison: React.FC = () => {
 	>([]);
 
 	useEffect(() => {
-		fetchResults({limit: 100});
-	}, [fetchResults]);
+		const loadResults = async () => {
+			try {
+				const data = await getResults();
+				setResults(data);
+			} catch (err) {
+				console.error("Error loading results:", err);
+			}
+		};
+
+		loadResults();
+	}, [getResults]);
 
 	useEffect(() => {
 		if (!searchTerm) {

@@ -392,11 +392,11 @@ const appRoutes: RouteObject[] = [
 							},
 							// Rutas de desarrollo/testing (opcionales, se pueden quitar en producción)
 							{
-								path: "dev/interface",
+								path: "interface",
 								element: <MaterialCalculationInterface />,
 							},
 							{
-								path: "dev/hub",
+								path: "hub",
 								element: <MaterialCalculationsHub />,
 							},
 							{
@@ -404,23 +404,23 @@ const appRoutes: RouteObject[] = [
 								element: <MaterialCalculationsRouter />,
 							},
 							{
-								path: "dev/catalog",
+								path: "catalog",
 								element: <MaterialCatalog />,
 							},
 							{
-								path: "dev/manager",
+								path: "manager",
 								element: <MaterialTemplatesManager />,
 							},
 							{
-								path: "dev/analytics",
+								path: "analytics",
 								element: <MaterialTrendingAnalytics />,
 							},
 							{
-								path: "dev/comparison",
+								path: "comparison",
 								element: <MaterialCalculationComparison />,
 							},
 							{
-								path: "dev/results",
+								path: "results",
 								element: <MaterialResultsHistory />,
 							},
 						],

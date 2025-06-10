@@ -1,75 +1,44 @@
 // src/ui/pages/calculations/materials/MaterialCatalog.tsx
 import React, {useState, useEffect} from "react";
-import {Link, useNavigate} from "react-router-dom";
+import {useNavigate, Link} from "react-router-dom";
 import {
-	MagnifyingGlassIcon,
+	BeakerIcon,
 	FunnelIcon,
+	MagnifyingGlassIcon,
 	StarIcon,
 	EyeIcon,
+	ClockIcon,
 	PlayIcon,
 	BookmarkIcon,
-	BeakerIcon,
-	CubeIcon,
-	BuildingOffice2Icon,
-	WrenchScrewdriverIcon,
-	HomeIcon,
-	ClockIcon,
-	CheckBadgeIcon,
 	ArrowTopRightOnSquareIcon,
+	TagIcon,
 } from "@heroicons/react/24/outline";
 import {BookmarkIcon as BookmarkSolidIcon} from "@heroicons/react/24/solid";
 import {
 	useMaterialCalculations,
-	type MaterialTemplate,
 } from "../shared/hooks/useMaterialCalculations";
+import type {MaterialTemplate} from "../shared/hooks/useMaterialCalculations";
 
-// Categorías de materiales
+
+// Categorías de materiales - actualizadas según los datos del API
 const MATERIAL_CATEGORIES = [
-	{
-		id: "all",
-		name: "Todos",
-		icon: CubeIcon,
-		color: "text-gray-600",
-		bgColor: "bg-gray-100",
-	},
-	{
-		id: "concrete",
-		name: "Hormigón",
-		icon: BuildingOffice2Icon,
-		color: "text-blue-600",
-		bgColor: "bg-blue-100",
-	},
-	{
-		id: "steel",
-		name: "Acero",
-		icon: WrenchScrewdriverIcon,
-		color: "text-gray-600",
-		bgColor: "bg-gray-100",
-	},
-	{
-		id: "masonry",
-		name: "Mampostería",
-		icon: HomeIcon,
-		color: "text-orange-600",
-		bgColor: "bg-orange-100",
-	},
-	{
-		id: "aggregates",
-		name: "Agregados",
-		icon: CubeIcon,
-		color: "text-yellow-600",
-		bgColor: "bg-yellow-100",
-	},
+	{id: "all", name: "Todas las categorías", icon: BeakerIcon},
+	{id: "concrete", name: "Hormigón", icon: BeakerIcon},
+	{id: "masonry", name: "Mampostería", icon: BeakerIcon},
+	{id: "finishes", name: "Acabados", icon: BeakerIcon},
+	{id: "steel", name: "Acero", icon: BeakerIcon},
+	{id: "insulation", name: "Aislamiento", icon: BeakerIcon},
 ];
 
-// Filtros de ordenamiento
+// Opciones de ordenamiento
 const SORT_OPTIONS = [
-	{value: "popularity", label: "Más Popular"},
-	{value: "recent", label: "Más Reciente"},
-	{value: "name", label: "Nombre A-Z"},
-	{value: "rating", label: "Mejor Calificación"},
+	{value: "popularity", label: "Más populares"},
+	{value: "recent", label: "Más recientes"},
+	{value: "name", label: "Alfabético"},
+	{value: "rating", label: "Mejor valoradas"},
 ];
 
+// Componente de Card de Plantilla
 interface TemplateCardProps {
 	template: MaterialTemplate;
 	onUse: (templateId: string) => void;
@@ -81,87 +50,62 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
 	onUse,
 	onToggleFavorite,
 }) => {
-	const [isFavorite, setIsFavorite] = useState(false);
 	const [isHovered, setIsHovered] = useState(false);
+	const [isFavorite, setIsFavorite] = useState(false);
 
-	const getCategoryIcon = (type: string) => {
-		const category = MATERIAL_CATEGORIES.find((cat) => cat.id === type);
-		return category ? category.icon : CubeIcon;
-	};
-
-	const getCategoryColor = (type: string) => {
-		const category = MATERIAL_CATEGORIES.find((cat) => cat.id === type);
-		return category ? category.color : "text-gray-600";
-	};
-
-	const handleToggleFavorite = (e: React.MouseEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
+	const handleUse = () => onUse(template.id);
+	const handleToggleFavorite = () => {
 		setIsFavorite(!isFavorite);
 		onToggleFavorite(template.id);
 	};
 
-	const handleUse = (e: React.MouseEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
-		onUse(template.id);
+	const getCategoryIcon = (type: string) => {
+		const category = MATERIAL_CATEGORIES.find((cat) => cat.id === type);
+		return category?.icon || BeakerIcon;
 	};
 
 	const CategoryIcon = getCategoryIcon(template.type);
 
 	return (
 		<div
-			className="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300"
+			className="relative bg-white rounded-2xl border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg group"
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
 		>
-			{/* Header de la card */}
-			<div className="relative p-6 pb-4">
+			{/* Header con icono y categoría */}
+			<div className="px-6 pt-6 pb-4">
 				<div className="flex items-start justify-between mb-4">
-					<div
-						className={`w-12 h-12 ${getCategoryColor(template.type)} bg-opacity-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
-					>
-						<CategoryIcon
-							className={`h-6 w-6 ${getCategoryColor(template.type)}`}
-						/>
+					<div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+						<CategoryIcon className="h-6 w-6 text-white" />
 					</div>
 
-					<div className="flex items-center gap-2">
-						{template.isFeatured && (
-							<div className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full">
-								⭐ Destacada
-							</div>
-						)}
-
-						{template.isVerified && (
-							<div className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200">
-								<CheckBadgeIcon className="h-3 w-3" />
-								Verificada
-							</div>
-						)}
-					</div>
+					{template.isFeatured && (
+						<div className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-medium rounded-full">
+							Destacada
+						</div>
+					)}
 				</div>
 
-				<div className="mb-4">
-					<h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors line-clamp-2 mb-2">
-						{template.name}
-					</h3>
-					<p className="text-sm text-gray-600 line-clamp-3 leading-relaxed">
-						{template.description}
-					</p>
-				</div>
+				<h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+					{template.name}
+				</h3>
 
-				{/* Referencia normativa */}
-				{template.necReference && (
-					<div className="flex items-center gap-2 mb-4">
-						<div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
-							{template.necReference}
+				<p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
+					{template.description}
+				</p>
+
+				{/* Tags de NEC si existe */}
+				{template.normativeReference && (
+					<div className="mt-3">
+						<div className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">
+							<TagIcon className="h-3 w-3" />
+							{template.normativeReference}
 						</div>
 					</div>
 				)}
 
 				{/* Métricas */}
-				<div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+				<div className="flex items-center justify-between text-sm text-gray-500 mb-4 mt-4">
 					<div className="flex items-center gap-4">
 						<div className="flex items-center gap-1">
 							<EyeIcon className="h-4 w-4" />
@@ -175,9 +119,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
 
 						<div className="flex items-center gap-1">
 							<ClockIcon className="h-4 w-4" />
-							<span>
-								Actualizada {new Date(template.updatedAt).toLocaleDateString()}
-							</span>
+							<span>{new Date(template.updatedAt).toLocaleDateString()}</span>
 						</div>
 					</div>
 				</div>
@@ -247,27 +189,54 @@ const MaterialCatalog: React.FC = () => {
 	const [selectedCategory, setSelectedCategory] = useState("all");
 	const [sortBy, setSortBy] = useState("popularity");
 	const [showFilters, setShowFilters] = useState(false);
+	const [isInitialized, setIsInitialized] = useState(false);
 
-	// Cargar plantillas
+	// Cargar plantillas al montar el componente
 	useEffect(() => {
 		const loadTemplates = async () => {
 			try {
+				console.log("🔄 Cargando plantillas de materiales...");
 				const data = await getTemplates({
 					isActive: true,
 					limit: 50,
 					page: 1,
 				});
-				setTemplates(data || []);
+
+				console.log("📦 Datos recibidos:", data);
+
+				// Asegurar que data sea un array
+				const templatesArray = Array.isArray(data) ? data : [];
+				console.log("✅ Templates procesados:", templatesArray.length);
+
+				setTemplates(templatesArray);
+				setIsInitialized(true);
 			} catch (error) {
-				console.error("Error loading templates:", error);
+				console.error("❌ Error loading templates:", error);
+				setTemplates([]); // Establecer array vacío en caso de error
+				setIsInitialized(true);
 			}
 		};
 
 		loadTemplates();
 	}, [getTemplates]);
 
-	// Filtrar y ordenar plantillas
+	// Filtrar y ordenar plantillas - SOLO después de que se inicialice
 	useEffect(() => {
+		if (!isInitialized || !Array.isArray(templates)) {
+			console.log("⏳ Esperando inicialización...", {
+				isInitialized,
+				templatesIsArray: Array.isArray(templates),
+			});
+			return;
+		}
+
+		console.log("🔍 Filtrando plantillas...", {
+			totalTemplates: templates.length,
+			searchTerm,
+			selectedCategory,
+			sortBy,
+		});
+
 		let filtered = [...templates];
 
 		// Filtro por búsqueda
@@ -307,8 +276,9 @@ const MaterialCatalog: React.FC = () => {
 			}
 		});
 
+		console.log("✅ Plantillas filtradas:", filtered.length);
 		setFilteredTemplates(filtered);
-	}, [templates, searchTerm, selectedCategory, sortBy]);
+	}, [templates, searchTerm, selectedCategory, sortBy, isInitialized]);
 
 	const handleUseTemplate = (templateId: string) => {
 		navigate(`/calculations/materials/interface/${templateId}`);
@@ -316,7 +286,7 @@ const MaterialCatalog: React.FC = () => {
 
 	const handleToggleFavorite = (templateId: string) => {
 		console.log("Toggle favorite:", templateId);
-		// Implementar lógica de favoritos
+		// TODO: Implementar lógica de favoritos
 	};
 
 	const renderHeader = () => (
@@ -360,10 +330,14 @@ const MaterialCatalog: React.FC = () => {
 
 	const renderFilters = () => (
 		<div
-			className={`bg-gray-50 border-b border-gray-200 transition-all duration-300 ${showFilters ? "max-h-96" : "max-h-0 overflow-hidden"}`}
+			className={`bg-gray-50 border-b border-gray-200 transition-all duration-300 ${
+				showFilters
+					? "max-h-96 opacity-100"
+					: "max-h-0 opacity-0 overflow-hidden"
+			}`}
 		>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 					{/* Búsqueda */}
 					<div>
 						<label className="block text-sm font-medium text-gray-900 mb-2">
@@ -386,7 +360,7 @@ const MaterialCatalog: React.FC = () => {
 						<label className="block text-sm font-medium text-gray-900 mb-2">
 							Categoría
 						</label>
-						<div className="flex flex-wrap gap-2">
+						<div className="grid grid-cols-2 gap-2">
 							{MATERIAL_CATEGORIES.map((category) => {
 								const CategoryIcon = category.icon;
 								return (
@@ -394,7 +368,8 @@ const MaterialCatalog: React.FC = () => {
 										key={category.id}
 										onClick={() => setSelectedCategory(category.id)}
 										className={`
-											px-3 py-2 rounded-lg border transition-all duration-200 flex items-center gap-2 text-sm
+											px-3 py-2 rounded-lg border text-sm font-medium transition-colors
+											flex items-center gap-2 justify-center
 											${
 												selectedCategory === category.id
 													? "border-blue-300 bg-blue-50 text-blue-700"
@@ -433,7 +408,7 @@ const MaterialCatalog: React.FC = () => {
 	);
 
 	const renderTemplateGrid = () => {
-		if (isLoading) {
+		if (isLoading || !isInitialized) {
 			return (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 					{[...Array(6)].map((_, index) => (

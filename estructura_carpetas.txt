@@ -15,7 +15,7 @@ C:.
 |   tsconfig.json
 |   tsconfig.node.json
 |   vite.config.ts
-|   
+|               
 +---public
 |       vite.svg
 |       
@@ -208,6 +208,9 @@ C:.
     |   |   |   |           SharedComponents.tsx
     |   |   |   |           
     |   |   |   +---shared
+    |   |   |   |   +---constants
+    |   |   |   |   |       materialConstants.ts
+    |   |   |   |   |       
     |   |   |   |   +---hooks
     |   |   |   |   |       useCalculations.tsx
     |   |   |   |   |       useCatalogTemplates.tsx
