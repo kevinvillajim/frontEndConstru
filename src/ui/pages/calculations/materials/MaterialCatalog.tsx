@@ -170,7 +170,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
 
 			{/* Overlay de hover */}
 			{isHovered && (
-				<div className="absolute inset-0 bg-blue-500 bg-opacity-5 pointer-events-none rounded-2xl"></div>
+				<div className="absolute inset-0 bg-opacity-5 pointer-events-none rounded-2xl"></div>
 			)}
 		</div>
 	);

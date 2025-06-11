@@ -105,22 +105,7 @@ const CalculationsSettings = lazy(
 );
 
 // Calculation Materials
-
-// const MaterialCalculationsMain = lazy(
-// 	() => import("../pages/calculations/materials/MaterialCalculationsMain")
-// );
-const MaterialCalculationInterface = lazy(()=>import("../pages/calculations/materials/MaterialCalculationInterface"));
-const MaterialCalculationsHub = lazy(()=>import("../pages/calculations/materials/MaterialCalculationsHub"));
 const MaterialCalculationsRouter = lazy(()=>import("../pages/calculations/materials/MaterialCalculationsRouter"));
-const MaterialCatalog = lazy(()=>import("../pages/calculations/materials/MaterialCatalog"));
-const MaterialTemplatesManager = lazy(()=>import("../pages/calculations/materials/MaterialTemplatesManager"));
-const MaterialTrendingAnalytics = lazy(() => import("../pages/calculations/materials/MaterialTrendingAnalytics"));
-const MaterialCalculationComparison = lazy(
-	() => import("../pages/calculations/materials/MaterialCalculationComparison")
-);
-const MaterialResultsHistory = lazy(
-	() => import("../pages/calculations/materials/MaterialResultsHistory")
-);
 
 
 const appRoutes: RouteObject[] = [
@@ -384,46 +369,8 @@ const appRoutes: RouteObject[] = [
 					// 	element: <CalculationsDashboard />,
 					// },
 					{
-						path: "materials",
-						children: [
-							{
-								index: true,
-								element: <MaterialCalculationsHub />, // Página principal de mis plantillas
-							},
-							// Rutas de desarrollo/testing (opcionales, se pueden quitar en producción)
-							{
-								path: "interface",
-								element: <MaterialCalculationInterface />,
-							},
-							{
-								path: "hub",
-								element: <MaterialCalculationsHub />,
-							},
-							{
-								path: "router",
-								element: <MaterialCalculationsRouter />,
-							},
-							{
-								path: "catalog",
-								element: <MaterialCatalog />,
-							},
-							{
-								path: "manager",
-								element: <MaterialTemplatesManager />,
-							},
-							{
-								path: "analytics",
-								element: <MaterialTrendingAnalytics />,
-							},
-							{
-								path: "comparison",
-								element: <MaterialCalculationComparison />,
-							},
-							{
-								path: "results",
-								element: <MaterialResultsHistory />,
-							},
-						],
+						path: "materials/*",
+						element: <MaterialCalculationsRouter />, // ← USAR ROUTER DIRECTAMENTE
 					},
 				],
 			},

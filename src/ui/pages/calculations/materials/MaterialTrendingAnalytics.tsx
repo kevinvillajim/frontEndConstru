@@ -147,7 +147,7 @@ const MaterialTrendingAnalytics: React.FC = () => {
 					<StatCard
 						icon={ChartBarIcon}
 						title="Total de Cálculos"
-						value={analyticsData.totalCalculations.toLocaleString()}
+						value={analyticsData.totalCalculations.toString()}
 						subtitle={`Período ${selectedPeriod}`}
 						color="blue"
 						trend={
