@@ -1,5 +1,5 @@
 // src/ui/pages/calculations/materials/MaterialTrendingAnalytics.tsx
-// CORRECCIÓN: useEffect con dependencias faltantes y tipo any corregido
+// CORRECCIÓN: Agregada validación segura para propiedades de analyticsData
 
 import React, {useState, useEffect, useCallback} from "react";
 import {
@@ -66,6 +66,27 @@ const MaterialTrendingAnalytics: React.FC = () => {
 		{value: "monthly", label: "Mensual", icon: ArrowTrendingUpIcon},
 		{value: "yearly", label: "Anual", icon: ChartBarIcon},
 	] as const;
+
+	// FUNCIÓN AUXILIAR: Validación segura de datos
+	const safeGetValue = (
+		value: unknown,
+		fallback: string | number = 0
+	): string => {
+		if (value === null || value === undefined) {
+			return typeof fallback === "number" ? fallback.toString() : fallback;
+		}
+		if (typeof value === "number") {
+			return value.toLocaleString();
+		}
+		return String(value);
+	};
+
+	const safeGetNumber = (value: unknown, fallback: number = 0): number => {
+		if (value === null || value === undefined || isNaN(Number(value))) {
+			return fallback;
+		}
+		return Number(value);
+	};
 
 	if (loading || analyticsLoading) {
 		return (
@@ -141,20 +162,23 @@ const MaterialTrendingAnalytics: React.FC = () => {
 				</div>
 			</div>
 
-			{/* Estadísticas generales */}
+			{/* Estadísticas generales - CON VALIDACIÓN SEGURA */}
 			{analyticsData && (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 					<StatCard
 						icon={ChartBarIcon}
 						title="Total de Cálculos"
-						value={analyticsData.totalCalculations.toString()}
+						value={safeGetValue(analyticsData.totalCalculations)}
 						subtitle={`Período ${selectedPeriod}`}
 						color="blue"
 						trend={
-							analyticsData.growthRates
+							analyticsData.growthRates?.calculations !== undefined
 								? {
-										value: analyticsData.growthRates.calculations,
-										isPositive: analyticsData.growthRates.calculations > 0,
+										value: safeGetNumber(
+											analyticsData.growthRates.calculations
+										),
+										isPositive:
+											safeGetNumber(analyticsData.growthRates.calculations) > 0,
 									}
 								: undefined
 						}
@@ -162,14 +186,15 @@ const MaterialTrendingAnalytics: React.FC = () => {
 					<StatCard
 						icon={UserGroupIcon}
 						title="Usuarios Únicos"
-						value={analyticsData.uniqueUsers.toLocaleString()}
+						value={safeGetValue(analyticsData.uniqueUsers)}
 						subtitle="Usuarios activos"
 						color="green"
 						trend={
-							analyticsData.growthRates
+							analyticsData.growthRates?.users !== undefined
 								? {
-										value: analyticsData.growthRates.users,
-										isPositive: analyticsData.growthRates.users > 0,
+										value: safeGetNumber(analyticsData.growthRates.users),
+										isPositive:
+											safeGetNumber(analyticsData.growthRates.users) > 0,
 									}
 								: undefined
 						}
@@ -177,14 +202,14 @@ const MaterialTrendingAnalytics: React.FC = () => {
 					<StatCard
 						icon={SparklesIcon}
 						title="Tasa de Éxito"
-						value={`${analyticsData.successRate.toFixed(1)}%`}
+						value={`${safeGetNumber(analyticsData.successRate).toFixed(1)}%`}
 						subtitle="Cálculos exitosos"
 						color="purple"
 					/>
 					<StatCard
 						icon={ClockIcon}
 						title="Tiempo Promedio"
-						value={`${analyticsData.averageExecutionTime.toFixed(0)}ms`}
+						value={`${safeGetNumber(analyticsData.averageExecutionTime).toFixed(0)}ms`}
 						subtitle="Tiempo de ejecución"
 						color="yellow"
 					/>
@@ -228,91 +253,96 @@ const MaterialTrendingAnalytics: React.FC = () => {
 
 				{/* Panel lateral */}
 				<div className="space-y-6">
-					{/* Top templates */}
-					{analyticsData?.topTemplates && (
-						<div className="bg-white rounded-xl border border-gray-200 p-6">
-							<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-								<ArrowTrendingUpIcon className="h-5 w-5 text-primary-600 mr-2" />
-								Top Templates
-							</h3>
-							<div className="space-y-3">
-								{analyticsData.topTemplates
-									.slice(0, 5)
-									.map((template, index) => (
-										<div
-											key={template.templateId}
-											className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-										>
-											<div className="flex-1">
-												<div className="font-medium text-sm text-gray-900 truncate">
-													{template.templateName}
+					{/* Top templates - CON VALIDACIÓN SEGURA */}
+					{analyticsData?.topTemplates &&
+						analyticsData.topTemplates.length > 0 && (
+							<div className="bg-white rounded-xl border border-gray-200 p-6">
+								<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+									<ArrowTrendingUpIcon className="h-5 w-5 text-primary-600 mr-2" />
+									Top Templates
+								</h3>
+								<div className="space-y-3">
+									{analyticsData.topTemplates
+										.slice(0, 5)
+										.map((template, index) => (
+											<div
+												key={template.templateId}
+												className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+											>
+												<div className="flex-1">
+													<div className="font-medium text-sm text-gray-900 truncate">
+														{template.templateName || "Sin nombre"}
+													</div>
+													<div className="text-xs text-gray-500">
+														{safeGetValue(template.usageCount)} usos
+													</div>
 												</div>
-												<div className="text-xs text-gray-500">
-													{template.usageCount} usos
+												<div className="text-right">
+													<div className="text-sm font-medium text-primary-600">
+														#{index + 1}
+													</div>
+													<div className="flex items-center text-xs text-yellow-500">
+														<span>★</span>
+														<span className="ml-1">
+															{safeGetNumber(template.averageRating).toFixed(1)}
+														</span>
+													</div>
 												</div>
 											</div>
-											<div className="text-right">
-												<div className="text-sm font-medium text-primary-600">
-													#{index + 1}
-												</div>
-												<div className="flex items-center text-xs text-yellow-500">
-													<span>★</span>
-													<span className="ml-1">
-														{template.averageRating.toFixed(1)}
-													</span>
-												</div>
-											</div>
-										</div>
-									))}
+										))}
+								</div>
 							</div>
-						</div>
-					)}
+						)}
 
-					{/* Distribución por tipo */}
-					{analyticsData?.calculationsByType && (
-						<div className="bg-white rounded-xl border border-gray-200 p-6">
-							<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-								<AdjustmentsHorizontalIcon className="h-5 w-5 text-blue-600 mr-2" />
-								Por Tipo de Material
-							</h3>
-							<div className="space-y-3">
-								{Object.entries(analyticsData.calculationsByType).map(
-									([type, count]) => {
-										const percentage =
-											analyticsData.totalCalculations > 0
-												? (count / analyticsData.totalCalculations) * 100
-												: 0;
+					{/* Distribución por tipo - CON VALIDACIÓN SEGURA */}
+					{analyticsData?.calculationsByType &&
+						Object.keys(analyticsData.calculationsByType).length > 0 && (
+							<div className="bg-white rounded-xl border border-gray-200 p-6">
+								<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+									<AdjustmentsHorizontalIcon className="h-5 w-5 text-blue-600 mr-2" />
+									Por Tipo de Material
+								</h3>
+								<div className="space-y-3">
+									{Object.entries(analyticsData.calculationsByType).map(
+										([type, count]) => {
+											const totalCalculations = safeGetNumber(
+												analyticsData.totalCalculations
+											);
+											const percentage =
+												totalCalculations > 0
+													? (safeGetNumber(count) / totalCalculations) * 100
+													: 0;
 
-										return (
-											<div key={type} className="space-y-1">
-												<div className="flex justify-between text-sm">
-													<span className="text-gray-700 font-medium">
-														{type.replace("_", " ")}
-													</span>
-													<span className="text-gray-600">
-														{count} ({percentage.toFixed(1)}%)
-													</span>
+											return (
+												<div key={type} className="space-y-1">
+													<div className="flex justify-between text-sm">
+														<span className="text-gray-700 font-medium">
+															{type.replace("_", " ")}
+														</span>
+														<span className="text-gray-600">
+															{safeGetValue(count)} ({percentage.toFixed(1)}%)
+														</span>
+													</div>
+													<div className="w-full bg-gray-200 rounded-full h-2">
+														<div
+															className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+															style={{width: `${percentage}%`}}
+														/>
+													</div>
 												</div>
-												<div className="w-full bg-gray-200 rounded-full h-2">
-													<div
-														className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-														style={{width: `${percentage}%`}}
-													/>
-												</div>
-											</div>
-										);
-									}
-								)}
+											);
+										}
+									)}
+								</div>
 							</div>
-						</div>
-					)}
+						)}
 				</div>
 			</div>
 		</div>
 	);
 };
 
-// Componente para cada template trending
+// Componente para cada template trending - CON VALIDACIÓN SEGURA
 interface TrendingTemplateCardProps {
 	template: MaterialTrendingTemplate;
 	rank: number;
@@ -336,6 +366,15 @@ const TrendingTemplateCard: React.FC<TrendingTemplateCardProps> = ({
 		return "📉";
 	};
 
+	// Validación segura de los datos del template
+	const safeTemplate = {
+		templateName: template.templateName || "Sin nombre",
+		usageCount: template.usageCount || 0,
+		uniqueUsers: template.uniqueUsers || 0,
+		successRate: template.successRate || 0,
+		trendScore: template.trendScore || 0,
+	};
+
 	return (
 		<div className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
 			{/* Rank badge */}
@@ -352,22 +391,24 @@ const TrendingTemplateCard: React.FC<TrendingTemplateCardProps> = ({
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center space-x-2">
 					<h4 className="font-medium text-gray-900 truncate">
-						{template.templateName}
+						{safeTemplate.templateName}
 					</h4>
-					<span className="text-lg">{getTrendIcon(template.trendScore)}</span>
+					<span className="text-lg">
+						{getTrendIcon(safeTemplate.trendScore)}
+					</span>
 				</div>
 				<div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
 					<span className="flex items-center">
 						<ChartBarIcon className="h-4 w-4 mr-1" />
-						{template.usageCount} usos
+						{safeTemplate.usageCount.toLocaleString()} usos
 					</span>
 					<span className="flex items-center">
 						<UserGroupIcon className="h-4 w-4 mr-1" />
-						{template.uniqueUsers} usuarios
+						{safeTemplate.uniqueUsers.toLocaleString()} usuarios
 					</span>
 					<span className="flex items-center">
 						<SparklesIcon className="h-4 w-4 mr-1" />
-						{template.successRate.toFixed(1)}% éxito
+						{safeTemplate.successRate.toFixed(1)}% éxito
 					</span>
 				</div>
 			</div>
@@ -375,7 +416,7 @@ const TrendingTemplateCard: React.FC<TrendingTemplateCardProps> = ({
 			{/* Trend score */}
 			<div className="text-right">
 				<div className="text-lg font-bold text-primary-600">
-					{template.trendScore.toFixed(1)}
+					{safeTemplate.trendScore.toFixed(1)}
 				</div>
 				<div className="text-xs text-gray-500">Trend Score</div>
 			</div>
