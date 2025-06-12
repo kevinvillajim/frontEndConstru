@@ -1,5 +1,5 @@
 Listado de rutas de carpetas
-El n�mero de serie del volumen es 7C1B-BCDF
+El n�mero de serie del volumen es 204F-F5E4
 C:.
 |   .env
 |   .gitignore
@@ -15,6 +15,7 @@ C:.
 |   tsconfig.json
 |   tsconfig.node.json
 |   vite.config.ts
+|   
 |               
 +---public
 |       vite.svg
@@ -34,15 +35,13 @@ C:.
     |       
     +---core
     |   +---adapters
-    |   |   +---api
-    |   |   |       ApiAuthRepository.ts
-    |   |   |       ApiCalculationRepository.ts
-    |   |   |       ApiClient.ts
-    |   |   |       ApiUserRepository.ts
-    |   |   |       AxiosConfig.ts
-    |   |   |       
-    |   |   +---persistence
-    |   |   \---store
+    |   |   \---api
+    |   |           ApiAuthRepository.ts
+    |   |           ApiCalculationRepository.ts
+    |   |           ApiClient.ts
+    |   |           ApiUserRepository.ts
+    |   |           AxiosConfig.ts
+    |   |           
     |   +---application
     |   |   |   ServiceFactory.ts
     |   |   |   
@@ -52,7 +51,6 @@ C:.
     |   |   +---calculations
     |   |   |       TemplateApplicationService.ts
     |   |   |       
-    |   |   +---projects
     |   |   \---user
     |   |           UserService.ts
     |   |           
@@ -67,14 +65,12 @@ C:.
     |       |   \---user
     |       |           User.ts
     |       |           
-    |       +---repositories
-    |       |       AuthRepository.ts
-    |       |       CalculationTemplateRepository.ts
-    |       |       UserRepository.ts
-    |       |       
-    |       \---services
+    |       \---repositories
+    |               AuthRepository.ts
+    |               CalculationTemplateRepository.ts
+    |               UserRepository.ts
+    |               
     +---infrastructure
-    |   +---repositories
     |   \---services
     |           LocalStorageService.ts
     |           
@@ -87,7 +83,6 @@ C:.
     |       
     +---ui
     |   +---components
-    |   |   +---auth
     |   |   +---calculations
     |   |   |       CalculationsNavigation.tsx
     |   |   |       
@@ -96,7 +91,6 @@ C:.
     |   |   |       Toast.tsx
     |   |   |       ToastService.ts
     |   |   |       
-    |   |   +---debug
     |   |   +---layout
     |   |   |       Footer.tsx
     |   |   |       Header.tsx

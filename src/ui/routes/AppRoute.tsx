@@ -107,6 +107,8 @@ const CalculationsSettings = lazy(
 // Calculation Materials
 const MaterialCalculationsRouter = lazy(()=>import("../pages/calculations/materials/MaterialCalculationsRouter"));
 
+// Calculation Budget
+const CalculationBudgetRouter = lazy(()=>import("../pages/calculations/budget/CalculationBudgetRouter"));
 
 const appRoutes: RouteObject[] = [
 	//Public Routes
@@ -371,6 +373,10 @@ const appRoutes: RouteObject[] = [
 					{
 						path: "materials/*",
 						element: <MaterialCalculationsRouter />, // ← USAR ROUTER DIRECTAMENTE
+					},
+					{
+						path: "budget/*",
+						element: <CalculationBudgetRouter />, // ← USAR ROUTER DIRECTAMENTE
 					},
 				],
 			},

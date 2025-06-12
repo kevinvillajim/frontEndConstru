@@ -29,7 +29,7 @@ const navigationItems = [
 		submenu: [
 			{name: "Cálculos Técnicos", to: "/calculations"},
 			{name: "Estimación de Materiales", to: "/calculations/materials"},
-			{name: "Presupuestos", to: "/calculadoras/presupuestos"},
+			{name: "Presupuestos", to: "/calculations/budget"},
 			{name: "Cronogramas", to: "/calculadoras/cronogramas"},
 		],
 	},
