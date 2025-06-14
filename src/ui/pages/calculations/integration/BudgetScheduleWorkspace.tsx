@@ -11,12 +11,8 @@ import {
 	BeakerIcon,
 	DocumentTextIcon,
 	ClockIcon,
-	TrendingUpIcon,
-	TrendingDownIcon,
 	CheckCircleIcon,
 	XCircleIcon,
-	PlayIcon,
-	PauseIcon,
 	AdjustmentsHorizontalIcon,
 	BellIcon,
 } from "@heroicons/react/24/outline";

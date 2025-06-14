@@ -18,7 +18,8 @@ import {
 	DocumentTextIcon,
 	PhotoIcon,
 	ArrowUpTrayIcon,
-	ArrowDownTrayIcon,
+    BuildingOfficeIcon,
+    DocumentChartBarIcon,
 } from "@heroicons/react/24/outline";
 import {
 	LoadingSpinner,

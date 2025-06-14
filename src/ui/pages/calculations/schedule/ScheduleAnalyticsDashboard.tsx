@@ -5,16 +5,13 @@ import {
 	ChartBarIcon,
 	ClockIcon,
 	CurrencyDollarIcon,
-	TrendingUpIcon,
-	TrendingDownIcon,
+	ArrowTrendingUpIcon,
+	ArrowTrendingDownIcon,
 	ExclamationTriangleIcon,
 	CheckCircleIcon,
 	ArrowPathIcon,
-	CalendarDaysIcon,
 	UsersIcon,
-	BuildingOfficeIcon,
 	DocumentChartBarIcon,
-	FunnelIcon,
 	ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
 import {useScheduleAnalytics} from "../shared/hooks/useScheduleAnalytics";
@@ -51,9 +48,9 @@ const KPICard: React.FC<KPICardProps> = ({
 
 	const trendIcon =
 		trend === "up"
-			? TrendingUpIcon
+			? ArrowTrendingUpIcon
 			: trend === "down"
-				? TrendingDownIcon
+				? ArrowTrendingDownIcon
 				: null;
 	const trendColor =
 		trend === "up"
@@ -181,7 +178,7 @@ const ScheduleAnalyticsDashboard: React.FC = () => {
 			<div className="flex gap-2">
 				{[
 					{key: "overview", label: "Resumen", icon: ChartBarIcon},
-					{key: "performance", label: "Performance", icon: TrendingUpIcon},
+					{key: "performance", label: "Performance", icon: ArrowTrendingUpIcon},
 					{key: "resources", label: "Recursos", icon: UsersIcon},
 					{key: "costs", label: "Costos", icon: CurrencyDollarIcon},
 				].map((tab) => (
@@ -216,7 +213,7 @@ const ScheduleAnalyticsDashboard: React.FC = () => {
 				title="Eficiencia"
 				value={`${kpis?.efficiency || 0}%`}
 				change={kpis?.efficiencyChange || 0}
-				icon={TrendingUpIcon}
+				icon={ArrowTrendingUpIcon}
 				trend={kpis?.efficiencyChange > 0 ? "up" : "down"}
 				color="blue"
 			/>

@@ -3,7 +3,6 @@ import React, {useState, useEffect} from "react";
 import {useParams} from "react-router-dom";
 import {
 	BuildingOfficeIcon,
-	EyeIcon,
 	ClockIcon,
 	CurrencyDollarIcon,
 	CalendarDaysIcon,
@@ -14,10 +13,8 @@ import {
 	ChatBubbleLeftIcon,
 	HandThumbUpIcon,
 	HandThumbDownIcon,
-	ArrowDownTrayIcon,
 	BellIcon,
 	UserCircleIcon,
-	MapPinIcon,
 	ChartBarIcon,
 } from "@heroicons/react/24/outline";
 import {

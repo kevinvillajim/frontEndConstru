@@ -1,33 +1,22 @@
 // src/ui/pages/calculations/performance/PerformanceOptimizations.tsx
 import React, {useState, useEffect, useMemo, useCallback, memo} from "react";
 import {
-	BoltIcon,
 	ChartBarIcon,
 	ClockIcon,
 	CpuChipIcon,
 	DocumentTextIcon,
-	EyeIcon,
-	ArrowPathIcon,
 	CheckCircleIcon,
 	ExclamationTriangleIcon,
 	SignalIcon,
 	ServerIcon,
-	CogIcon,
 	CloudIcon,
-	DevicePhoneMobileIcon,
-	ComputerDesktopIcon,
-	GlobeAltIcon,
 	BeakerIcon,
 	RocketLaunchIcon,
 	WrenchScrewdriverIcon,
 	CubeIcon,
 	TableCellsIcon,
 	PhotoIcon,
-	DocumentDuplicateIcon,
 	MagnifyingGlassIcon,
-	FunnelIcon,
-	Bars3Icon,
-	ListBulletIcon,
 } from "@heroicons/react/24/outline";
 import {
 	LoadingSpinner,

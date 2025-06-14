@@ -13,16 +13,12 @@ import {
 	StarIcon,
 	PhoneIcon,
 	EnvelopeIcon,
-	MapPinIcon,
 	CurrencyDollarIcon,
 	ChartBarIcon,
 	PlusIcon,
 	FunnelIcon,
-	ArrowPathIcon,
 	BellIcon,
 	EyeIcon,
-	PencilIcon,
-	TrashIcon,
 } from "@heroicons/react/24/outline";
 import {
 	LoadingSpinner,

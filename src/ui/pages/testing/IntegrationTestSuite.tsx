@@ -2,17 +2,10 @@
 import React, {useState, useEffect} from "react";
 import {
 	PlayIcon,
-	PauseIcon,
-	StopIcon,
 	CheckCircleIcon,
 	XCircleIcon,
-	ExclamationTriangleIcon,
 	ClockIcon,
-	DocumentTextIcon,
-	ChartBarIcon,
-	CogIcon,
 	BugAntIcon,
-	ArrowPathIcon,
 	EyeIcon,
 	DocumentArrowDownIcon,
 } from "@heroicons/react/24/outline";

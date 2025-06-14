@@ -12,10 +12,9 @@ import {
 	UsersIcon,
 	CurrencyDollarIcon,
 	ClockIcon,
-	TrendingUpIcon,
-	TrendingDownIcon,
+	ArrowTrendingUpIcon,
+	ArrowTrendingDownIcon,
 	CheckCircleIcon,
-	XCircleIcon,
 	InformationCircleIcon,
 	FlagIcon,
 } from "@heroicons/react/24/outline";
@@ -79,9 +78,9 @@ const MetricCard: React.FC<{metric: ReportMetric}> = ({metric}) => {
 	const getTrendIcon = (trend?: string) => {
 		switch (trend) {
 			case "up":
-				return <TrendingUpIcon className="h-4 w-4 text-green-600" />;
+				return <ArrowTrendingUpIcon className="h-4 w-4 text-green-600" />;
 			case "down":
-				return <TrendingDownIcon className="h-4 w-4 text-red-600" />;
+				return <ArrowTrendingDownIcon className="h-4 w-4 text-red-600" />;
 			default:
 				return null;
 		}
@@ -120,10 +119,10 @@ const ProductivityChart: React.FC<{data: ProductivityMetric[]}> = ({data}) => (
 							{item.efficiency}% eficiencia
 						</Badge>
 						{item.trend === "up" && (
-							<TrendingUpIcon className="h-4 w-4 text-green-600" />
+							<ArrowTrendingUpIcon className="h-4 w-4 text-green-600" />
 						)}
 						{item.trend === "down" && (
-							<TrendingDownIcon className="h-4 w-4 text-red-600" />
+							<ArrowTrendingDownIcon className="h-4 w-4 text-red-600" />
 						)}
 					</div>
 				</div>
