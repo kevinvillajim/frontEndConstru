@@ -10,6 +10,7 @@ import {
 	MagnifyingGlassIcon,
 	FunnelIcon,
 	PlayIcon,
+	ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import {
 	useMaterialResults,
@@ -137,8 +138,19 @@ const MaterialResultsHistory: React.FC = () => {
 	// Cargar resultados
 	useEffect(() => {
 		const loadResults = async () => {
-			const data = await getResults();
-			setResults(data);
+			try {
+				const data = await getResults();
+				// Validar que data sea un array
+				if (Array.isArray(data)) {
+					setResults(data);
+				} else {
+					console.error('Invalid results data:', data);
+					setResults([]);
+				}
+			} catch (error) {
+				console.error("Error loading results:", error);
+				setResults([]);
+			}
 		};
 
 		loadResults();
@@ -158,6 +170,12 @@ const MaterialResultsHistory: React.FC = () => {
 
 	// Filtrar resultados
 	useEffect(() => {
+		// Validar que results sea un array antes de filtrar
+		if (!Array.isArray(results)) {
+			setFilteredResults([]);
+			return;
+		}
+
 		let filtered = [...results];
 
 		// Filtro por búsqueda
@@ -341,6 +359,28 @@ const MaterialResultsHistory: React.FC = () => {
 							<div className="h-10 bg-gray-200 rounded"></div>
 						</div>
 					))}
+				</div>
+			);
+		}
+
+		if (!Array.isArray(results)) {
+			return (
+				<div className="text-center py-12">
+					<div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+						<ExclamationTriangleIcon className="h-12 w-12 text-red-600" />
+					</div>
+					<h3 className="text-lg font-medium text-gray-900 mb-2">
+						Error al cargar resultados
+					</h3>
+					<p className="text-gray-600 mb-6">
+						Ocurrió un error al cargar el historial de resultados
+					</p>
+					<button
+						onClick={() => window.location.reload()}
+						className="inline-flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+					>
+						Reintentar
+					</button>
 				</div>
 			);
 		}

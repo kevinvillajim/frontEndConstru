@@ -1,5 +1,5 @@
 Listado de rutas de carpetas
-El n�mero de serie del volumen es 204F-F5E4
+El n�mero de serie del volumen es 7C1B-BCDF
 C:.
 |   .env
 |   .gitignore
@@ -35,13 +35,15 @@ C:.
     |       
     +---core
     |   +---adapters
-    |   |   \---api
-    |   |           ApiAuthRepository.ts
-    |   |           ApiCalculationRepository.ts
-    |   |           ApiClient.ts
-    |   |           ApiUserRepository.ts
-    |   |           AxiosConfig.ts
-    |   |           
+    |   |   +---api
+    |   |   |       ApiAuthRepository.ts
+    |   |   |       ApiCalculationRepository.ts
+    |   |   |       ApiClient.ts
+    |   |   |       ApiUserRepository.ts
+    |   |   |       AxiosConfig.ts
+    |   |   |       
+    |   |   +---persistence
+    |   |   \---store
     |   +---application
     |   |   |   ServiceFactory.ts
     |   |   |   
@@ -51,6 +53,7 @@ C:.
     |   |   +---calculations
     |   |   |       TemplateApplicationService.ts
     |   |   |       
+    |   |   +---projects
     |   |   \---user
     |   |           UserService.ts
     |   |           
@@ -65,12 +68,14 @@ C:.
     |       |   \---user
     |       |           User.ts
     |       |           
-    |       \---repositories
-    |               AuthRepository.ts
-    |               CalculationTemplateRepository.ts
-    |               UserRepository.ts
-    |               
+    |       +---repositories
+    |       |       AuthRepository.ts
+    |       |       CalculationTemplateRepository.ts
+    |       |       UserRepository.ts
+    |       |       
+    |       \---services
     +---infrastructure
+    |   +---repositories
     |   \---services
     |           LocalStorageService.ts
     |           
@@ -83,6 +88,7 @@ C:.
     |       
     +---ui
     |   +---components
+    |   |   +---auth
     |   |   +---calculations
     |   |   |       CalculationsNavigation.tsx
     |   |   |       
@@ -91,6 +97,7 @@ C:.
     |   |   |       Toast.tsx
     |   |   |       ToastService.ts
     |   |   |       
+    |   |   +---debug
     |   |   +---layout
     |   |   |       Footer.tsx
     |   |   |       Header.tsx
@@ -147,6 +154,23 @@ C:.
     |   |   +---calculations
     |   |   |   |   CalculationsSettings.tsx
     |   |   |   |   
+    |   |   |   +---budget
+    |   |   |   |   |   BudgetComparison.tsx
+    |   |   |   |   |   BudgetExportCenter.tsx
+    |   |   |   |   |   BudgetGenerator.tsx
+    |   |   |   |   |   BudgetHistory.tsx
+    |   |   |   |   |   BudgetSettings.tsx
+    |   |   |   |   |   BudgetTemplateManager.tsx
+    |   |   |   |   |   CalculationBudgetHub.tsx
+    |   |   |   |   |   CalculationBudgetMain.tsx
+    |   |   |   |   |   CalculationBudgetRouter.tsx
+    |   |   |   |   |   
+    |   |   |   |   \---components
+    |   |   |   |           BudgetAdvancedSettings.tsx
+    |   |   |   |           BudgetConfigurationForm.tsx
+    |   |   |   |           BudgetReviewPanel.tsx
+    |   |   |   |           BudgetTemplateSelector.tsx
+    |   |   |   |           
     |   |   |   +---catalog
     |   |   |   |   |   CalculationInterface.tsx
     |   |   |   |   |   CalculationsCatalog.tsx
@@ -206,6 +230,8 @@ C:.
     |   |   |   |   |       materialConstants.ts
     |   |   |   |   |       
     |   |   |   |   +---hooks
+    |   |   |   |   |       useBudgetComparison.tsx
+    |   |   |   |   |       useBudgetGeneration.tsx
     |   |   |   |   |       useCalculations.tsx
     |   |   |   |   |       useCatalogTemplates.tsx
     |   |   |   |   |       useComparison.tsx
@@ -213,6 +239,7 @@ C:.
     |   |   |   |   |       useTemplates.tsx
     |   |   |   |   |       
     |   |   |   |   +---types
+    |   |   |   |   |       budget.types.ts
     |   |   |   |   |       calculation.types.ts
     |   |   |   |   |       material.types.ts
     |   |   |   |   |       template.types.ts
