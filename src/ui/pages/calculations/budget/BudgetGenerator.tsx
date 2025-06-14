@@ -7,8 +7,6 @@ import {
   ArrowRightIcon,
   CheckIcon,
   CurrencyDollarIcon,
-  DocumentTextIcon,
-  Cog6ToothIcon,
   EyeIcon,
   SparklesIcon,
   ExclamationTriangleIcon
@@ -16,7 +14,7 @@ import {
 
 // Importar hooks personalizados
 import { useBudgetGeneration, useBudgetTemplates } from "../shared/hooks/useBudgetGeneration";
-import { ProjectType, GeographicalZone, BudgetType } from "../shared/types/budget.types";
+import { ProjectType, GeographicalZone } from "../shared/types/budget.types";
 
 // Importar componentes especializados (se implementarán después)
 import BudgetTemplateSelector from "./components/BudgetTemplateSelector";

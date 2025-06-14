@@ -7,10 +7,10 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import CalculationBudgetMain from "./CalculationBudgetMain";
 import BudgetGenerator from "./BudgetGenerator";
 import BudgetComparison from "./BudgetComparison";
-// import BudgetSettings from "./BudgetSettings";
-// import BudgetHistory from "./BudgetHistory";
-// import BudgetTemplateManager from "./BudgetTemplateManager";
-// import BudgetExportCenter from "./BudgetExportCenter";
+import BudgetSettings from "./BudgetSettings";
+import BudgetHistory from "./BudgetHistory";
+import BudgetTemplateManager from "./BudgetTemplateManager";
+import BudgetExportCenter from "./BudgetExportCenter";
 
 const CalculationBudgetRouter: React.FC = () => {
   return (
@@ -37,7 +37,7 @@ const CalculationBudgetRouter: React.FC = () => {
       {/* ==============================================
           GESTIÓN DE PLANTILLAS
           ============================================== */}
-      {/* <Route path="templates" element={<BudgetTemplateManager />} />
+      <Route path="templates" element={<BudgetTemplateManager />} />
       <Route path="templates/create" element={<BudgetTemplateManager />} />
       <Route 
         path="templates/edit/:templateId" 
@@ -46,15 +46,15 @@ const CalculationBudgetRouter: React.FC = () => {
       <Route 
         path="templates/duplicate/:templateId" 
         element={<BudgetTemplateManager />} 
-      /> */}
+      />
 
       {/* ==============================================
           HISTORIAL Y GESTIÓN DE PRESUPUESTOS
           ============================================== */}
-      {/* <Route path="history" element={<BudgetHistory />} />
-      <Route path="history/:budgetId" element={<BudgetHistory />} /> */}
+      <Route path="history" element={<BudgetHistory />} />
+      <Route path="history/:budgetId" element={<BudgetHistory />} />
       <Route path="history/:budgetId/edit" element={<BudgetGenerator />} />
-      {/* <Route path="history/:budgetId/versions" element={<BudgetHistory />} /> */}
+      <Route path="history/:budgetId/versions" element={<BudgetHistory />} />
 
       {/* ==============================================
           COMPARACIÓN DE PRESUPUESTOS
@@ -72,19 +72,19 @@ const CalculationBudgetRouter: React.FC = () => {
       {/* ==============================================
           CENTRO DE EXPORTACIÓN
           ============================================== */}
-      {/* <Route path="export" element={<BudgetExportCenter />} /> */}
-      {/* <Route 
+      <Route path="export" element={<BudgetExportCenter />} />
+      <Route 
         path="export/:budgetId" 
         element={<BudgetExportCenter />} 
-      /> */}
+      />
 
       {/* ==============================================
           CONFIGURACIÓN Y AJUSTES
-          ============================================== */}
-      {/* <Route path="settings" element={<BudgetSettings />} />
+      ============================================== */}
+      <Route path="settings" element={<BudgetSettings />} />
       <Route path="settings/templates" element={<BudgetSettings />} />
       <Route path="settings/branding" element={<BudgetSettings />} />
-      <Route path="settings/regional" element={<BudgetSettings />} /> */}
+      <Route path="settings/regional" element={<BudgetSettings />} />
 
       {/* ==============================================
           RUTAS DE INTEGRACIÓN CON OTROS MÓDULOS
